@@ -2,8 +2,8 @@ import { JETTI_POOL } from './sql.pool.jetti';
 import { IDeleteTaskParams, IGetTaskParams, execQueueAPIPostRequest } from './models/Tasks/tasks';
 import { CatalogUser } from './models/Catalogs/Catalog.User';
 import { EXCHANGE_POOL } from './sql.pool.exchange';
-import { getUserPermissions } from './fuctions/UsersPermissions';
-import { configSchema } from './models/config';
+import { controlPermission, getUserPermissions, getUsersPermissionQueryFilters } from './fuctions/UsersPermissions';
+import { IConfigSchema } from './models/config';
 import {
   DocumentBase, Ref, IFlatDocument, INoSqlDocument, RefValue, RegisterAccumulation,
   Type, RegisterInfo, PropOptions, RegisterAccumulationOptions
@@ -29,6 +29,9 @@ import { DocumentOperationServer } from './models/Documents/Document.Operation.s
 import { createRegisterInfo } from './models/Registers/Info/factory';
 import { createFormServer, FormBaseServer } from './models/Forms/form.factory.server';
 import { Event } from './fuctions/Event';
+import { Global, IProcessVariables } from './models/global';
+import { publisher } from '.';
+import { AllDocTypes } from './models/documents.types';
 
 export interface BatchRow { SKU: Ref; Storehouse: Ref; Qty: number; Cost: number; batch: Ref; rate: number; }
 export interface FillDocBasedOnParams {
@@ -41,14 +44,19 @@ export interface FillDocBasedOnParams {
 
 export interface ExecuteCommandParams {
   command: string; // @required command name
-  type: string; // @required document type
-  operation: string; // @optional catalog.operation id (@required if document type is Document.Operation)
-  id: string; // @optional document id
-  saveMode: 'post' | 'save' | 'none'; // @optional fillable save mode (default: 'none')
+  type?: string; // @required document type
+  operation?: string; // @optional catalog.operation id (@required if document type is Document.Operation)
+  id?: string; // @optional document id
+  saveMode?: 'post' | 'save' | 'none'; // @optional fillable save mode (default: 'none')
 }
-
-
 export interface JTL {
+  sys: {
+    updateProcessVariables: (variables: Partial<IProcessVariables>) => boolean,
+    readProcessVariables: () => IProcessVariables
+    getUsersPermissionQueryFilters: (users: string[], type: AllDocTypes) => Promise<any>
+    clearUsersPermissons: (users: string[]) => boolean
+    getGlobal: () => Global;
+  };
   account: {
     balance: (account: Ref, date: Date, company: Ref, tx: MSSQL) => Promise<number | null>,
     debit: (account: Ref, date: Date, company: Ref, tx: MSSQL) => Promise<number | null>,
@@ -130,12 +138,14 @@ export interface JTL {
     updateSQLViewsByOperationId: (id: string, tx?: MSSQL, withSecurityPolicy?: boolean) => Promise<void>,
     riseUpdateMetadataEvent: () => void,
     propsByType: (type: string, operation?: string, tx?: MSSQL) => Promise<{ [x: string]: PropOptions }>,
-    propByType: (type: string, operation?: string, tx?: MSSQL) => Promise<PropOptions | RegisterAccumulationOptions>
+    propByType: (type: string, operation?: string, tx?: MSSQL) => Promise<PropOptions | RegisterAccumulationOptions>,
+    configSchema: () => Map<AllDocTypes, IConfigSchema>
   };
   util: {
+    clone: <T>(obj: T) => T,
     // tslint:disable-next-line: max-line-length
     createObject: (init: any, tx?: MSSQL | undefined) => Promise<DocumentOperationServer | RegisterAccumulation | RegisterInfo | FormBaseServer>
-    groupArray: <T>(array: T[], groupField?: string) => T[],
+    groupArray: <T>(array: any[], groupField?: string) => T[],
     formatDate: (date: Date) => string,
     parseDate: (date: string, format: string, delimiter: string) => Date,
     round: (num: number, precision?: number) => number,
@@ -181,6 +191,13 @@ export interface JTL {
 }
 
 export const lib: JTL = {
+  sys: {
+    updateProcessVariables,
+    readProcessVariables,
+    clearUsersPermissons,
+    getGlobal,
+    getUsersPermissionQueryFilters
+  },
   account: {
     balance,
     debit,
@@ -221,7 +238,8 @@ export const lib: JTL = {
     updateSQLViewsByOperationId,
     riseUpdateMetadataEvent,
     propsByType,
-    propByType
+    propByType,
+    configSchema
   },
   info: {
     sliceLast,
@@ -232,6 +250,7 @@ export const lib: JTL = {
     turnover
   },
   util: {
+    clone,
     createObject,
     groupArray,
     formatDate,
@@ -276,6 +295,53 @@ export const lib: JTL = {
     newEvent
   }
 };
+
+
+function clone(obj) {
+  let copy;
+
+  if (null == obj || 'object' !== typeof obj) return obj;
+
+  if (obj instanceof Date) {
+    copy = new Date();
+    copy.setTime(obj.getTime());
+    return copy;
+  }
+
+  if (obj instanceof Array) {
+    copy = [];
+    for (let i = 0, len = obj.length; i < len; i++) {
+      copy[i] = clone(obj[i]);
+    }
+    return copy;
+  }
+
+  if (obj instanceof Object) {
+    copy = {};
+    for (const prop in obj) {
+      if (obj.hasOwnProperty(prop)) copy[prop] = clone(obj[prop]);
+    }
+    return copy;
+  }
+
+  throw new Error('Unable to copy obj! Its type isn\'t supported.');
+}
+
+function getGlobal() { return clone(Global); }
+
+function updateProcessVariables(variables: Partial<IProcessVariables>): boolean {
+  publisher.publish('processVariables', JSON.stringify(variables));
+  return true;
+}
+
+function readProcessVariables(): IProcessVariables {
+  return clone(Global.processVariables());
+}
+
+function clearUsersPermissons(users: string[]): boolean {
+  publisher.publish('clearUsersPermissons', JSON.stringify(users));
+  return true;
+}
 
 async function GUID(): Promise<string> {
   return v1().toLocaleUpperCase();
@@ -422,7 +488,7 @@ async function fillDocBasedOn(params: FillDocBasedOnParams, tx: MSSQL): Promise<
 
 async function executeCommand(params: ExecuteCommandParams, tx: MSSQL): Promise<IFlatDocument | null> {
   const { command, type, operation, saveMode, id } = params;
-  if (Type.isOperation(type) && !operation && !id) throw new Error(`Bad arguments: (Type.isOperation(type) && !operation && !id)`);
+  if (Type.isOperation(type!) && !operation && !id) throw new Error(`Bad arguments: (Type.isOperation(type) && !operation && !id)`);
   let serverDoc: DocumentBaseServer | null = null;
   // serverDoc creation
   if (id) {
@@ -432,8 +498,8 @@ async function executeCommand(params: ExecuteCommandParams, tx: MSSQL): Promise<
       throw new Error(`Bad arguments: exist document has operation id "${(serverDoc as any).Operation}" (document.operation != operation)`);
   } else {
     const group = operation ? (await getObjectPropertyById(operation, 'Group', tx)).id : undefined;
-    const doc = { ...createDocument(type), Operation: operation, Group: group };
-    serverDoc = await createDocumentServer(type, doc as IFlatDocument, tx);
+    const doc = { ...createDocument(type!), Operation: operation, Group: group };
+    serverDoc = await createDocumentServer(type!, doc as IFlatDocument, tx);
   }
   // command execution
   const docModule: () => Promise<void> = serverDoc['serverModule'][command];
@@ -532,7 +598,7 @@ export function flatDocument(noSqldoc: INoSqlDocument): IFlatDocument {
 
 async function docPrefix(type: string, tx: MSSQL): Promise<string> {
   const sqType = Type.isOperation(type) ? 'Document.Operation' : type;
-  const metadata = configSchema().get(sqType);
+  const metadata = configSchema().get(sqType as AllDocTypes);
   if (metadata && metadata.prefix) {
     const prefix = metadata.prefix;
     const queryText = `SELECT '${prefix}' + FORMAT((NEXT VALUE FOR "Sq.${sqType}"), '0000000000') result `;
@@ -698,6 +764,7 @@ export async function postById(id: Ref, tx: MSSQL) {
   await lib.util.adminMode(true, tx);
   try {
     const serverDoc = await setPostedSate(id, tx);
+    await controlPermission(serverDoc, tx);
     await unpostDocument(serverDoc, tx);
     if (serverDoc.deleted === false) await postDocument(serverDoc, tx);
     return serverDoc;
@@ -710,7 +777,7 @@ export async function unPostById(id: Ref, tx: MSSQL) {
   try {
     const doc = (await lib.doc.byId(id, tx))!;
     const serverDoc = await createDocumentServer(doc.type as string, doc, tx);
-    // if (!doc.posted) return serverDoc;
+    await controlPermission(serverDoc, tx);
     serverDoc.posted = false;
     await unpostDocument(serverDoc, tx);
     await upsertDocument(serverDoc, tx);
@@ -768,12 +835,16 @@ async function updateSQLViewsByOperationId(id: string, tx?: MSSQL, withSecurityP
   }
 }
 
+function configSchema(): Map<AllDocTypes, IConfigSchema> {
+  return Global.configSchema();
+}
+
 async function propsByType(type: string, operation?: string, tx?: MSSQL): Promise<{ [x: string]: PropOptions }> {
-  return (await createObject({ type, operation }, tx)).Props();
+  return (await createObject({ type, Operation: operation }, tx)).Props();
 }
 
 async function propByType(type: string, operation?: string, tx?: MSSQL): Promise<PropOptions | RegisterAccumulationOptions> {
-  return (await createObject({ type, operation })).Prop();
+  return (await createObject({ type, Operation: operation })).Prop();
 }
 
 async function createDocumentOperationServer(init: Partial<DocumentOperation>, tx: MSSQL): Promise<DocumentOperationServer> {
@@ -930,7 +1001,7 @@ function parseDate(date: string, format: string, delimiter: string): Date {
   return new Date(dateItems[yearIndex] as any, month, dateItems[dayIndex] as any);
 }
 
-function groupArray<T>(array: T[], groupField = ''): T[] {
+function groupArray<T>(array: any[], groupField = ''): T[] {
   return groupField ? [...new Set<T>(array.map(e => e[groupField]))] : [...new Set<T>(array)];
 }
 

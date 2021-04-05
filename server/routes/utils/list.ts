@@ -1,8 +1,10 @@
 import { configSchema } from './../../models/config';
 import { MSSQL } from '../../mssql';
 import { lib } from '../../std.lib';
-import { filterBuilder } from '../../fuctions/filterBuilder';
+import { filterBuilderConcat, filterBuilderGroup } from '../../fuctions/filterBuilder';
 import { DocListRequestBody, DocListResponse, FormListFilter, DocumentBase } from 'jetti-middle';
+import { getPermissionQueryFilter } from '../../fuctions/UsersPermissions';
+import { AllDocTypes } from '../../models/documents.types';
 
 export async function List(params: DocListRequestBody, tx: MSSQL): Promise<DocListResponse> {
   params.filter = (params.filter || [])
@@ -76,7 +78,7 @@ export async function List(params: DocListRequestBody, tx: MSSQL): Promise<DocLi
     const dir = lastORDER ? isAfter ? '>' : '<' : isAfter ? '<' : '>';
     let queryBuilderResult = `
       SELECT TOP ${params.count + 1} id FROM (${QueryList}) d
-      WHERE ${(filterBuilder(params.filter).where)} AND (`;
+      WHERE ${(queryFilter.where)} AND (`;
 
     valueOrder.forEach(_or => {
       let where = '(';
@@ -96,7 +98,11 @@ export async function List(params: DocListRequestBody, tx: MSSQL): Promise<DocLi
     return queryBuilderResult;
   };
 
-  const queryFilter = filterBuilder(params.filter);
+  const queryFilter = filterBuilderConcat(
+    [filterBuilderGroup([{ group: 'AND', filters: params.filter }]),
+    await getPermissionQueryFilter({ user: tx.userId(), type: params.type as AllDocTypes, tx, kind: 'list', props: Props })]
+  );
+
   const queryBefore = queryBuilder(false);
   const queryAfter = queryBuilder(true);
   if (queryBefore && queryAfter && row) {

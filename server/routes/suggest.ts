@@ -1,41 +1,14 @@
-import { DocTypes } from './../models/documents.types';
+import { AllDocTypes, DocTypes } from './../models/documents.types';
 import * as express from 'express';
 import { NextFunction, Request, Response } from 'express';
 import { SDB } from './middleware/db-sessions';
-import { filterBuilder } from '../fuctions/filterBuilder';
+import { filterBuilder, filterBuilderConcat, filterBuilderGroup } from '../fuctions/filterBuilder';
 import { createTypes, allTypes } from '../models/Types/Types.factory';
 import { createDocument } from '../models/documents.factory';
 import { FormListFilter, ISuggest, Type, DocumentOptions } from 'jetti-middle';
+import { getPermissionQueryFilter } from '../fuctions/UsersPermissions';
 
 export const router = express.Router();
-
-router.post('/suggestOld/:type', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const sdb = SDB(req);
-    const type = req.params.type as string;
-    const filter = req.query.filter as string;
-    const filters = req.body.filters as FormListFilter[];
-
-    let filterQuery = `(1 = 1)`;
-    filters.filter(e => e.right !== undefined).forEach(f => {
-      const value = f.right.id ? f.right.id : f.right;
-      filterQuery += `
-    AND [${f.left}] = N'${value}'`;
-    });
-
-    const query = `
-    SELECT top 10 id as id, description as value, code as code, type as type, isfolder, deleted
-    FROM [${type}.v] WITH (NOEXPAND)
-    WHERE ${filterQuery}
-    AND (description LIKE @p1 OR code LIKE @p1)
-    ORDER BY type, description, deleted, code`;
-
-    const data = await sdb.manyOrNone<ISuggest>(query, ['%' + filter + '%']);
-    res.json(data);
-  } catch (err) { next(err); }
-
-});
-
 
 router.post('/suggest/:type', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -43,9 +16,9 @@ router.post('/suggest/:type', async (req: Request, res: Response, next: NextFunc
     const type = req.params.type as string;
     const filterLike = req.query.filter as string;
     const filter = req.body.filters as FormListFilter[];
-    const filterQuery = filterBuilder(filter);
-    let query = '';
     const queryOrder = 'type, description, deleted, code'.split(', ');
+    let query = '';
+
     if (Type.isType(type)) {
       const select = createTypes(type as any).getTypes()
         .map(el => (
@@ -53,20 +26,53 @@ router.post('/suggest/:type', async (req: Request, res: Response, next: NextFunc
             type: el,
             description: (createDocument(el as DocTypes).Prop() as DocumentOptions).description
           }));
-      query = suggestQuery(select);
-    } else if (type === 'Catalog.Subcount') query = suggestQuery(allTypes(), 'Catalog.Subcount');
+      query = `
+      ${suggestQuery(select)}
+      AND (description LIKE @p1 OR code LIKE @p1)
+      ORDER BY ${queryOrder.join(', ')}`;
+
+    } else if (type === 'Catalog.Subcount')
+      query = `
+      ${suggestQuery(allTypes(), 'Catalog.Subcount')}
+      AND (description LIKE @p1 OR code LIKE @p1)
+      ORDER BY ${queryOrder.join(', ')}`;
     else {
+      const filterQuery = filterBuilderConcat(
+        [filterBuilderGroup([{ group: 'AND', filters: filter }]),
+        await getPermissionQueryFilter({ type: type as AllDocTypes, tx: sdb, kind: 'list', user: sdb.userId() })]
+      );
+      //   query = `${filterQuery.tempTable}
+      // SELECT top 10 id,
+      //   description value,
+      //   code,
+      //   description + ' (' + code + ')' description,
+      //   type,
+      //   isfolder,
+      //   deleted
+      // FROM [${type}.v] WITH (NOEXPAND)
+      // WHERE ${filterQuery.where}`;
+      //   queryOrder.unshift('LEN([description])');
+      // }
+      // query += `
+      // AND (description LIKE @p1 OR code LIKE @p1)
+      // ORDER BY ${queryOrder.join(', ')}`;
+      const shortType = type.replace('Catalog.', '').replace('Document.', '');
+      queryOrder.unshift(`LEN([${shortType}])`);
       query = `${filterQuery.tempTable}
-    SELECT top 10 id as id, description as value, code as code, description + ' (' + code + ')' as description, type as type, isfolder, deleted
-    FROM [${type}.v] WITH (NOEXPAND)
-    WHERE ${filterQuery.where}`;
-      queryOrder.unshift('LEN([description])');
+      SELECT TOP 10
+        id,
+        [${shortType}] value,
+        code,
+        [${shortType}]  + ' (' + code + ')' description,
+        type,
+        isfolder,
+        deleted
+      FROM [${type}]
+      WHERE ${filterQuery.where}
+      AND ([${shortType}] LIKE @p1 OR code LIKE @p1)
+      ORDER BY ${queryOrder.join(', ')}`;
     }
-    query = query.concat(
-      `AND (description LIKE @p1 OR code LIKE @p1)
-    ORDER BY ${queryOrder.join(', ')}`);
-    const data = await sdb.manyOrNone<ISuggest>(query, ['%' + filterLike + '%']);
-    res.json(data);
+    res.json(await sdb.manyOrNone<ISuggest>(query, [`%${filterLike}%`]));
   } catch (err) { next(err); }
 });
 

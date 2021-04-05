@@ -3,7 +3,6 @@ import * as compression from 'compression';
 import * as cors from 'cors';
 import * as express from 'express';
 import { NextFunction, Request, Response } from 'express';
-import * as fs from 'fs';
 import * as httpServer from 'http';
 import * as os from 'os';
 import 'reflect-metadata';
@@ -24,6 +23,7 @@ import { authHTTP, authIO } from './routes/middleware/check-auth';
 import { router as registers } from './routes/registers';
 import { router as suggests } from './routes/suggest';
 import { router as swagger } from './routes/swagger';
+import { router as metadata } from './routes/metadata';
 import { router as tasks } from './routes/tasks';
 import { router as userSettings } from './routes/user.settings';
 import { router as form } from './routes/form';
@@ -32,12 +32,12 @@ import { router as exchange } from './routes/exchange';
 import { jettiDB, tasksDB } from './routes/middleware/db-sessions';
 import * as swaggerDocument from './swagger.json';
 import * as swaggerUi from 'swagger-ui-express';
-
 // tslint:disable: no-shadowed-variable
+
+console['logDev'] = (message: any, ...params: any[]) => Global.isProd ? '' : console.log(message, ...params);
 const app = express();
 export const HTTP = httpServer.createServer(app);
 
-const root = './';
 app.use(compression());
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
@@ -53,6 +53,7 @@ app.use(api, authHTTP, tasksDB, tasks);
 app.use(api, authHTTP, tasksDB, form);
 app.use(api, authHTTP, jettiDB, bp);
 app.use(api, authHTTP, jettiDB, swagger);
+app.use(api, authHTTP, jettiDB, metadata);
 app.use('/auth', jettiDB, auth);
 app.use('/exchange', jettiDB, exchange);
 app.use('/swagger', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
@@ -74,6 +75,7 @@ app.use(errorHandler);
 
 export const IO = new SocketIO(HTTP, { cors: { origin: '*.*', methods: ['GET', 'POST'] } });
 IO.use(authIO);
+
 const pubClient = new RedisClient({ host: REDIS_DB_HOST, password: REDIS_DB_AUTH });
 const subClient = pubClient.duplicate();
 IO.adapter(createAdapter({ pubClient, subClient }));
@@ -81,56 +83,26 @@ IO.of('/').adapter.on('error', (error) => { });
 
 export const subscriber = new RedisClient(({ host: REDIS_DB_HOST, auth_pass: REDIS_DB_AUTH }));
 export const publisher = new RedisClient(({ host: REDIS_DB_HOST, auth_pass: REDIS_DB_AUTH }));
+
 subscriber.on('message', function (channel, message) {
+  console.log(`PubSub event in channel "${channel}" retrive message "${message}"`);
   if (channel === 'updateDynamicMeta') updateDynamicMeta();
+  if (channel === 'processVariables') Global.updateProcessVariables(JSON.parse(message));
+  if (channel === 'clearUsersPermissons') Global.clearUsersPermissons(JSON.parse(message));
 });
-subscriber.subscribe('updateDynamicMeta');
+
+subscriber.subscribe(['updateDynamicMeta', 'processVariables', 'clearUsersPermissons']);
 
 const port = (process.env.PORT) || '3000';
-HTTP.listen(port, () => console.log(`API running on port: ${port}\nDB: ${DB_NAME}\nCPUs: ${os.cpus().length}`));
-JQueue.getJobCounts().then(jobs => console.log('JOBS:', jobs));
+HTTP.listen(port, () => console.log(`API port: ${port}\nDB: ${DB_NAME}\nCPUs: ${os.cpus().length}`));
 
-Global.init().then(e => {
-  if (!Global.isProd) {
-    let script = '';
-    const ef = () => { };
+JQueue
+  .getJobCounts()
+  .then(jobs => console.log('JOBS:', jobs));
 
-    SQLGenegatorMetadata.CreateViewOperations().then(script => fs.writeFile('./sql-metadata-sripts/OperationsView.sql', script, ef));
-
-    // tslint:disable-next-line: max-line-length
-    SQLGenegatorMetadata.CreateViewOperationsIndex().then(script => fs.writeFile('./sql-metadata-sripts/OperationsViewIndex.sql', script, ef));
-
-    script = SQLGenegatorMetadata.CreateViewCatalogsIndex();
-    fs.writeFile('./sql-metadata-sripts/CatalogsViewIndex.sql', script, ef);
-
-    script = SQLGenegatorMetadata.CreateViewCatalogsIndex(true, true);
-    fs.writeFile('./sql-metadata-sripts/CatalogsViewIndexDynamic.sql', script, ef);
-
-    script = SQLGenegatorMetadata.CreateViewCatalogs();
-    fs.writeFile('./sql-metadata-sripts/CatalogsView.sql', script, ef);
-
-    script = SQLGenegatorMetadata.CreateViewCatalogs(true);
-    fs.writeFile('./sql-metadata-sripts/CatalogsViewDynamic.sql', script, ef);
-
-    script = SQLGenegatorMetadata.CreateRegisterInfoViewIndex();
-    fs.writeFile('./sql-metadata-sripts/RegisterInfoViewIndex.sql', script, ef);
-
-    script = SQLGenegatorMetadata.RegisterAccumulationClusteredTables();
-    fs.writeFile('./sql-metadata-sripts/RegisterAccumulationClusteredTables.sql', script, ef);
-
-    script = SQLGenegatorMetadata.RegisterAccumulationView();
-    fs.writeFile('./sql-metadata-sripts/RegisterAccumulationView.sql', script, ef);
-
-    script = SQLGenegatorMetadata.CreateTableRegisterAccumulationTO();
-    fs.writeFile('./sql-metadata-sripts/CreateTableRegisterAccumulationTotals.sql', script, ef);
-
-    script = SQLGenegatorMetadata.CreateTableRegisterAccumulationTOv2();
-    fs.writeFile('./sql-metadata-sripts/CreateTableRegisterAccumulationTotalsv2.sql', script, ef);
-
-    script = SQLGenegatorMetadata.CreateRegisterAccumulationViewIndex();
-    fs.writeFile('./sql-metadata-sripts/CreateRegisterAccumulationViewIndex.sql', script, ef);
-
-  }
-});
-
-
+Global
+  .init()
+  .then(_ => {
+    console.log('VARS:', Global.processVariables());
+    if (!Global.isProd) SQLGenegatorMetadata.writeScriptsToFiles();
+  });

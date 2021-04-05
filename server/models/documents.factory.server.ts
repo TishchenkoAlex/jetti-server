@@ -25,6 +25,7 @@ import { CatalogLoanServer } from './Catalogs/Catalog.Loan.server';
 import { Ref, DocumentBase, IFlatDocument, DocumentOptions, RefValue, calculateDescription } from 'jetti-middle';
 import { CatalogUserServer } from './Catalogs/Catalog.User.server';
 import { CatalogOperationTypeServer } from './Catalogs/Catalog.Operation.Type.server';
+import { CatalogRoleServer } from './Catalogs/Catalog.Role.server';
 
 export interface IServerDocument {
 
@@ -63,6 +64,7 @@ export const RegisteredServerDocument: RegisteredDocumentType[] = [
   { type: 'Catalog.ProductKind', Class: CatalogProductKindServer },
   { type: 'Catalog.Product', Class: CatalogProductServer },
   { type: 'Catalog.ProductCategory', Class: CatalogProductCategoryServer },
+  { type: 'Catalog.Role', Class: CatalogRoleServer },
   { type: 'Catalog.User', Class: CatalogUserServer },
   { type: 'Document.Operation', Class: DocumentOperationServer },
   { type: 'Document.Invoice', Class: DocumentInvoiceServer },

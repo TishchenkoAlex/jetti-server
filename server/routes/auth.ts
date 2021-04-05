@@ -1,5 +1,5 @@
 import { LOGIC_USECASHREQUESTAPPROVING } from './../env/environment';
-import { getUserRoles } from './../fuctions/UsersPermissions';
+import { getUserRoles, isAvalibleObject, userPermissionsTypes, usersPermissions } from './../fuctions/UsersPermissions';
 import * as express from 'express';
 import axios from 'axios';
 import * as jwt from 'jsonwebtoken';
@@ -11,7 +11,7 @@ import { JETTI_POOL } from '../sql.pool.jetti';
 import { lib } from '../std.lib';
 import { CatalogSubSystem } from '../models/Catalogs/Catalog.SubSystem';
 import { createDocument } from '../models/documents.factory';
-import { DocumentOptions, Ref, IFlatDocument, INoSqlDocument, IJWTPayload } from 'jetti-middle';
+import { DocumentOptions, INoSqlDocument, IJWTPayload } from 'jetti-middle';
 import { createForm } from '../models/Forms/form.factory';
 import { CatalogOperationGroup } from '../models/Catalogs/Catalog.Operation.Group';
 
@@ -40,25 +40,70 @@ router.post('/login', async (req, res, next) => {
     const me = (await instance.get('/v1.0/me/')).data;
     const mail = req.body.email;
     const user = await getUser(mail);
-    if (!user) { return res.status(401).json({ message: 'Auth failed' }); }
+    if (!user)
+      return res.status(401).json({ message: 'Auth failed' });
 
-    let photoArraybuffer; let photo;
+    let photo;
     try {
-      photoArraybuffer = (await instance.get('/v1.0/me/photos/48x48/$value', { responseType: 'arraybuffer' })).data;
+      const photoArraybuffer = (await instance.get('/v1.0/me/photos/48x48/$value', { responseType: 'arraybuffer' })).data;
       photo = Buffer.from(photoArraybuffer, 'binary').toString('base64');
     } catch { }
 
     const payload: IJWTPayload = {
       email: me.userPrincipalName,
       description: me.displayName,
-      isAdmin: user.isAdmin === true ? true : false,
+      isAdmin: user.isAdmin === true,
       roles: await getUserRoles(user),
       env: getUserEnviroment(user),
     };
 
     const token = jwt.sign(payload, JTW_KEY, { expiresIn: '72h' });
 
-    return res.json({ account: payload, token, photo });
+    return res.json({
+      account: payload,
+      token,
+      photo,
+      permissions: await userPermissionsTypes(user.id, sdba)
+    });
+
+  } catch (err) { next(err); }
+});
+
+router.post('/loginAs', async (req, res, next) => {
+  try {
+    const mail = req.body.userAs;
+    const user = await getUser(mail);
+    if (!user)
+      return res.status(401).json({ message: 'Auth failed' });
+    const payload: IJWTPayload = {
+      email: mail,
+      description: user.description,
+      isAdmin: user.isAdmin === true,
+      roles: await getUserRoles(user),
+      env: getUserEnviroment(user),
+    };
+    const token = jwt.sign(payload, JTW_KEY, { expiresIn: '72h' });
+    return res.json({
+      account: payload,
+      token,
+      permissions: await userPermissionsTypes(user.id, sdba)
+    });
+
+  } catch (err) { next(err); }
+});
+
+
+router.get('/permissions', authHTTP, async (req, res, next) => {
+  try {
+    const user = await getUser((<any>req).user.email);
+    if (!user) { return res.status(401).json({ message: 'Auth failed' }); }
+    res.json(await userPermissionsTypes(user.id, sdba));
+  } catch (err) { next(err); }
+});
+
+router.get('/isavalibleobject/:id', authHTTP, async (req, res, next) => {
+  try {
+    res.json((await isAvalibleObject(req.params.id, req['user'].env.view.id, sdba)));
   } catch (err) { next(err); }
 });
 
@@ -69,9 +114,9 @@ router.get('/account', authHTTP, async (req, res, next) => {
     const payload: IJWTPayload = {
       email: user.code,
       description: user.description,
-      isAdmin: user.isAdmin === true ? true : false,
+      isAdmin: user.isAdmin === true,
       roles: await getUserRoles(user),
-      env: getUserEnviroment(user),
+      env: getUserEnviroment(user)
     };
     res.json(payload);
   } catch (err) { next(err); }
@@ -85,12 +130,12 @@ router.post('/refresh', authHTTP, async (req, res, next) => {
     const new_payload: IJWTPayload = {
       email: user.id,
       description: user.description,
-      isAdmin: user.isAdmin === true ? true : false,
+      isAdmin: user.isAdmin === true,
       roles: await getUserRoles(user),
       env: getUserEnviroment(user),
     };
     const token = jwt.sign(new_payload, JTW_KEY, { expiresIn: '72h' });
-    return res.json({ account: user, token });
+    return res.json({ account: user, token, permissions: await userPermissionsTypes(user.id, sdba) });
   } catch (err) { next(err); }
 });
 

@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import { Global } from '../../models/global';
 import { MSSQL } from '../../mssql';
 import { JETTI_POOL } from '../../sql.pool.jetti';
 import { TASKS_POOL } from '../../sql.pool.tasks';

@@ -2,11 +2,11 @@ import { x100 } from './../x100.lib';
 import * as express from 'express';
 import { NextFunction, Request, Response } from 'express';
 import { createDocumentServer, DocumentBaseServer } from '../models/documents.factory.server';
-import { DocTypes } from '../models/documents.types';
+import { AllDocTypes, DocTypes } from '../models/documents.types';
 import { DocumentOperation } from '../models/Documents/Document.Operation';
 import { lib } from './../std.lib';
 import { List } from './utils/list';
-import { postDocument, insertDocument, updateDocument, unpostDocument, upsertDocument } from './utils/post';
+import { postDocument, unpostDocument, upsertDocument } from './utils/post';
 import { MSSQL } from '../mssql';
 import { SDB } from './middleware/db-sessions';
 import { getIndexedOperationType } from '../models/indexedOperation';
@@ -17,13 +17,33 @@ import {
 } from 'jetti-middle';
 import { createDocument } from '../models/documents.factory';
 import { FormListSettings } from 'jetti-middle/dist/common/classes/form-list';
+import { controlPermission, getPermissionQueryFilter, isReadOnlyType } from '../fuctions/UsersPermissions';
 
 export const router = express.Router();
 
 export async function buildViewModel<T>(ServerDoc: DocumentBase, tx: MSSQL) {
-  const viewModelQuery = SQLGenegator.QueryObjectFromJSON(ServerDoc.Props());
+
+  const props = ServerDoc.Props();
   const NoSqlDocument = JSON.stringify(lib.doc.noSqlDocument(ServerDoc));
-  return await tx.oneOrNone<T>(viewModelQuery, [NoSqlDocument]);
+
+  const filter = await getPermissionQueryFilter({
+    type: ServerDoc.type as AllDocTypes,
+    operation: ServerDoc['Operation'],
+    user: tx.userId(),
+    tx,
+    kind: 'view',
+    props
+  });
+
+  const query = `
+  ${filter.tempTable}
+  ${SQLGenegator.QueryObjectFromJSON(props)}
+  WHERE 1 = 1
+  ${filter.where}`;
+
+  console['logDev'](filter);
+
+  return await tx.oneOrNone<T>(query, [NoSqlDocument]);
 }
 
 // Select documents list for UI (grids/list etc)
@@ -66,7 +86,7 @@ const viewAction = async (req: Request, res: Response, next: NextFunction) => {
 
     let model = {};
     const settings = new FormListSettings();
-    const userID = sdb.user.env.view.id;
+    const userID = sdb.userId();
 
     if (id) {
 
@@ -120,11 +140,21 @@ const viewAction = async (req: Request, res: Response, next: NextFunction) => {
 
     const columnsDef = buildColumnDef(ServerDoc.Props(), settings);
     const metadata = ServerDoc.Prop() as DocumentOptions;
+
     if (params.operation)
       metadata['Operation'] = await lib.doc.formControlRef(params.operation, sdb);
     else if (params.group)
       metadata['Group'] = await lib.doc.formControlRef(params.group, sdb);
-    const result: IViewModel = { schema: ServerDoc.Props(), model, columnsDef, metadata, settings };
+
+    const result: IViewModel = { schema: ServerDoc.Props(), model, columnsDef, metadata, settings, access: {} };
+
+    if (!model && !req.query.new)
+      result.access!.denied = true;
+    else if (await isReadOnlyType(ServerDoc.type as AllDocTypes, sdb, ServerDoc['Group']))
+      result.access!.readOnly = true;
+
+    if (result.access!.denied) throw new Error('Access denied');
+
     res.json(result);
   } catch (err) { next(err); }
 };
@@ -161,6 +191,7 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
         if (!doc) throw new Error(`API - Delete: document with id '${id}' not found.`);
 
         const serverDoc = await createDocumentServer(doc.type, doc, tx);
+        await controlPermission(serverDoc, tx);
 
         if (!doc.deleted) {
           const beforeDelete: (tx: MSSQL) => Promise<void> = serverDoc['serverModule']['beforeDelete'];
@@ -193,35 +224,6 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
   } catch (err) { next(err); }
 });
 
-router.post('/deprecated/save', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const sdb = SDB(req);
-    await sdb.tx(async tx => {
-      await lib.util.adminMode(true, tx);
-      try {
-        const doc: IFlatDocument = JSON.parse(JSON.stringify(req.body), dateReviverUTC);
-        if (!doc.code) doc.code = await lib.doc.docPrefix(doc.type, tx);
-        const serverDoc = await createDocumentServer(doc.type as DocTypes, doc, tx);
-        if (doc.ExchangeBase) {
-          serverDoc['ExchangeBase'] = doc.ExchangeBase;
-          serverDoc['ExchangeCode'] = doc.ExchangeCode;
-        }
-        if (serverDoc.timestamp) {
-          await updateDocument(serverDoc, tx);
-          if (serverDoc.posted && serverDoc.isDoc) {
-            await unpostDocument(serverDoc, tx);
-            await postDocument(serverDoc, tx);
-          }
-        } else {
-          await insertDocument(serverDoc, tx);
-        }
-        res.json((await buildViewModel(serverDoc, tx)));
-      } catch (ex) { throw new Error(ex); }
-      finally { await lib.util.adminMode(false, tx); }
-    });
-  } catch (err) { next(err); }
-});
-
 router.post('/save', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const sdb = SDB(req);
@@ -231,6 +233,7 @@ router.post('/save', async (req: Request, res: Response, next: NextFunction) => 
         const doc: IFlatDocument = JSON.parse(JSON.stringify(req.body), dateReviverUTC);
         if (!doc.code) doc.code = await lib.doc.docPrefix(doc.type, tx);
         const serverDoc = await createDocumentServer(doc.type as DocTypes, doc, tx);
+        await controlPermission(serverDoc, tx);
         if (doc.ExchangeBase) {
           serverDoc['ExchangeBase'] = doc.ExchangeBase;
           serverDoc['ExchangeCode'] = doc.ExchangeCode;
@@ -259,57 +262,9 @@ router.post('/savepost', async (req: Request, res: Response, next: NextFunction)
       try {
         if (!doc.code) doc.code = await lib.doc.docPrefix(doc.type, tx);
         const serverDoc = await createDocumentServer(doc.type as DocTypes, doc, tx);
+        await controlPermission(serverDoc, tx);
         await unpostDocument(serverDoc, tx);
         await upsertDocument(serverDoc, tx);
-        await postDocument(serverDoc, tx);
-        res.json((await buildViewModel(serverDoc, tx)));
-      } catch (ex) { throw new Error(ex); }
-      finally { await lib.util.adminMode(false, tx); }
-    });
-  } catch (err) { next(err); }
-});
-
-router.post('/deprecated/savepost', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const sdb = SDB(req);
-    await sdb.tx(async tx => {
-      const doc: IFlatDocument = JSON.parse(JSON.stringify(req.body), dateReviverUTC);
-      if (doc && doc.deleted) throw new Error('Cant POST deleted document');
-      doc.posted = true;
-      await lib.util.adminMode(true, tx);
-      try {
-        if (!doc.code) doc.code = await lib.doc.docPrefix(doc.type, tx);
-        const serverDoc = await createDocumentServer(doc.type as DocTypes, doc, tx);
-        await unpostDocument(serverDoc, tx);
-        if (serverDoc.timestamp) {
-          await updateDocument(serverDoc, tx);
-        } else {
-          await insertDocument(serverDoc, tx);
-        }
-        await postDocument(serverDoc, tx);
-        res.json((await buildViewModel(serverDoc, tx)));
-      } catch (ex) { throw new Error(ex); }
-      finally { await lib.util.adminMode(false, tx); }
-    });
-  } catch (err) { next(err); }
-});
-
-router.post('/deprecated/post', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const sdb = SDB(req);
-    await sdb.tx(async tx => {
-      const doc: IFlatDocument = JSON.parse(JSON.stringify(req.body), dateReviverUTC);
-      if (doc && doc.deleted) throw new Error('Cant POST deleted document');
-      doc.posted = true;
-      await lib.util.adminMode(true, tx);
-      try {
-        const serverDoc = await createDocumentServer(doc.type as DocTypes, doc, tx);
-        await unpostDocument(serverDoc, tx);
-        if (serverDoc.timestamp) {
-          await updateDocument(serverDoc, tx);
-        } else {
-          await insertDocument(serverDoc, tx);
-        }
         await postDocument(serverDoc, tx);
         res.json((await buildViewModel(serverDoc, tx)));
       } catch (ex) { throw new Error(ex); }
@@ -329,6 +284,7 @@ router.post('/post', async (req: Request, res: Response, next: NextFunction) => 
       await lib.util.adminMode(true, tx);
       try {
         const serverDoc = await createDocumentServer(doc.type as DocTypes, doc, tx);
+        await controlPermission(serverDoc, tx);
         await unpostDocument(serverDoc, tx);
         await upsertDocument(serverDoc, tx);
         await postDocument(serverDoc, tx);

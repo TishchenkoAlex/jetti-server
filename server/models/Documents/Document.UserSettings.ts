@@ -1,4 +1,4 @@
-import { Ref } from 'jetti-middle';
+import { Ref, matchOperator } from 'jetti-middle';
 import { DocumentBase, JDocument, Props } from 'jetti-middle/dist/common/models/document';
 
 @JDocument({
@@ -7,6 +7,7 @@ import { DocumentBase, JDocument, Props } from 'jetti-middle/dist/common/models/
   icon: 'far fa-file-alt',
   menu: 'User settings',
   prefix: 'USET-',
+  dimensions: [{ UserOrGroup: 'Types.UserOrGroup' }],
   commands: [
     { method: 'AddDescendantsCompany', icon: 'pi pi-plus', label: 'Добавить починенные компании', order: 1 },
     { method: 'ClearCompanyList', icon: 'pi pi-plus', label: 'Очистить ТЧ "Companys"', order: 2 }
@@ -19,23 +20,26 @@ export class DocumentUserSettings extends DocumentBase {
   @Props({ type: 'Types.UserOrGroup', required: true })
   UserOrGroup: Ref = null;
 
-  @Props({ type: 'boolean', label: 'Exclude Companys'})
-  COMP = false;
+  @Props({ type: 'boolean', label: 'Exclude Companys' })
+  ExcludeCompanys = false;
 
-  @Props({ type: 'boolean', label: 'Exclude Departments'})
-  DEPT = false;
+  @Props({ type: 'boolean', label: 'Exclude Departments' })
+  ExcludeDepartments = false;
 
-  @Props({ type: 'boolean', label: 'Exclude Storehouse'})
-  STOR = false;
+  @Props({ type: 'boolean', label: 'Exclude Storehouse' })
+  ExcludeStorehouse = false;
 
-  @Props({ type: 'boolean', label: 'Exclude CashRegisters'})
-  CASH = false;
+  @Props({ type: 'boolean', label: 'Exclude CashRegisters' })
+  ExcludeCashRegisters = false;
 
-  @Props({ type: 'boolean', label: 'Exclude BankAccounts'})
-  BANK = false;
+  @Props({ type: 'boolean', label: 'Exclude BankAccounts' })
+  ExcludeBankAccounts = false;
 
-  @Props({ type: 'boolean', label: 'Exclude Operations '})
-  GROUP = false;
+  @Props({ type: 'boolean', label: 'Exclude Operations ' })
+  ExcludeOperationGroups = false;
+
+  @Props({ type: 'table', order: 8, label: 'Filters' })
+  Filters: Filters[] = [new Filters()];
 
   @Props({ type: 'table', order: 1, label: 'Roles' })
   RoleList: RoleItems[] = [new RoleItems()];
@@ -60,38 +64,50 @@ export class DocumentUserSettings extends DocumentBase {
 
 }
 
+class Filters {
+
+  @Props({ type: 'Catalog.Subcount', required: true })
+  Type: Ref = null;
+
+  @Props({ type: 'enum', value: ['IN', 'NOT IN', 'IN GROUP', 'NOT IN GROUP', 'IS NULL', 'IS NOT NULL'], required: true })
+  MatchOperator: String = 'IN';
+
+  @Props({ type: 'Types.Catalog' })
+  Value: Ref = null;
+
+}
 class RoleItems {
-  @Props({ type: 'Catalog.Role', required: true, style: { width: '100%' }})
+  @Props({ type: 'Catalog.Role', required: true, style: { width: '100%' } })
   Role: Ref = null;
 }
 
 export class CompanyItems {
-  @Props({ type: 'Catalog.Company', required: true, style: { width: '100%' }})
+  @Props({ type: 'Catalog.Company', style: { width: '100%' } })
   company: Ref = null;
 }
 
 class OperationGroups {
-  @Props({ type: 'Catalog.Operation.Group', required: true, style: { width: '100%' }})
+  @Props({ type: 'Catalog.Operation.Group', style: { width: '100%' } })
   Group: Ref = null;
 }
 
 class Storehouses {
-  @Props({ type: 'Catalog.Storehouse', required: true, style: { width: '100%' }})
+  @Props({ type: 'Catalog.Storehouse', style: { width: '100%' } })
   Storehouse: Ref = null;
 }
 
 class CashRegisters {
-  @Props({ type: 'Catalog.CashRegister', required: true, style: { width: '100%' }})
+  @Props({ type: 'Catalog.CashRegister', style: { width: '100%' } })
   CashRegister: Ref = null;
 }
 
 class BankAccounts {
-  @Props({ type: 'Catalog.BankAccount', required: true, style: { width: '100%' }})
+  @Props({ type: 'Catalog.BankAccount', style: { width: '100%' } })
   BankAccount: Ref = null;
 }
 
 class Departments {
-  @Props({ type: 'Catalog.Department', required: true, style: { width: '100%' }})
+  @Props({ type: 'Catalog.Department', style: { width: '100%' } })
   Department: Ref = null;
 }
 

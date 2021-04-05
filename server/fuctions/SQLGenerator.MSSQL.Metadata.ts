@@ -11,9 +11,53 @@ import { createRegisterInfo, GetRegisterInfo } from '../models/Registers/Info/fa
 import { lib } from '../std.lib';
 import { getIndexedOperationById, IIndexedOperation } from '../models/indexedOperation';
 import { MSSQL } from '../mssql';
+import * as fs from 'fs';
 
 
 export class SQLGenegatorMetadata {
+
+  static writeScriptsToFiles(rootPath = './sql-metadata-sripts') {
+
+    let script = '';
+    const nothing = () => { };
+
+    SQLGenegatorMetadata.CreateViewOperations()
+      .then(script => fs.writeFile(`${rootPath}/OperationsView.sql`, script, nothing));
+
+    SQLGenegatorMetadata.CreateViewOperationsIndex()
+      .then(script => fs.writeFile(`${rootPath}/OperationsViewIndex.sql`, script, nothing));
+
+    script = SQLGenegatorMetadata.CreateViewCatalogsIndex();
+    fs.writeFile(`${rootPath}/CatalogsViewIndex.sql`, script, nothing);
+
+    script = SQLGenegatorMetadata.CreateViewCatalogsIndex(true, true);
+    fs.writeFile(`${rootPath}/CatalogsViewIndexDynamic.sql`, script, nothing);
+
+    script = SQLGenegatorMetadata.CreateViewCatalogs();
+    fs.writeFile(`${rootPath}/CatalogsView.sql`, script, nothing);
+
+    script = SQLGenegatorMetadata.CreateViewCatalogs(true);
+    fs.writeFile(`${rootPath}/CatalogsViewDynamic.sql`, script, nothing);
+
+    script = SQLGenegatorMetadata.CreateRegisterInfoViewIndex();
+    fs.writeFile(`${rootPath}/RegisterInfoViewIndex.sql`, script, nothing);
+
+    script = SQLGenegatorMetadata.RegisterAccumulationClusteredTables();
+    fs.writeFile(`${rootPath}/RegisterAccumulationClusteredTables.sql`, script, nothing);
+
+    script = SQLGenegatorMetadata.RegisterAccumulationView();
+    fs.writeFile(`${rootPath}/RegisterAccumulationView.sql`, script, nothing);
+
+    script = SQLGenegatorMetadata.CreateTableRegisterAccumulationTO();
+    fs.writeFile(`${rootPath}/CreateTableRegisterAccumulationTotals.sql`, script, nothing);
+
+    script = SQLGenegatorMetadata.CreateTableRegisterAccumulationTOv2();
+    fs.writeFile(`${rootPath}/CreateTableRegisterAccumulationTotalsv2.sql`, script, nothing);
+
+    script = SQLGenegatorMetadata.CreateRegisterAccumulationViewIndex();
+    fs.writeFile(`${rootPath}/CreateRegisterAccumulationViewIndex.sql`, script, nothing);
+
+  }
 
   static typeSpliter(type: string, begin: boolean, length = 30) {
     return `\n${'-'.repeat(length)} ${begin ? 'BEGIN' : 'END'} ${type} ${'-'.repeat(length)}\n`;

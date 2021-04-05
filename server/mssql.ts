@@ -2,7 +2,6 @@ import { Connection, Request, ColumnValue, RequestError, ConnectionError, ISOLAT
 import { Pool } from 'tarn';
 import { ConnectionConfigAndPool } from './env/environment';
 import { dateReviverUTC } from 'jetti-middle';
-
 export class SqlPool {
 
   constructor(public config: ConnectionConfigAndPool) {
@@ -107,7 +106,7 @@ export class MSSQL {
         const request = new Request(this.prepareSession(sql), (error: RequestError, rowCount: number, rows: ColumnValue[][]) => {
           if (!this.connection) this.sqlPool.pool.release(connection);
           if (error) { if (!global['isProd']) console.error(error, sql); return reject(error); }
-          if (!rowCount) return resolve(null);
+          if (!rowCount || !rows.length) return resolve(null);
           const data = {} as T;
           rows[0].forEach(col => data[col.metadata.colName] = col.value);
           const result = this.complexObject(data);

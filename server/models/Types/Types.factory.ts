@@ -42,20 +42,19 @@ export function documentsTypes(): { type: AllTypes, description: string }[] {
 
 export function simpleTypes(): { type: AllTypes, description: string, defaultValue?: any }[] {
 
-  const result: { type: AllTypes, description: string, defaultValue?: any }[] = [];
+  return [
+    { type: 'number', description: 'number', defaultValue: 0 },
+    { type: 'date', description: 'date', defaultValue: null },
+    { type: 'datetime', description: 'datetime', defaultValue: null },
+    { type: 'string', description: 'string', defaultValue: '' },
+    { type: 'boolean', description: 'boolean', defaultValue: false },
+    { type: 'table', description: 'table', defaultValue: [] },
+    { type: 'javascript', description: 'javascript', defaultValue: '' },
+    { type: 'enum', description: 'emum', defaultValue: '' },
+    { type: 'link', description: 'link', defaultValue: '' },
+    { type: 'URL', description: 'URL', defaultValue: '' },
+  ];
 
-  result.push({ type: 'number', description: 'number', defaultValue: 0 });
-  result.push({ type: 'date', description: 'date', defaultValue: null });
-  result.push({ type: 'datetime', description: 'datetime', defaultValue: null });
-  result.push({ type: 'string', description: 'string', defaultValue: '' });
-  result.push({ type: 'boolean', description: 'boolean', defaultValue: false });
-  result.push({ type: 'table', description: 'table', defaultValue: [] });
-  result.push({ type: 'javascript', description: 'javascript', defaultValue: '' });
-  result.push({ type: 'enum', description: 'emum', defaultValue: '' });
-  result.push({ type: 'link', description: 'link', defaultValue: '' });
-  result.push({ type: 'URL', description: 'URL', defaultValue: '' });
-
-  return result;
 }
 
 export function defaultTypeValue(type: any) {
