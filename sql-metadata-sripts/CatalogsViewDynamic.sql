@@ -267,6 +267,52 @@ GO
 
       
       
+------------------------------ BEGIN Catalog.CashFlow ------------------------------
+
+      
+      CREATE OR ALTER VIEW dbo.[Catalog.CashFlow] AS
+        
+      SELECT
+        d.id, d.type, d.date, d.code, d.description "CashFlow", d.posted, d.deleted, d.isfolder, d.timestamp, d.version
+        , ISNULL("parent".description, '') "parent.value", d."parent" "parent.id", "parent".type "parent.type"
+        , ISNULL("company".description, '') "company.value", d."company" "company.id", "company".type "company.type"
+        , ISNULL("user".description, '') "user.value", d."user" "user.id", "user".type "user.type"
+        , ISNULL([workflow.v].description, '') [workflow.value], d.[workflow] [workflow.id], [workflow.v].type [workflow.type]
+        , d.[DescriptionENG] [DescriptionENG]
+        , ISNULL([BusinessDirection.v].description, '') [BusinessDirection.value], d.[BusinessDirection] [BusinessDirection.id], [BusinessDirection.v].type [BusinessDirection.type]
+      
+        , ISNULL(l5.id, d.id) [CashFlow.Level5.id]
+        , ISNULL(l4.id, ISNULL(l5.id, d.id)) [CashFlow.Level4.id]
+        , ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))) [CashFlow.Level3.id]
+        , ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id)))) [CashFlow.Level2.id]
+        , ISNULL(l1.id, ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))))) [CashFlow.Level1.id]
+        , ISNULL(l5.description, d.description) [CashFlow.Level5]
+        , ISNULL(l4.description, ISNULL(l5.description, d.description)) [CashFlow.Level4]
+        , ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))) [CashFlow.Level3]
+        , ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description)))) [CashFlow.Level2]
+        , ISNULL(l1.description, ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))))) [CashFlow.Level1]
+      FROM [Catalog.CashFlow.v] d WITH (NOEXPAND)
+        LEFT JOIN [Catalog.CashFlow.v] l5 WITH (NOEXPAND) ON (l5.id = d.parent)
+        LEFT JOIN [Catalog.CashFlow.v] l4 WITH (NOEXPAND) ON (l4.id = l5.parent)
+        LEFT JOIN [Catalog.CashFlow.v] l3 WITH (NOEXPAND) ON (l3.id = l4.parent)
+        LEFT JOIN [Catalog.CashFlow.v] l2 WITH (NOEXPAND) ON (l2.id = l3.parent)
+        LEFT JOIN [Catalog.CashFlow.v] l1 WITH (NOEXPAND) ON (l1.id = l2.parent)
+      
+        LEFT JOIN dbo.[Documents] [parent] ON [parent].id = d.[parent]
+        LEFT JOIN dbo.[Catalog.User.v] [user] WITH (NOEXPAND) ON [user].id = d.[user]
+        LEFT JOIN dbo.[Catalog.Company.v] [company] WITH (NOEXPAND) ON [company].id = d.company
+        LEFT JOIN dbo.[Document.WorkFlow.v] [workflow.v] WITH (NOEXPAND) ON [workflow.v].id = d.[workflow]
+        LEFT JOIN dbo.[Catalog.BusinessDirection.v] [BusinessDirection.v] WITH (NOEXPAND) ON [BusinessDirection.v].id = d.[BusinessDirection]
+    ;
+GO
+GRANT SELECT ON dbo.[Catalog.CashFlow] TO jetti;
+GO
+
+      
+------------------------------ END Catalog.CashFlow ------------------------------
+
+      
+      
 ------------------------------ BEGIN Catalog.Contract ------------------------------
 
       
@@ -370,6 +416,7 @@ GO
         , ISNULL([Manager.v].description, '') [Manager.value], d.[Manager] [Manager.id], [Manager.v].type [Manager.type]
         , d.[Mail] [Mail]
         , ISNULL([ParentCounterpartie.v].description, '') [ParentCounterpartie.value], d.[ParentCounterpartie] [ParentCounterpartie.id], [ParentCounterpartie.v].type [ParentCounterpartie.type]
+        , ISNULL([Country.v].description, '') [Country.value], d.[Country] [Country.id], [Country.v].type [Country.type]
       
         , ISNULL(l5.id, d.id) [Counterpartie.Level5.id]
         , ISNULL(l4.id, ISNULL(l5.id, d.id)) [Counterpartie.Level4.id]
@@ -395,6 +442,7 @@ GO
         LEFT JOIN dbo.[Catalog.Department.v] [Department.v] WITH (NOEXPAND) ON [Department.v].id = d.[Department]
         LEFT JOIN dbo.[Catalog.User.v] [Manager.v] WITH (NOEXPAND) ON [Manager.v].id = d.[Manager]
         LEFT JOIN dbo.[Catalog.Counterpartie.v] [ParentCounterpartie.v] WITH (NOEXPAND) ON [ParentCounterpartie.v].id = d.[ParentCounterpartie]
+        LEFT JOIN dbo.[Catalog.Country.v] [Country.v] WITH (NOEXPAND) ON [Country.v].id = d.[Country]
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.Counterpartie] TO jetti;
@@ -503,6 +551,54 @@ GO
 
       
       
+------------------------------ BEGIN Catalog.InvestorGroup ------------------------------
+
+      
+      CREATE OR ALTER VIEW dbo.[Catalog.InvestorGroup] AS
+        
+      SELECT
+        d.id, d.type, d.date, d.code, d.description "InvestorGroup", d.posted, d.deleted, d.isfolder, d.timestamp, d.version
+        , ISNULL("parent".description, '') "parent.value", d."parent" "parent.id", "parent".type "parent.type"
+        , ISNULL("company".description, '') "company.value", d."company" "company.id", "company".type "company.type"
+        , ISNULL("user".description, '') "user.value", d."user" "user.id", "user".type "user.type"
+        , ISNULL([workflow.v].description, '') [workflow.value], d.[workflow] [workflow.id], [workflow.v].type [workflow.type]
+        , ISNULL([KindInvestorGroup.v].description, '') [KindInvestorGroup.value], d.[KindInvestorGroup] [KindInvestorGroup.id], [KindInvestorGroup.v].type [KindInvestorGroup.type]
+        , d.[NameAD] [NameAD]
+        , ISNULL([Product.v].description, '') [Product.value], d.[Product] [Product.id], [Product.v].type [Product.type]
+      
+        , ISNULL(l5.id, d.id) [InvestorGroup.Level5.id]
+        , ISNULL(l4.id, ISNULL(l5.id, d.id)) [InvestorGroup.Level4.id]
+        , ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))) [InvestorGroup.Level3.id]
+        , ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id)))) [InvestorGroup.Level2.id]
+        , ISNULL(l1.id, ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))))) [InvestorGroup.Level1.id]
+        , ISNULL(l5.description, d.description) [InvestorGroup.Level5]
+        , ISNULL(l4.description, ISNULL(l5.description, d.description)) [InvestorGroup.Level4]
+        , ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))) [InvestorGroup.Level3]
+        , ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description)))) [InvestorGroup.Level2]
+        , ISNULL(l1.description, ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))))) [InvestorGroup.Level1]
+      FROM [Catalog.InvestorGroup.v] d WITH (NOEXPAND)
+        LEFT JOIN [Catalog.InvestorGroup.v] l5 WITH (NOEXPAND) ON (l5.id = d.parent)
+        LEFT JOIN [Catalog.InvestorGroup.v] l4 WITH (NOEXPAND) ON (l4.id = l5.parent)
+        LEFT JOIN [Catalog.InvestorGroup.v] l3 WITH (NOEXPAND) ON (l3.id = l4.parent)
+        LEFT JOIN [Catalog.InvestorGroup.v] l2 WITH (NOEXPAND) ON (l2.id = l3.parent)
+        LEFT JOIN [Catalog.InvestorGroup.v] l1 WITH (NOEXPAND) ON (l1.id = l2.parent)
+      
+        LEFT JOIN dbo.[Documents] [parent] ON [parent].id = d.[parent]
+        LEFT JOIN dbo.[Catalog.User.v] [user] WITH (NOEXPAND) ON [user].id = d.[user]
+        LEFT JOIN dbo.[Catalog.Company.v] [company] WITH (NOEXPAND) ON [company].id = d.company
+        LEFT JOIN dbo.[Document.WorkFlow.v] [workflow.v] WITH (NOEXPAND) ON [workflow.v].id = d.[workflow]
+        LEFT JOIN dbo.[Catalog.Operation.Type.v] [KindInvestorGroup.v] WITH (NOEXPAND) ON [KindInvestorGroup.v].id = d.[KindInvestorGroup]
+        LEFT JOIN dbo.[Catalog.Product.v] [Product.v] WITH (NOEXPAND) ON [Product.v].id = d.[Product]
+    ;
+GO
+GRANT SELECT ON dbo.[Catalog.InvestorGroup] TO jetti;
+GO
+
+      
+------------------------------ END Catalog.InvestorGroup ------------------------------
+
+      
+      
 ------------------------------ BEGIN Catalog.JobTitle ------------------------------
 
       
@@ -598,6 +694,123 @@ GO
 
       
       
+------------------------------ BEGIN Catalog.Loan ------------------------------
+
+      
+      CREATE OR ALTER VIEW dbo.[Catalog.Loan] AS
+        
+      SELECT
+        d.id, d.type, d.date, d.code, d.description "Loan", d.posted, d.deleted, d.isfolder, d.timestamp, d.version
+        , ISNULL("parent".description, '') "parent.value", d."parent" "parent.id", "parent".type "parent.type"
+        , ISNULL("company".description, '') "company.value", d."company" "company.id", "company".type "company.type"
+        , ISNULL("user".description, '') "user.value", d."user" "user.id", "user".type "user.type"
+        , ISNULL([workflow.v].description, '') [workflow.value], d.[workflow] [workflow.id], [workflow.v].type [workflow.type]
+        , d.[PayDay] [PayDay]
+        , d.[CloseDay] [CloseDay]
+        , ISNULL([owner.v].description, '') [owner.value], d.[owner] [owner.id], [owner.v].type [owner.type]
+        , ISNULL([OwnerBankAccount.v].description, '') [OwnerBankAccount.value], d.[OwnerBankAccount] [OwnerBankAccount.id], [OwnerBankAccount.v].type [OwnerBankAccount.type]
+        , d.[CashKind] [CashKind]
+        , d.[kind] [kind]
+        , d.[Status] [Status]
+        , ISNULL([InvestorGroup.v].description, '') [InvestorGroup.value], d.[InvestorGroup] [InvestorGroup.id], [InvestorGroup.v].type [InvestorGroup.type]
+        , d.[InterestRate] [InterestRate]
+        , d.[InterestDeadline] [InterestDeadline]
+        , ISNULL([loanType.v].description, '') [loanType.value], d.[loanType] [loanType.id], [loanType.v].type [loanType.type]
+        , ISNULL([Department.v].description, '') [Department.value], d.[Department] [Department.id], [Department.v].type [Department.type]
+        , d.[AmountLoan] [AmountLoan]
+        , ISNULL([currency.v].description, '') [currency.value], d.[currency] [currency.id], [currency.v].type [currency.type]
+        , ISNULL([Country.v].description, '') [Country.value], d.[Country] [Country.id], [Country.v].type [Country.type]
+        , ISNULL([Lot.v].description, '') [Lot.value], d.[Lot] [Lot.id], [Lot.v].type [Lot.type]
+        , d.[LotQty] [LotQty]
+        , ISNULL([LoanRepaymentProcedure.v].description, '') [LoanRepaymentProcedure.value], d.[LoanRepaymentProcedure] [LoanRepaymentProcedure.id], [LoanRepaymentProcedure.v].type [LoanRepaymentProcedure.type]
+        , d.[PayDeadline] [PayDeadline]
+      
+        , ISNULL(l5.id, d.id) [Loan.Level5.id]
+        , ISNULL(l4.id, ISNULL(l5.id, d.id)) [Loan.Level4.id]
+        , ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))) [Loan.Level3.id]
+        , ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id)))) [Loan.Level2.id]
+        , ISNULL(l1.id, ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))))) [Loan.Level1.id]
+        , ISNULL(l5.description, d.description) [Loan.Level5]
+        , ISNULL(l4.description, ISNULL(l5.description, d.description)) [Loan.Level4]
+        , ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))) [Loan.Level3]
+        , ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description)))) [Loan.Level2]
+        , ISNULL(l1.description, ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))))) [Loan.Level1]
+      FROM [Catalog.Loan.v] d WITH (NOEXPAND)
+        LEFT JOIN [Catalog.Loan.v] l5 WITH (NOEXPAND) ON (l5.id = d.parent)
+        LEFT JOIN [Catalog.Loan.v] l4 WITH (NOEXPAND) ON (l4.id = l5.parent)
+        LEFT JOIN [Catalog.Loan.v] l3 WITH (NOEXPAND) ON (l3.id = l4.parent)
+        LEFT JOIN [Catalog.Loan.v] l2 WITH (NOEXPAND) ON (l2.id = l3.parent)
+        LEFT JOIN [Catalog.Loan.v] l1 WITH (NOEXPAND) ON (l1.id = l2.parent)
+      
+        LEFT JOIN dbo.[Documents] [parent] ON [parent].id = d.[parent]
+        LEFT JOIN dbo.[Catalog.User.v] [user] WITH (NOEXPAND) ON [user].id = d.[user]
+        LEFT JOIN dbo.[Catalog.Company.v] [company] WITH (NOEXPAND) ON [company].id = d.company
+        LEFT JOIN dbo.[Document.WorkFlow.v] [workflow.v] WITH (NOEXPAND) ON [workflow.v].id = d.[workflow]
+        LEFT JOIN dbo.[Documents] [owner.v] ON [owner.v].id = d.[owner]
+        LEFT JOIN dbo.[Catalog.Counterpartie.BankAccount.v] [OwnerBankAccount.v] WITH (NOEXPAND) ON [OwnerBankAccount.v].id = d.[OwnerBankAccount]
+        LEFT JOIN dbo.[Catalog.InvestorGroup.v] [InvestorGroup.v] WITH (NOEXPAND) ON [InvestorGroup.v].id = d.[InvestorGroup]
+        LEFT JOIN dbo.[Catalog.LoanTypes.v] [loanType.v] WITH (NOEXPAND) ON [loanType.v].id = d.[loanType]
+        LEFT JOIN dbo.[Catalog.Department.v] [Department.v] WITH (NOEXPAND) ON [Department.v].id = d.[Department]
+        LEFT JOIN dbo.[Catalog.Currency.v] [currency.v] WITH (NOEXPAND) ON [currency.v].id = d.[currency]
+        LEFT JOIN dbo.[Catalog.Country.v] [Country.v] WITH (NOEXPAND) ON [Country.v].id = d.[Country]
+        LEFT JOIN dbo.[Catalog.Product.v] [Lot.v] WITH (NOEXPAND) ON [Lot.v].id = d.[Lot]
+        LEFT JOIN dbo.[Catalog.LoanRepaymentProcedure.v] [LoanRepaymentProcedure.v] WITH (NOEXPAND) ON [LoanRepaymentProcedure.v].id = d.[LoanRepaymentProcedure]
+    ;
+GO
+GRANT SELECT ON dbo.[Catalog.Loan] TO jetti;
+GO
+
+      
+------------------------------ END Catalog.Loan ------------------------------
+
+      
+      
+------------------------------ BEGIN Catalog.ModifiersGroup ------------------------------
+
+      
+      CREATE OR ALTER VIEW dbo.[Catalog.ModifiersGroup] AS
+        
+      SELECT
+        d.id, d.type, d.date, d.code, d.description "ModifiersGroup", d.posted, d.deleted, d.isfolder, d.timestamp, d.version
+        , ISNULL("parent".description, '') "parent.value", d."parent" "parent.id", "parent".type "parent.type"
+        , ISNULL("company".description, '') "company.value", d."company" "company.id", "company".type "company.type"
+        , ISNULL("user".description, '') "user.value", d."user" "user.id", "user".type "user.type"
+        , ISNULL([workflow.v].description, '') [workflow.value], d.[workflow] [workflow.id], [workflow.v].type [workflow.type]
+        , d.[MinPosition] [MinPosition]
+        , d.[MaxPosition] [MaxPosition]
+        , d.[Multiselection] [Multiselection]
+      
+        , ISNULL(l5.id, d.id) [ModifiersGroup.Level5.id]
+        , ISNULL(l4.id, ISNULL(l5.id, d.id)) [ModifiersGroup.Level4.id]
+        , ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))) [ModifiersGroup.Level3.id]
+        , ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id)))) [ModifiersGroup.Level2.id]
+        , ISNULL(l1.id, ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))))) [ModifiersGroup.Level1.id]
+        , ISNULL(l5.description, d.description) [ModifiersGroup.Level5]
+        , ISNULL(l4.description, ISNULL(l5.description, d.description)) [ModifiersGroup.Level4]
+        , ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))) [ModifiersGroup.Level3]
+        , ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description)))) [ModifiersGroup.Level2]
+        , ISNULL(l1.description, ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))))) [ModifiersGroup.Level1]
+      FROM [Catalog.ModifiersGroup.v] d 
+        LEFT JOIN [Catalog.ModifiersGroup.v] l5  ON (l5.id = d.parent)
+        LEFT JOIN [Catalog.ModifiersGroup.v] l4  ON (l4.id = l5.parent)
+        LEFT JOIN [Catalog.ModifiersGroup.v] l3  ON (l3.id = l4.parent)
+        LEFT JOIN [Catalog.ModifiersGroup.v] l2  ON (l2.id = l3.parent)
+        LEFT JOIN [Catalog.ModifiersGroup.v] l1  ON (l1.id = l2.parent)
+      
+        LEFT JOIN dbo.[Documents] [parent] ON [parent].id = d.[parent]
+        LEFT JOIN dbo.[Catalog.User.v] [user] WITH (NOEXPAND) ON [user].id = d.[user]
+        LEFT JOIN dbo.[Catalog.Company.v] [company] WITH (NOEXPAND) ON [company].id = d.company
+        LEFT JOIN dbo.[Document.WorkFlow.v] [workflow.v] WITH (NOEXPAND) ON [workflow.v].id = d.[workflow]
+    ;
+GO
+GRANT SELECT ON dbo.[Catalog.ModifiersGroup] TO jetti;
+GO
+
+      
+------------------------------ END Catalog.ModifiersGroup ------------------------------
+
+      
+      
 ------------------------------ BEGIN Catalog.MoneyDocument ------------------------------
 
       
@@ -612,8 +825,12 @@ GO
         , ISNULL([kind.v].description, '') [kind.value], d.[kind] [kind.id], [kind.v].type [kind.type]
         , ISNULL([currency.v].description, '') [currency.value], d.[currency] [currency.id], [currency.v].type [currency.type]
         , ISNULL([Owner.v].description, '') [Owner.value], d.[Owner] [Owner.id], [Owner.v].type [Owner.type]
+        , d.[Qty] [Qty]
         , d.[Price] [Price]
+        , d.[CreateDate] [CreateDate]
         , d.[ExpiredAt] [ExpiredAt]
+        , ISNULL([currency_Pay.v].description, '') [currency_Pay.value], d.[currency_Pay] [currency_Pay.id], [currency_Pay.v].type [currency_Pay.type]
+        , d.[Amount_Pay] [Amount_Pay]
       
         , ISNULL(l5.id, d.id) [MoneyDocument.Level5.id]
         , ISNULL(l4.id, ISNULL(l5.id, d.id)) [MoneyDocument.Level4.id]
@@ -639,6 +856,7 @@ GO
         LEFT JOIN dbo.[Catalog.Operation.Type.v] [kind.v] WITH (NOEXPAND) ON [kind.v].id = d.[kind]
         LEFT JOIN dbo.[Catalog.Currency.v] [currency.v] WITH (NOEXPAND) ON [currency.v].id = d.[currency]
         LEFT JOIN dbo.[Documents] [Owner.v] ON [Owner.v].id = d.[Owner]
+        LEFT JOIN dbo.[Catalog.Currency.v] [currency_Pay.v] WITH (NOEXPAND) ON [currency_Pay.v].id = d.[currency_Pay]
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.MoneyDocument] TO jetti;
@@ -646,6 +864,52 @@ GO
 
       
 ------------------------------ END Catalog.MoneyDocument ------------------------------
+
+      
+      
+------------------------------ BEGIN Catalog.ObjectsExploitation ------------------------------
+
+      
+      CREATE OR ALTER VIEW dbo.[Catalog.ObjectsExploitation] AS
+        
+      SELECT
+        d.id, d.type, d.date, d.code, d.description "ObjectsExploitation", d.posted, d.deleted, d.isfolder, d.timestamp, d.version
+        , ISNULL("parent".description, '') "parent.value", d."parent" "parent.id", "parent".type "parent.type"
+        , ISNULL("company".description, '') "company.value", d."company" "company.id", "company".type "company.type"
+        , ISNULL("user".description, '') "user.value", d."user" "user.id", "user".type "user.type"
+        , ISNULL([workflow.v].description, '') [workflow.value], d.[workflow] [workflow.id], [workflow.v].type [workflow.type]
+        , ISNULL([Group.v].description, '') [Group.value], d.[Group] [Group.id], [Group.v].type [Group.type]
+        , d.[InventoryNumber] [InventoryNumber]
+      
+        , ISNULL(l5.id, d.id) [ObjectsExploitation.Level5.id]
+        , ISNULL(l4.id, ISNULL(l5.id, d.id)) [ObjectsExploitation.Level4.id]
+        , ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))) [ObjectsExploitation.Level3.id]
+        , ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id)))) [ObjectsExploitation.Level2.id]
+        , ISNULL(l1.id, ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))))) [ObjectsExploitation.Level1.id]
+        , ISNULL(l5.description, d.description) [ObjectsExploitation.Level5]
+        , ISNULL(l4.description, ISNULL(l5.description, d.description)) [ObjectsExploitation.Level4]
+        , ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))) [ObjectsExploitation.Level3]
+        , ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description)))) [ObjectsExploitation.Level2]
+        , ISNULL(l1.description, ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))))) [ObjectsExploitation.Level1]
+      FROM [Catalog.ObjectsExploitation.v] d WITH (NOEXPAND)
+        LEFT JOIN [Catalog.ObjectsExploitation.v] l5 WITH (NOEXPAND) ON (l5.id = d.parent)
+        LEFT JOIN [Catalog.ObjectsExploitation.v] l4 WITH (NOEXPAND) ON (l4.id = l5.parent)
+        LEFT JOIN [Catalog.ObjectsExploitation.v] l3 WITH (NOEXPAND) ON (l3.id = l4.parent)
+        LEFT JOIN [Catalog.ObjectsExploitation.v] l2 WITH (NOEXPAND) ON (l2.id = l3.parent)
+        LEFT JOIN [Catalog.ObjectsExploitation.v] l1 WITH (NOEXPAND) ON (l1.id = l2.parent)
+      
+        LEFT JOIN dbo.[Documents] [parent] ON [parent].id = d.[parent]
+        LEFT JOIN dbo.[Catalog.User.v] [user] WITH (NOEXPAND) ON [user].id = d.[user]
+        LEFT JOIN dbo.[Catalog.Company.v] [company] WITH (NOEXPAND) ON [company].id = d.company
+        LEFT JOIN dbo.[Document.WorkFlow.v] [workflow.v] WITH (NOEXPAND) ON [workflow.v].id = d.[workflow]
+        LEFT JOIN dbo.[Catalog.ObjectsExploitation.v] [Group.v] WITH (NOEXPAND) ON [Group.v].id = d.[Group]
+    ;
+GO
+GRANT SELECT ON dbo.[Catalog.ObjectsExploitation] TO jetti;
+GO
+
+      
+------------------------------ END Catalog.ObjectsExploitation ------------------------------
 
       
       
@@ -888,6 +1152,148 @@ GO
 
       
       
+------------------------------ BEGIN Catalog.Product ------------------------------
+
+      
+      CREATE OR ALTER VIEW dbo.[Catalog.Product] AS
+        
+      SELECT
+        d.id, d.type, d.date, d.code, d.description "Product", d.posted, d.deleted, d.isfolder, d.timestamp, d.version
+        , ISNULL("parent".description, '') "parent.value", d."parent" "parent.id", "parent".type "parent.type"
+        , ISNULL("company".description, '') "company.value", d."company" "company.id", "company".type "company.type"
+        , ISNULL("user".description, '') "user.value", d."user" "user.id", "user".type "user.type"
+        , ISNULL([workflow.v].description, '') [workflow.value], d.[workflow] [workflow.id], [workflow.v].type [workflow.type]
+        , ISNULL([ProductKind.v].description, '') [ProductKind.value], d.[ProductKind] [ProductKind.id], [ProductKind.v].type [ProductKind.type]
+        , ISNULL([ProductCategory.v].description, '') [ProductCategory.value], d.[ProductCategory] [ProductCategory.id], [ProductCategory.v].type [ProductCategory.type]
+        , ISNULL([Specification.v].description, '') [Specification.value], d.[Specification] [Specification.id], [Specification.v].type [Specification.type]
+        , ISNULL([Brand.v].description, '') [Brand.value], d.[Brand] [Brand.id], [Brand.v].type [Brand.type]
+        , ISNULL([RetailNetwork.v].description, '') [RetailNetwork.value], d.[RetailNetwork] [RetailNetwork.id], [RetailNetwork.v].type [RetailNetwork.type]
+        , ISNULL([Unit.v].description, '') [Unit.value], d.[Unit] [Unit.id], [Unit.v].type [Unit.type]
+        , ISNULL([Expense.v].description, '') [Expense.value], d.[Expense] [Expense.id], [Expense.v].type [Expense.type]
+        , ISNULL([Analytics.v].description, '') [Analytics.value], d.[Analytics] [Analytics.id], [Analytics.v].type [Analytics.type]
+        , ISNULL([ProductReport.v].description, '') [ProductReport.value], d.[ProductReport] [ProductReport.id], [ProductReport.v].type [ProductReport.type]
+        , ISNULL([Settings.v].description, '') [Settings.value], d.[Settings] [Settings.id], [Settings.v].type [Settings.type]
+        , d.[Purchased] [Purchased]
+        , d.[ShortCode] [ShortCode]
+        , d.[DescriptionCustomer] [DescriptionCustomer]
+        , d.[ShortName] [ShortName]
+        , d.[Tags] [Tags]
+        , d.[Weight] [Weight]
+        , d.[Volume] [Volume]
+        , d.[Calorie] [Calorie]
+        , d.[Carbohydrates] [Carbohydrates]
+        , d.[Fat] [Fat]
+        , d.[Proteins] [Proteins]
+        , d.[CookingTime] [CookingTime]
+        , d.[Composition] [Composition]
+        , d.[CookingPlace] [CookingPlace]
+        , d.[Order] [Order]
+        , d.[Barcode] [Barcode]
+        , d.[Eancode] [Eancode]
+        , d.[isVegan] [isVegan]
+        , d.[isHot] [isHot]
+        , d.[isPromo] [isPromo]
+        , d.[isAggregator] [isAggregator]
+        , d.[isThermallabelPrinting] [isThermallabelPrinting]
+        , d.[Slug] [Slug]
+        , d.[InvoiceComposition] [InvoiceComposition]
+        , d.[isAdditions] [isAdditions]
+      
+        , ISNULL(l5.id, d.id) [Product.Level5.id]
+        , ISNULL(l4.id, ISNULL(l5.id, d.id)) [Product.Level4.id]
+        , ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))) [Product.Level3.id]
+        , ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id)))) [Product.Level2.id]
+        , ISNULL(l1.id, ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))))) [Product.Level1.id]
+        , ISNULL(l5.description, d.description) [Product.Level5]
+        , ISNULL(l4.description, ISNULL(l5.description, d.description)) [Product.Level4]
+        , ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))) [Product.Level3]
+        , ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description)))) [Product.Level2]
+        , ISNULL(l1.description, ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))))) [Product.Level1]
+      FROM [Catalog.Product.v] d WITH (NOEXPAND)
+        LEFT JOIN [Catalog.Product.v] l5 WITH (NOEXPAND) ON (l5.id = d.parent)
+        LEFT JOIN [Catalog.Product.v] l4 WITH (NOEXPAND) ON (l4.id = l5.parent)
+        LEFT JOIN [Catalog.Product.v] l3 WITH (NOEXPAND) ON (l3.id = l4.parent)
+        LEFT JOIN [Catalog.Product.v] l2 WITH (NOEXPAND) ON (l2.id = l3.parent)
+        LEFT JOIN [Catalog.Product.v] l1 WITH (NOEXPAND) ON (l1.id = l2.parent)
+      
+        LEFT JOIN dbo.[Documents] [parent] ON [parent].id = d.[parent]
+        LEFT JOIN dbo.[Catalog.User.v] [user] WITH (NOEXPAND) ON [user].id = d.[user]
+        LEFT JOIN dbo.[Catalog.Company.v] [company] WITH (NOEXPAND) ON [company].id = d.company
+        LEFT JOIN dbo.[Document.WorkFlow.v] [workflow.v] WITH (NOEXPAND) ON [workflow.v].id = d.[workflow]
+        LEFT JOIN dbo.[Catalog.ProductKind.v] [ProductKind.v] WITH (NOEXPAND) ON [ProductKind.v].id = d.[ProductKind]
+        LEFT JOIN dbo.[Catalog.ProductCategory.v] [ProductCategory.v] WITH (NOEXPAND) ON [ProductCategory.v].id = d.[ProductCategory]
+        LEFT JOIN dbo.[Catalog.Specification.v] [Specification.v] WITH (NOEXPAND) ON [Specification.v].id = d.[Specification]
+        LEFT JOIN dbo.[Catalog.Brand.v] [Brand.v] WITH (NOEXPAND) ON [Brand.v].id = d.[Brand]
+        LEFT JOIN dbo.[Catalog.RetailNetwork.v] [RetailNetwork.v] WITH (NOEXPAND) ON [RetailNetwork.v].id = d.[RetailNetwork]
+        LEFT JOIN dbo.[Catalog.Unit.v] [Unit.v] WITH (NOEXPAND) ON [Unit.v].id = d.[Unit]
+        LEFT JOIN dbo.[Catalog.Expense.v] [Expense.v] WITH (NOEXPAND) ON [Expense.v].id = d.[Expense]
+        LEFT JOIN dbo.[Catalog.Expense.Analytics.v] [Analytics.v] WITH (NOEXPAND) ON [Analytics.v].id = d.[Analytics]
+        LEFT JOIN dbo.[Catalog.Product.Report.v] [ProductReport.v] WITH (NOEXPAND) ON [ProductReport.v].id = d.[ProductReport]
+        LEFT JOIN dbo.[Document.Operation.v] [Settings.v] WITH (NOEXPAND) ON [Settings.v].id = d.[Settings]
+    ;
+GO
+GRANT SELECT ON dbo.[Catalog.Product] TO jetti;
+GO
+
+      
+------------------------------ END Catalog.Product ------------------------------
+
+      
+      
+------------------------------ BEGIN Catalog.ProductCategory ------------------------------
+
+      
+      CREATE OR ALTER VIEW dbo.[Catalog.ProductCategory] AS
+        
+      SELECT
+        d.id, d.type, d.date, d.code, d.description "ProductCategory", d.posted, d.deleted, d.isfolder, d.timestamp, d.version
+        , ISNULL("parent".description, '') "parent.value", d."parent" "parent.id", "parent".type "parent.type"
+        , ISNULL("company".description, '') "company.value", d."company" "company.id", "company".type "company.type"
+        , ISNULL("user".description, '') "user.value", d."user" "user.id", "user".type "user.type"
+        , ISNULL([workflow.v].description, '') [workflow.value], d.[workflow] [workflow.id], [workflow.v].type [workflow.type]
+        , d.[Order] [Order]
+        , d.[Presentation] [Presentation]
+        , ISNULL([RetailNetwork.v].description, '') [RetailNetwork.value], d.[RetailNetwork] [RetailNetwork.id], [RetailNetwork.v].type [RetailNetwork.type]
+        , d.[isDefault] [isDefault]
+        , d.[isDesktop] [isDesktop]
+        , d.[isWeb] [isWeb]
+        , d.[isMobile] [isMobile]
+        , d.[Slug] [Slug]
+        , ISNULL([GroupProductCategory.v].description, '') [GroupProductCategory.value], d.[GroupProductCategory] [GroupProductCategory.id], [GroupProductCategory.v].type [GroupProductCategory.type]
+      
+        , ISNULL(l5.id, d.id) [ProductCategory.Level5.id]
+        , ISNULL(l4.id, ISNULL(l5.id, d.id)) [ProductCategory.Level4.id]
+        , ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))) [ProductCategory.Level3.id]
+        , ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id)))) [ProductCategory.Level2.id]
+        , ISNULL(l1.id, ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))))) [ProductCategory.Level1.id]
+        , ISNULL(l5.description, d.description) [ProductCategory.Level5]
+        , ISNULL(l4.description, ISNULL(l5.description, d.description)) [ProductCategory.Level4]
+        , ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))) [ProductCategory.Level3]
+        , ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description)))) [ProductCategory.Level2]
+        , ISNULL(l1.description, ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))))) [ProductCategory.Level1]
+      FROM [Catalog.ProductCategory.v] d WITH (NOEXPAND)
+        LEFT JOIN [Catalog.ProductCategory.v] l5 WITH (NOEXPAND) ON (l5.id = d.parent)
+        LEFT JOIN [Catalog.ProductCategory.v] l4 WITH (NOEXPAND) ON (l4.id = l5.parent)
+        LEFT JOIN [Catalog.ProductCategory.v] l3 WITH (NOEXPAND) ON (l3.id = l4.parent)
+        LEFT JOIN [Catalog.ProductCategory.v] l2 WITH (NOEXPAND) ON (l2.id = l3.parent)
+        LEFT JOIN [Catalog.ProductCategory.v] l1 WITH (NOEXPAND) ON (l1.id = l2.parent)
+      
+        LEFT JOIN dbo.[Documents] [parent] ON [parent].id = d.[parent]
+        LEFT JOIN dbo.[Catalog.User.v] [user] WITH (NOEXPAND) ON [user].id = d.[user]
+        LEFT JOIN dbo.[Catalog.Company.v] [company] WITH (NOEXPAND) ON [company].id = d.company
+        LEFT JOIN dbo.[Document.WorkFlow.v] [workflow.v] WITH (NOEXPAND) ON [workflow.v].id = d.[workflow]
+        LEFT JOIN dbo.[Catalog.RetailNetwork.v] [RetailNetwork.v] WITH (NOEXPAND) ON [RetailNetwork.v].id = d.[RetailNetwork]
+        LEFT JOIN dbo.[Catalog.Operation.Type.v] [GroupProductCategory.v] WITH (NOEXPAND) ON [GroupProductCategory.v].id = d.[GroupProductCategory]
+    ;
+GO
+GRANT SELECT ON dbo.[Catalog.ProductCategory] TO jetti;
+GO
+
+      
+------------------------------ END Catalog.ProductCategory ------------------------------
+
+      
+      
 ------------------------------ BEGIN Catalog.ReasonTypes ------------------------------
 
       
@@ -965,6 +1371,7 @@ GO
         , ISNULL([ServiceProduct.v].description, '') [ServiceProduct.value], d.[ServiceProduct] [ServiceProduct.id], [ServiceProduct.v].type [ServiceProduct.type]
         , d.[smsGateway] [smsGateway]
         , d.[usePriceByAggregator] [usePriceByAggregator]
+        , d.[sailplayCredentials] [sailplayCredentials]
       
         , ISNULL(l5.id, d.id) [RetailNetwork.Level5.id]
         , ISNULL(l4.id, ISNULL(l5.id, d.id)) [RetailNetwork.Level4.id]

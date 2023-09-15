@@ -390,8 +390,8 @@
       id, date, document, company
         , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(data, N'$."RetailNetwork"')) [RetailNetwork]
         , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(data, N'$."Department"')) [Department]
-        , TRY_CONVERT(DATE, JSON_VALUE(data, N'$."BeginDate"'),127) [BeginDate]
-        , TRY_CONVERT(DATE, JSON_VALUE(data, N'$."EndDate"'),127) [EndDate]
+        , TRY_CONVERT(DATETIME, JSON_VALUE(data, N'$."BeginDate"'),127) [BeginDate]
+        , TRY_CONVERT(DATETIME, JSON_VALUE(data, N'$."EndDate"'),127) [EndDate]
         , TRY_CONVERT(NVARCHAR(128), JSON_VALUE(data, N'$."Info"')) [Info]
         , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(data, N'$."StatusReason"')) [StatusReason]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.DepartmentStatus';

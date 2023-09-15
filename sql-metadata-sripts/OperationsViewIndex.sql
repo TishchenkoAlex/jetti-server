@@ -15,11 +15,8 @@
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."TimeOpen"')), '') [TimeOpen]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."TimeClose"')), '') [TimeClose]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."MaxTotalOrder"')), 0) [MaxTotalOrder]
-      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."DeliveryTimeOpen"')), '') [DeliveryTimeOpen]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."DeliveryTimeClose"')), '') [DeliveryTimeClose]
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isDeliveringService"')), 0) [isDeliveringService]
-      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."PickupTimeOpen"')), '') [PickupTimeOpen]
-      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."PickupTimeClose"')), '') [PickupTimeClose]
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isPickupService"')), 0) [isPickupService]
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isComentRequired"')), 0) [isComentRequired]
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isOnlinePayAccepted"')), 0) [isOnlinePayAccepted]
@@ -43,6 +40,8 @@
       , ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."paymentGateway"')), '') [paymentGateway]
       , ISNULL(TRY_CONVERT(NVARCHAR(250), JSON_VALUE(doc,N'$."keyVaultURL"')), '') [keyVaultURL]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."WayStoreHouse"')) [WayStoreHouse]
+      , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."generatorExist"')), 0) [generatorExist]
+      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."hostName"')), '') [hostName]
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isTaxPayer"')), 0) [isTaxPayer]
       , ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."StickerSettings"')), '') [StickerSettings]
       , ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."ThermalName"')), '') [ThermalName]
@@ -52,6 +51,11 @@
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."MaxOrdersPerHour"')), 0) [MaxOrdersPerHour]
       , ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."provider"')), '') [provider]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."outletId"')), '') [outletId]
+      , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isPlanningSemifinished"')), 0) [isPlanningSemifinished]
+      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."PickupTimeOpen"')), '') [PickupTimeOpen]
+      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."PickupTimeClose"')), '') [PickupTimeClose]
+      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."DeliveryTimeOpen"')), '') [DeliveryTimeOpen]
+      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."DeliveryTimeCloseKaDS"')), '') [DeliveryTimeCloseKaDS]
       FROM dbo.[Documents]
       WHERE [operation] = 'CE62E430-3004-11E8-A0FF-732D589B1ACA'
 ; 
@@ -228,80 +232,42 @@ GRANT SELECT ON dbo.[Operation.DeliveryAreas.v]TO jetti;
 ------------------------------ BEGIN Operation.DeliveryAreas ------------------------------
 
       
------------------------------- BEGIN Operation.LOT_Sales ------------------------------
+------------------------------ BEGIN Operation.Group_Create_CashRequests ------------------------------
 
-      RAISERROR('Operation.LOT_Sales start', 0 ,1) WITH NOWAIT;
-      CREATE OR ALTER VIEW dbo.[Operation.LOT_Sales.v] WITH SCHEMABINDING AS 
+      RAISERROR('Operation.Group_Create_CashRequests start', 0 ,1) WITH NOWAIT;
+      CREATE OR ALTER VIEW dbo.[Operation.Group_Create_CashRequests.v] WITH SCHEMABINDING AS 
       SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Group"')) [Group]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Operation"')) [Operation]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Amount"')), 0) [Amount]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."currency"')) [currency]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Customer"')) [Customer]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Department"')) [Department]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."CompanySeller"')) [CompanySeller]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Department_CompanySeller"')) [Department_CompanySeller]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Loan_Customer"')) [Loan_Customer]
-      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Transaction_Id"')), '') [Transaction_Id]
-      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Alias"')), '') [Alias]
-      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Title"')), '') [Title]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Income_CompanySeller"')) [Income_CompanySeller]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Expense_CompanySeller"')) [Expense_CompanySeller]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Income"')) [Income]
-      , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."DocReceived"')), 0) [DocReceived]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."ResponsibilityCenter"')) [ResponsibilityCenter]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."GroupSettings"')) [GroupSettings]
+      , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."BDate"'),127) [BDate]
+      , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."EDate"'),127) [EDate]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."SalaryAnalytics"')) [SalaryAnalytics]
+      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Status_Log"')), '') [Status_Log]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."CashFlow"')) [CashFlow]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."CashRegisterByDefault"')) [CashRegisterByDefault]
+      , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isPayByDepartmentOfPerson"')), 0) [isPayByDepartmentOfPerson]
       FROM dbo.[Documents]
-      WHERE [operation] = '8C711060-B1AD-11EA-B30E-316ED2102292'
+      WHERE [operation] = '22F78600-F4AD-11ED-BDD8-81F4104CEA7C'
 ; 
 GO
-CREATE UNIQUE CLUSTERED INDEX [Operation.LOT_Sales.v] ON [Operation.LOT_Sales.v](id);
-      CREATE UNIQUE NONCLUSTERED INDEX[Operation.LOT_Sales.v.date] ON[Operation.LOT_Sales.v](date, id) INCLUDE([company]);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.LOT_Sales.v.parent] ON [Operation.LOT_Sales.v](parent,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.LOT_Sales.v.deleted] ON [Operation.LOT_Sales.v](deleted,date,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.LOT_Sales.v.code] ON [Operation.LOT_Sales.v](code,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.LOT_Sales.v.user] ON [Operation.LOT_Sales.v]([user],id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.LOT_Sales.v.company] ON [Operation.LOT_Sales.v](company,id);
+CREATE UNIQUE CLUSTERED INDEX [Operation.Group_Create_CashRequests.v] ON [Operation.Group_Create_CashRequests.v](id);
+      CREATE UNIQUE NONCLUSTERED INDEX[Operation.Group_Create_CashRequests.v.date] ON[Operation.Group_Create_CashRequests.v](date, id) INCLUDE([company]);
+      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Group_Create_CashRequests.v.parent] ON [Operation.Group_Create_CashRequests.v](parent,id);
+      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Group_Create_CashRequests.v.deleted] ON [Operation.Group_Create_CashRequests.v](deleted,date,id);
+      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Group_Create_CashRequests.v.code] ON [Operation.Group_Create_CashRequests.v](code,id);
+      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Group_Create_CashRequests.v.user] ON [Operation.Group_Create_CashRequests.v]([user],id);
+      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Group_Create_CashRequests.v.company] ON [Operation.Group_Create_CashRequests.v](company,id);
       
 GO
-GRANT SELECT ON dbo.[Operation.LOT_Sales.v]TO jetti; 
-      RAISERROR('Operation.LOT_Sales finish', 0 ,1) WITH NOWAIT;
+GRANT SELECT ON dbo.[Operation.Group_Create_CashRequests.v]TO jetti; 
+      RAISERROR('Operation.Group_Create_CashRequests finish', 0 ,1) WITH NOWAIT;
       
------------------------------- BEGIN Operation.LOT_Sales ------------------------------
-
-      
------------------------------- BEGIN Operation.LotModelsVsDepartment ------------------------------
-
-      RAISERROR('Operation.LotModelsVsDepartment start', 0 ,1) WITH NOWAIT;
-      CREATE OR ALTER VIEW dbo.[Operation.LotModelsVsDepartment.v] WITH SCHEMABINDING AS 
-      SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Group"')) [Group]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Operation"')) [Operation]
-      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Amount"')), 0) [Amount]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."currency"')) [currency]
-      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Lot"')), '') [Lot]
-      , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isProfitability"')), 0) [isProfitability]
-      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Lot_BonusManager"')), 0) [Lot_BonusManager]
-      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Lot_CommisionAllUnic"')), 0) [Lot_CommisionAllUnic]
-      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Lot_ShareDistribution"')), 0) [Lot_ShareDistribution]
-      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Lot_ShareInvestor"')), 0) [Lot_ShareInvestor]
-      FROM dbo.[Documents]
-      WHERE [operation] = '69FB36A0-F735-11EA-B8BB-29476D5253E2'
-; 
-GO
-CREATE UNIQUE CLUSTERED INDEX [Operation.LotModelsVsDepartment.v] ON [Operation.LotModelsVsDepartment.v](id);
-      CREATE UNIQUE NONCLUSTERED INDEX[Operation.LotModelsVsDepartment.v.date] ON[Operation.LotModelsVsDepartment.v](date, id) INCLUDE([company]);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.LotModelsVsDepartment.v.parent] ON [Operation.LotModelsVsDepartment.v](parent,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.LotModelsVsDepartment.v.deleted] ON [Operation.LotModelsVsDepartment.v](deleted,date,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.LotModelsVsDepartment.v.code] ON [Operation.LotModelsVsDepartment.v](code,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.LotModelsVsDepartment.v.user] ON [Operation.LotModelsVsDepartment.v]([user],id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.LotModelsVsDepartment.v.company] ON [Operation.LotModelsVsDepartment.v](company,id);
-      
-GO
-GRANT SELECT ON dbo.[Operation.LotModelsVsDepartment.v]TO jetti; 
-      RAISERROR('Operation.LotModelsVsDepartment finish', 0 ,1) WITH NOWAIT;
-      
------------------------------- BEGIN Operation.LotModelsVsDepartment ------------------------------
+------------------------------ BEGIN Operation.Group_Create_CashRequests ------------------------------
 
       
 ------------------------------ BEGIN Operation.OnlineSalesManagementSettings ------------------------------
@@ -340,39 +306,36 @@ GRANT SELECT ON dbo.[Operation.OnlineSalesManagementSettings.v]TO jetti;
 ------------------------------ BEGIN Operation.OnlineSalesManagementSettings ------------------------------
 
       
------------------------------- BEGIN Operation.Status_Opening_Registry ------------------------------
+------------------------------ BEGIN Operation.Registry_Share_Sert ------------------------------
 
-      RAISERROR('Operation.Status_Opening_Registry start', 0 ,1) WITH NOWAIT;
-      CREATE OR ALTER VIEW dbo.[Operation.Status_Opening_Registry.v] WITH SCHEMABINDING AS 
+      RAISERROR('Operation.Registry_Share_Sert start', 0 ,1) WITH NOWAIT;
+      CREATE OR ALTER VIEW dbo.[Operation.Registry_Share_Sert.v] WITH SCHEMABINDING AS 
       SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Group"')) [Group]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Operation"')) [Operation]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Amount"')), 0) [Amount]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."currency"')) [currency]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."ResponsibilityCenter"')) [ResponsibilityCenter]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Department"')) [Department]
-      , ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."ValueString"')), '') [ValueString]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."BusinessRegion"')) [BusinessRegion]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Brand"')) [Brand]
-      , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."OpeningDatePlanned"'),127) [OpeningDatePlanned]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."CounterpartieOrPerson"')) [CounterpartieOrPerson]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."PersonOwnerStocks"')) [PersonOwnerStocks]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."OwnerStocksVia"')) [OwnerStocksVia]
       FROM dbo.[Documents]
-      WHERE [operation] = 'D7804240-741E-11EB-B750-45F122470B78'
+      WHERE [operation] = '3883A530-5511-11ED-BDA4-E52E2CDB3CB6'
 ; 
 GO
-CREATE UNIQUE CLUSTERED INDEX [Operation.Status_Opening_Registry.v] ON [Operation.Status_Opening_Registry.v](id);
-      CREATE UNIQUE NONCLUSTERED INDEX[Operation.Status_Opening_Registry.v.date] ON[Operation.Status_Opening_Registry.v](date, id) INCLUDE([company]);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Status_Opening_Registry.v.parent] ON [Operation.Status_Opening_Registry.v](parent,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Status_Opening_Registry.v.deleted] ON [Operation.Status_Opening_Registry.v](deleted,date,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Status_Opening_Registry.v.code] ON [Operation.Status_Opening_Registry.v](code,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Status_Opening_Registry.v.user] ON [Operation.Status_Opening_Registry.v]([user],id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Status_Opening_Registry.v.company] ON [Operation.Status_Opening_Registry.v](company,id);
+CREATE UNIQUE CLUSTERED INDEX [Operation.Registry_Share_Sert.v] ON [Operation.Registry_Share_Sert.v](id);
+      CREATE UNIQUE NONCLUSTERED INDEX[Operation.Registry_Share_Sert.v.date] ON[Operation.Registry_Share_Sert.v](date, id) INCLUDE([company]);
+      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Registry_Share_Sert.v.parent] ON [Operation.Registry_Share_Sert.v](parent,id);
+      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Registry_Share_Sert.v.deleted] ON [Operation.Registry_Share_Sert.v](deleted,date,id);
+      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Registry_Share_Sert.v.code] ON [Operation.Registry_Share_Sert.v](code,id);
+      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Registry_Share_Sert.v.user] ON [Operation.Registry_Share_Sert.v]([user],id);
+      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Registry_Share_Sert.v.company] ON [Operation.Registry_Share_Sert.v](company,id);
       
 GO
-GRANT SELECT ON dbo.[Operation.Status_Opening_Registry.v]TO jetti; 
-      RAISERROR('Operation.Status_Opening_Registry finish', 0 ,1) WITH NOWAIT;
+GRANT SELECT ON dbo.[Operation.Registry_Share_Sert.v]TO jetti; 
+      RAISERROR('Operation.Registry_Share_Sert finish', 0 ,1) WITH NOWAIT;
       
------------------------------- BEGIN Operation.Status_Opening_Registry ------------------------------
+------------------------------ BEGIN Operation.Registry_Share_Sert ------------------------------
 
       
 ------------------------------ BEGIN Operation.SyncManual ------------------------------
@@ -410,105 +373,5 @@ GRANT SELECT ON dbo.[Operation.SyncManual.v]TO jetti;
       RAISERROR('Operation.SyncManual finish', 0 ,1) WITH NOWAIT;
       
 ------------------------------ BEGIN Operation.SyncManual ------------------------------
-
-      
------------------------------- BEGIN Operation.ЗНРС ------------------------------
-
-      RAISERROR('Operation.ЗНРС start', 0 ,1) WITH NOWAIT;
-      CREATE OR ALTER VIEW dbo.[Operation.ЗНРС.v] WITH SCHEMABINDING AS 
-      SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Group"')) [Group]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Operation"')) [Operation]
-      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Amount"')), 0) [Amount]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."currency"')) [currency]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."PersonOwner"')) [PersonOwner]
-      FROM dbo.[Documents]
-      WHERE [operation] = '89FDA830-7E92-11EC-94A9-8D5669150773'
-; 
-GO
-CREATE UNIQUE CLUSTERED INDEX [Operation.ЗНРС.v] ON [Operation.ЗНРС.v](id);
-      CREATE UNIQUE NONCLUSTERED INDEX[Operation.ЗНРС.v.date] ON[Operation.ЗНРС.v](date, id) INCLUDE([company]);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.ЗНРС.v.parent] ON [Operation.ЗНРС.v](parent,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.ЗНРС.v.deleted] ON [Operation.ЗНРС.v](deleted,date,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.ЗНРС.v.code] ON [Operation.ЗНРС.v](code,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.ЗНРС.v.user] ON [Operation.ЗНРС.v]([user],id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.ЗНРС.v.company] ON [Operation.ЗНРС.v](company,id);
-      
-GO
-GRANT SELECT ON dbo.[Operation.ЗНРС.v]TO jetti; 
-      RAISERROR('Operation.ЗНРС finish', 0 ,1) WITH NOWAIT;
-      
------------------------------- BEGIN Operation.ЗНРС ------------------------------
-
-      
------------------------------- BEGIN Operation.Перенос операций LIQPAY (Приватбанк) ------------------------------
-
-      RAISERROR('Operation.Перенос операций LIQPAY (Приватбанк) start', 0 ,1) WITH NOWAIT;
-      CREATE OR ALTER VIEW dbo.[Operation.Перенос операций LIQPAY (Приватбанк).v] WITH SCHEMABINDING AS 
-      SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Group"')) [Group]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Operation"')) [Operation]
-      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Amount"')), 0) [Amount]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."currency"')) [currency]
-      , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."DataStart"'),127) [DataStart]
-      , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."DataEnd"'),127) [DataEnd]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."OperationForSearch"')) [OperationForSearch]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."OperationForSet"')) [OperationForSet]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."AgregatorForSearch"')) [AgregatorForSearch]
-      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."DocsCount"')), 0) [DocsCount]
-      FROM dbo.[Documents]
-      WHERE [operation] = '4A271030-E53A-11EB-A1D6-8F6C25760D94'
-; 
-GO
-CREATE UNIQUE CLUSTERED INDEX [Operation.Перенос операций LIQPAY (Приватбанк).v] ON [Operation.Перенос операций LIQPAY (Приватбанк).v](id);
-      CREATE UNIQUE NONCLUSTERED INDEX[Operation.Перенос операций LIQPAY (Приватбанк).v.date] ON[Operation.Перенос операций LIQPAY (Приватбанк).v](date, id) INCLUDE([company]);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Перенос операций LIQPAY (Приватбанк).v.parent] ON [Operation.Перенос операций LIQPAY (Приватбанк).v](parent,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Перенос операций LIQPAY (Приватбанк).v.deleted] ON [Operation.Перенос операций LIQPAY (Приватбанк).v](deleted,date,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Перенос операций LIQPAY (Приватбанк).v.code] ON [Operation.Перенос операций LIQPAY (Приватбанк).v](code,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Перенос операций LIQPAY (Приватбанк).v.user] ON [Operation.Перенос операций LIQPAY (Приватбанк).v]([user],id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Перенос операций LIQPAY (Приватбанк).v.company] ON [Operation.Перенос операций LIQPAY (Приватбанк).v](company,id);
-      
-GO
-GRANT SELECT ON dbo.[Operation.Перенос операций LIQPAY (Приватбанк).v]TO jetti; 
-      RAISERROR('Operation.Перенос операций LIQPAY (Приватбанк) finish', 0 ,1) WITH NOWAIT;
-      
------------------------------- BEGIN Operation.Перенос операций LIQPAY (Приватбанк) ------------------------------
-
-      
------------------------------- BEGIN Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода ------------------------------
-
-      RAISERROR('Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода start', 0 ,1) WITH NOWAIT;
-      CREATE OR ALTER VIEW dbo.[Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v] WITH SCHEMABINDING AS 
-      SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Group"')) [Group]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Operation"')) [Operation]
-      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Amount"')), 0) [Amount]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."currency"')) [currency]
-      , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."DataStart"'),127) [DataStart]
-      , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."DataEnd"'),127) [DataEnd]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."OperationForSearch"')) [OperationForSearch]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."OperationForSet"')) [OperationForSet]
-      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."BankAccountForSearch"')) [BankAccountForSearch]
-      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."DocsCount"')), 0) [DocsCount]
-      FROM dbo.[Documents]
-      WHERE [operation] = 'FBC4CF60-F063-11EB-B9DD-7FABCC838F5E'
-; 
-GO
-CREATE UNIQUE CLUSTERED INDEX [Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v] ON [Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v](id);
-      CREATE UNIQUE NONCLUSTERED INDEX[Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v.date] ON[Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v](date, id) INCLUDE([company]);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v.parent] ON [Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v](parent,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v.deleted] ON [Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v](deleted,date,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v.code] ON [Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v](code,id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v.user] ON [Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v]([user],id);
-      CREATE UNIQUE NONCLUSTERED INDEX [Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v.company] ON [Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v](company,id);
-      
-GO
-GRANT SELECT ON dbo.[Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода.v]TO jetti; 
-      RAISERROR('Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода finish', 0 ,1) WITH NOWAIT;
-      
------------------------------- BEGIN Operation.Перенос операций LIQPAY (Приватбанк) из прочего прихода ------------------------------
 
       

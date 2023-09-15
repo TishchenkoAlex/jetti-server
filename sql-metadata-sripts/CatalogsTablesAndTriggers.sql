@@ -57,6 +57,66 @@ GO
       
 ------------------------------ END Catalog.BRMRules ------------------------------
 
+------------------------------ BEGIN Catalog.ModifiersGroup ------------------------------
+
+      RAISERROR('Catalog.ModifiersGroup start', 0 ,1) WITH NOWAIT;
+      GO
+      
+    CREATE OR ALTER TRIGGER [Catalog.ModifiersGroup.t] ON [Documents] AFTER INSERT, UPDATE, DELETE
+    AS
+    BEGIN
+      SET NOCOUNT ON;
+      DECLARE @COUNT_D BIGINT = (SELECT COUNT(*) FROM deleted WHERE type = N'Catalog.ModifiersGroup');
+      IF (@COUNT_D) > 1 DELETE FROM [Catalog.ModifiersGroup.v] WHERE id IN (SELECT id FROM deleted WHERE type = N'Catalog.ModifiersGroup');
+      IF (@COUNT_D) = 1 DELETE FROM [Catalog.ModifiersGroup.v] WHERE id = (SELECT id FROM deleted WHERE type = N'Catalog.ModifiersGroup');
+      IF (SELECT COUNT(*) FROM inserted WHERE type = N'Catalog.ModifiersGroup') = 0 RETURN;
+
+      INSERT INTO [Catalog.ModifiersGroup.v] ([id],[type],[date],[code],[description],[posted],[deleted],[isfolder],[timestamp],[parent],[company],[user],[workflow],[MinPosition],[MaxPosition],[Multiselection])
+    
+      SELECT [id],[type],[date],[code],[description],[posted],[deleted],[isfolder],[timestamp],[parent],[company],[user]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
+      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."MinPosition"')), 0) [MinPosition]
+      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."MaxPosition"')), 0) [MaxPosition]
+      , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."Multiselection"')), 0) [Multiselection]
+
+    FROM inserted r
+    WHERE [type] = N'Catalog.ModifiersGroup'
+    END	
+GO
+
+    DROP TABLE IF EXISTS [Catalog.ModifiersGroup.v];
+    DROP VIEW IF EXISTS [Catalog.ModifiersGroup.v];	
+GO
+
+    
+      SELECT [id],[type],[date],[code],[description],[posted],[deleted],[isfolder],[timestamp],[parent],[company],[user], [version]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
+      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."MinPosition"')), 0) [MinPosition]
+      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."MaxPosition"')), 0) [MaxPosition]
+      , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."Multiselection"')), 0) [Multiselection]
+
+    INTO [Catalog.ModifiersGroup.v]
+    FROM [Documents] r
+    WHERE r.type = N'Catalog.ModifiersGroup';	
+GO
+
+    GRANT SELECT,INSERT,DELETE ON [Catalog.ModifiersGroup.v] TO JETTI;	
+GO
+
+    ALTER TABLE [Catalog.ModifiersGroup.v] ADD CONSTRAINT [PK_Catalog.ModifiersGroup.v] PRIMARY KEY NONCLUSTERED ([id]);
+    CREATE UNIQUE CLUSTERED INDEX [Catalog.ModifiersGroup.v] ON [Catalog.ModifiersGroup.v](id);
+      
+    CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ModifiersGroup.v.deleted] ON [Catalog.ModifiersGroup.v](deleted,description,id);
+    CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ModifiersGroup.v.code.f] ON [Catalog.ModifiersGroup.v](parent,isfolder,code,id);
+    CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ModifiersGroup.v.description.f] ON [Catalog.ModifiersGroup.v](parent,isfolder,description,id);
+    CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ModifiersGroup.v.description] ON [Catalog.ModifiersGroup.v](description,id);
+    CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ModifiersGroup.v.code] ON [Catalog.ModifiersGroup.v](code,id);
+    CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ModifiersGroup.v.user] ON [Catalog.ModifiersGroup.v]([user],id);
+    CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ModifiersGroup.v.company] ON [Catalog.ModifiersGroup.v](company,id);
+      RAISERROR('Catalog.ModifiersGroup end', 0 ,1) WITH NOWAIT;
+      
+------------------------------ END Catalog.ModifiersGroup ------------------------------
+
 ------------------------------ BEGIN Catalog.MoneyDocument ------------------------------
 
       RAISERROR('Catalog.MoneyDocument start', 0 ,1) WITH NOWAIT;
@@ -71,15 +131,19 @@ GO
       IF (@COUNT_D) = 1 DELETE FROM [Catalog.MoneyDocument.v] WHERE id = (SELECT id FROM deleted WHERE type = N'Catalog.MoneyDocument');
       IF (SELECT COUNT(*) FROM inserted WHERE type = N'Catalog.MoneyDocument') = 0 RETURN;
 
-      INSERT INTO [Catalog.MoneyDocument.v] ([id],[type],[date],[code],[description],[posted],[deleted],[isfolder],[timestamp],[parent],[company],[user],[workflow],[kind],[currency],[Owner],[Price],[ExpiredAt])
+      INSERT INTO [Catalog.MoneyDocument.v] ([id],[type],[date],[code],[description],[posted],[deleted],[isfolder],[timestamp],[parent],[company],[user],[workflow],[kind],[currency],[Owner],[Qty],[Price],[CreateDate],[ExpiredAt],[currency_Pay],[Amount_Pay])
     
       SELECT [id],[type],[date],[code],[description],[posted],[deleted],[isfolder],[timestamp],[parent],[company],[user]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."kind"')) [kind]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."currency"')) [currency]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Owner"')) [Owner]
+      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Qty"')), 0) [Qty]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Price"')), 0) [Price]
+      , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."CreateDate"'),127) [CreateDate]
       , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."ExpiredAt"'),127) [ExpiredAt]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."currency_Pay"')) [currency_Pay]
+      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Amount_Pay"')), 0) [Amount_Pay]
 
     FROM inserted r
     WHERE [type] = N'Catalog.MoneyDocument'
@@ -96,8 +160,12 @@ GO
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."kind"')) [kind]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."currency"')) [currency]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Owner"')) [Owner]
+      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Qty"')), 0) [Qty]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Price"')), 0) [Price]
+      , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."CreateDate"'),127) [CreateDate]
       , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."ExpiredAt"'),127) [ExpiredAt]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."currency_Pay"')) [currency_Pay]
+      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Amount_Pay"')), 0) [Amount_Pay]
 
     INTO [Catalog.MoneyDocument.v]
     FROM [Documents] r
