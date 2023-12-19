@@ -1,0 +1,1 @@
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Product.v.Slug] ON [Catalog.Product.v](Slug,id);
