@@ -540,8 +540,9 @@ async function salaryCompanyByCompany(company: Ref, tx: MSSQL): Promise<string |
 function noSqlDocument(flatDoc: INoSqlDocument | DocumentBaseServer): INoSqlDocument | null {
   if (!flatDoc) throw new Error(`lib.noSqlDocument: source is null!`);
   const { id, date, type, code, description, company, user, posted, deleted, isfolder, parent, info, timestamp, ...doc } = flatDoc;
+  const getType = () => (type || '').startsWith('Operation.') ? 'Document.Operation' : type;
   return <INoSqlDocument>
-    { id, date, type, code, description, company, user, posted, deleted, isfolder, parent, info, timestamp, ExchangeCode: flatDoc['ExchangeCode'], ExchangeBase: flatDoc['ExchangeBase'], doc };
+    { id, date, type: getType(), code, description, company, user, posted, deleted, isfolder, parent, info, timestamp, ExchangeCode: flatDoc['ExchangeCode'], ExchangeBase: flatDoc['ExchangeBase'], doc };
 }
 
 export function flatDocument(noSqldoc: INoSqlDocument): IFlatDocument {
