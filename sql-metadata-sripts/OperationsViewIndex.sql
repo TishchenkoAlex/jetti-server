@@ -90,6 +90,8 @@ GRANT SELECT ON dbo.[Operation.AdditionalParametersDepartment.v]TO jetti;
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."MainSKU"')) [MainSKU]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Qty"')), 0) [Qty]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."defaultQty"')), 0) [defaultQty]
+      , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."DateBegin"'),127) [DateBegin]
+      , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."DateEnd"'),127) [DateEnd]
       , ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."DeliveryType"')), '') [DeliveryType]
       FROM dbo.[Documents]
       WHERE [operation] = '73F98550-33E2-11EB-A7C3-274B4A063111'
@@ -178,6 +180,7 @@ GRANT SELECT ON dbo.[Operation.CashShifts.v]TO jetti;
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."DeliveryArea"')), 0) [DeliveryArea]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Courier"')) [Courier]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."counterpartyId"')), '') [counterpartyId]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."RetailClient"')) [RetailClient]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."orderId"')), '') [orderId]
       FROM dbo.[Documents]
       WHERE [operation] = '1D5BE740-298A-11EB-87AE-6D4972EE7833'
@@ -319,6 +322,8 @@ GRANT SELECT ON dbo.[Operation.OnlineSalesManagementSettings.v]TO jetti;
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."CounterpartieOrPerson"')) [CounterpartieOrPerson]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."PersonOwnerStocks"')) [PersonOwnerStocks]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."OwnerStocksVia"')) [OwnerStocksVia]
+      , ISNULL(TRY_CONVERT(NVARCHAR(250), JSON_VALUE(doc,N'$."separator_1"')), '') [separator_1]
+      , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."PersonOwnerStocks_isEmployee"')), 0) [PersonOwnerStocks_isEmployee]
       FROM dbo.[Documents]
       WHERE [operation] = '3883A530-5511-11ED-BDA4-E52E2CDB3CB6'
 ; 

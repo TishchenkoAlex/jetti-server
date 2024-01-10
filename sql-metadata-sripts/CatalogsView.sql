@@ -2141,59 +2141,6 @@ GO
 
       
       
------------------------------- BEGIN Catalog.RetailClient ------------------------------
-
-      
-      CREATE OR ALTER VIEW dbo.[Catalog.RetailClient] AS
-        
-      SELECT
-        d.id, d.type, d.date, d.code, d.description "RetailClient", d.posted, d.deleted, d.isfolder, d.timestamp, d.version
-        , ISNULL("parent".description, '') "parent.value", d."parent" "parent.id", "parent".type "parent.type"
-        , ISNULL("company".description, '') "company.value", d."company" "company.id", "company".type "company.type"
-        , ISNULL("user".description, '') "user.value", d."user" "user.id", "user".type "user.type"
-        , ISNULL([workflow.v].description, '') [workflow.value], d.[workflow] [workflow.id], [workflow.v].type [workflow.type]
-        , d.[Gender] [Gender]
-        , d.[isActive] [isActive]
-        , d.[CreateDate] [CreateDate]
-        , d.[Birthday] [Birthday]
-        , d.[FirstName] [FirstName]
-        , d.[LastName] [LastName]
-        , d.[MiddleName] [MiddleName]
-        , d.[Phone] [Phone]
-        , d.[Address] [Address]
-        , d.[Email] [Email]
-      
-        , ISNULL(l5.id, d.id) [RetailClient.Level5.id]
-        , ISNULL(l4.id, ISNULL(l5.id, d.id)) [RetailClient.Level4.id]
-        , ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))) [RetailClient.Level3.id]
-        , ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id)))) [RetailClient.Level2.id]
-        , ISNULL(l1.id, ISNULL(l2.id, ISNULL(l3.id, ISNULL(l4.id, ISNULL(l5.id, d.id))))) [RetailClient.Level1.id]
-        , ISNULL(l5.description, d.description) [RetailClient.Level5]
-        , ISNULL(l4.description, ISNULL(l5.description, d.description)) [RetailClient.Level4]
-        , ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))) [RetailClient.Level3]
-        , ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description)))) [RetailClient.Level2]
-        , ISNULL(l1.description, ISNULL(l2.description, ISNULL(l3.description, ISNULL(l4.description, ISNULL(l5.description, d.description))))) [RetailClient.Level1]
-      FROM [Catalog.RetailClient.v] d WITH (NOEXPAND)
-        LEFT JOIN [Catalog.RetailClient.v] l5 WITH (NOEXPAND) ON (l5.id = d.parent)
-        LEFT JOIN [Catalog.RetailClient.v] l4 WITH (NOEXPAND) ON (l4.id = l5.parent)
-        LEFT JOIN [Catalog.RetailClient.v] l3 WITH (NOEXPAND) ON (l3.id = l4.parent)
-        LEFT JOIN [Catalog.RetailClient.v] l2 WITH (NOEXPAND) ON (l2.id = l3.parent)
-        LEFT JOIN [Catalog.RetailClient.v] l1 WITH (NOEXPAND) ON (l1.id = l2.parent)
-      
-        LEFT JOIN dbo.[Documents] [parent] ON [parent].id = d.[parent]
-        LEFT JOIN dbo.[Catalog.User.v] [user] WITH (NOEXPAND) ON [user].id = d.[user]
-        LEFT JOIN dbo.[Catalog.Company.v] [company] WITH (NOEXPAND) ON [company].id = d.company
-        LEFT JOIN dbo.[Document.WorkFlow.v] [workflow.v] WITH (NOEXPAND) ON [workflow.v].id = d.[workflow]
-    ;
-GO
-GRANT SELECT ON dbo.[Catalog.RetailClient] TO jetti;
-GO
-
-      
------------------------------- END Catalog.RetailClient ------------------------------
-
-      
-      
 ------------------------------ BEGIN Catalog.Role ------------------------------
 
       

@@ -54,6 +54,7 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isActive"')), 0) [isActive]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isDefault"')), 0) [isDefault]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Code1"')), '') [Code1]
+, ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isLocal"')), 0) [isLocal]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.AcquiringTerminal';
 GO
@@ -96,6 +97,10 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."slug"')), '') [slug]
 , ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."typeAction"')), '') [typeAction]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."valueAction"')), '') [valueAction]
+, ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."slugIndex"')), 0) [slugIndex]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."retailNetwork"')) [retailNetwork]
+, ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."hideWebBanner"')), 0) [hideWebBanner]
+, ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."hideMobileBanner"')), 0) [hideMobileBanner]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.Advertising';
 GO
@@ -908,6 +913,7 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Slug"')), '') [Slug]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."InvoiceComposition"')), '') [InvoiceComposition]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isAdditions"')), 0) [isAdditions]
+, ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."SlugIndex"')), 0) [SlugIndex]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.Product';
 GO
@@ -1005,6 +1011,52 @@ RAISERROR('Catalog.ReasonTypes end', 0 ,1) WITH NOWAIT;
 ------------------------------ END Catalog.ReasonTypes ------------------------------
 
 
+------------------------------ BEGIN Catalog.RetailClient ------------------------------
+
+RAISERROR('Catalog.RetailClient start', 0 ,1) WITH NOWAIT;
+DROP TABLE IF EXISTS dbo.[Catalog.RetailClient.v]
+GO
+
+DROP TRIGGER IF EXISTS dbo.[Catalog.RetailClient.t]
+GO
+
+CREATE OR ALTER VIEW dbo.[Catalog.RetailClient.v] WITH SCHEMABINDING AS
+SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
+, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."Gender"')), '') [Gender]
+, ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isBlocked"')), 0) [isBlocked]
+, TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."CreateDate"'),127) [CreateDate]
+, TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."Birthday"'),127) [Birthday]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."FirstName"')), '') [FirstName]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."LastName"')), '') [LastName]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."MiddleName"')), '') [MiddleName]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Phone"')), '') [Phone]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Email"')), '') [Email]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."RetailNetwork"')) [RetailNetwork]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."BusinessRegion"')) [BusinessRegion]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."SailplayId"')), '') [SailplayId]
+, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."Source"')), '') [Source]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Address"')), '') [Address]
+FROM dbo.[Documents]
+WHERE [type] = N'Catalog.RetailClient';
+GO
+
+CREATE UNIQUE CLUSTERED INDEX [Catalog.RetailClient.v] ON [Catalog.RetailClient.v](id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.RetailClient.v.deleted] ON [Catalog.RetailClient.v](deleted,description,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.RetailClient.v.code.f] ON [Catalog.RetailClient.v](parent,isfolder,code,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.RetailClient.v.description.f] ON [Catalog.RetailClient.v](parent,isfolder,description,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.RetailClient.v.description] ON [Catalog.RetailClient.v](description,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.RetailClient.v.code] ON [Catalog.RetailClient.v](code,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.RetailClient.v.user] ON [Catalog.RetailClient.v]([user],id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.RetailClient.v.company] ON [Catalog.RetailClient.v](company,id);
+GO
+
+GRANT SELECT ON dbo.[Catalog.RetailClient.v] TO jetti;
+RAISERROR('Catalog.RetailClient end', 0 ,1) WITH NOWAIT;
+
+------------------------------ END Catalog.RetailClient ------------------------------
+
+
 ------------------------------ BEGIN Catalog.RetailNetwork ------------------------------
 
 RAISERROR('Catalog.RetailNetwork start', 0 ,1) WITH NOWAIT;
@@ -1035,6 +1087,7 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."smsGateway"')), '') [smsGateway]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."usePriceByAggregator"')), 0) [usePriceByAggregator]
 , ISNULL(TRY_CONVERT(NVARCHAR(250), JSON_VALUE(doc,N'$."sailplayCredentials"')), '') [sailplayCredentials]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Slug"')), '') [Slug]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.RetailNetwork';
 GO

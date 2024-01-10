@@ -98,6 +98,8 @@ GO
         , ISNULL([MainSKU.v].description, '') [MainSKU.value], d.[MainSKU] [MainSKU.id], [MainSKU.v].type [MainSKU.type]
         , d.[Qty] [Qty]
         , d.[defaultQty] [defaultQty]
+        , d.[DateBegin] [DateBegin]
+        , d.[DateEnd] [DateEnd]
         , d.[DeliveryType] [DeliveryType]
       FROM [Operation.AutoAdditionSettings.v] d WITH (NOEXPAND)
         LEFT JOIN dbo.[Documents] [parent] ON [parent].id = d.[parent]
@@ -192,6 +194,7 @@ GO
         , d.[DeliveryArea] [DeliveryArea]
         , ISNULL([Courier.v].description, '') [Courier.value], d.[Courier] [Courier.id], [Courier.v].type [Courier.type]
         , d.[counterpartyId] [counterpartyId]
+        , ISNULL([RetailClient.v].description, '') [RetailClient.value], d.[RetailClient] [RetailClient.id], [RetailClient.v].type [RetailClient.type]
         , d.[orderId] [orderId]
       FROM [Operation.CHECK_JETTI_FRONT.v] d WITH (NOEXPAND)
         LEFT JOIN dbo.[Documents] [parent] ON [parent].id = d.[parent]
@@ -209,6 +212,7 @@ GO
         LEFT JOIN dbo.[Catalog.OrderSource.v] [ParentOrderSource.v] WITH (NOEXPAND) ON [ParentOrderSource.v].id = d.[ParentOrderSource]
         LEFT JOIN dbo.[Catalog.Counterpartie.v] [Aggregator.v] WITH (NOEXPAND) ON [Aggregator.v].id = d.[Aggregator]
         LEFT JOIN dbo.[Catalog.Person.v] [Courier.v] WITH (NOEXPAND) ON [Courier.v].id = d.[Courier]
+        LEFT JOIN dbo.[Catalog.RetailClient.v] [RetailClient.v] WITH (NOEXPAND) ON [RetailClient.v].id = d.[RetailClient]
     ; 
 GO
 GRANT SELECT ON dbo.[Operation.CHECK_JETTI_FRONT] TO jetti;
@@ -352,6 +356,8 @@ GO
         , ISNULL([CounterpartieOrPerson.v].description, '') [CounterpartieOrPerson.value], d.[CounterpartieOrPerson] [CounterpartieOrPerson.id], [CounterpartieOrPerson.v].type [CounterpartieOrPerson.type]
         , ISNULL([PersonOwnerStocks.v].description, '') [PersonOwnerStocks.value], d.[PersonOwnerStocks] [PersonOwnerStocks.id], [PersonOwnerStocks.v].type [PersonOwnerStocks.type]
         , ISNULL([OwnerStocksVia.v].description, '') [OwnerStocksVia.value], d.[OwnerStocksVia] [OwnerStocksVia.id], [OwnerStocksVia.v].type [OwnerStocksVia.type]
+        , d.[separator_1] [separator_1]
+        , d.[PersonOwnerStocks_isEmployee] [PersonOwnerStocks_isEmployee]
       FROM [Operation.Registry_Share_Sert.v] d WITH (NOEXPAND)
         LEFT JOIN dbo.[Documents] [parent] ON [parent].id = d.[parent]
         LEFT JOIN dbo.[Catalog.User.v] [user] WITH (NOEXPAND) ON [user].id = d.[user]
