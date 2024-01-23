@@ -24,34 +24,66 @@ function getUserEnviroment(user: CatalogUser) {
   };
 }
 
-const sdba = new MSSQL(JETTI_POOL,
-  { email: 'service@service.com', isAdmin: true, description: 'service account', env: {}, roles: [] });
+const sdba = new MSSQL(JETTI_POOL, {
+  email: 'service@service.com',
+  isAdmin: true,
+  description: 'service account',
+  env: {},
+  roles: []
+});
+
 export async function getUser(email: string): Promise<CatalogUser | null> {
   let user: CatalogUser | null = null;
-  const userID = await lib.doc.byCode('Catalog.User', email, sdba);
-  if (userID) user = await lib.doc.byIdT<CatalogUser>(userID, sdba);
+  const userId = await getUserIdByEmail(email);
+  if (userId)
+    user = await lib.doc.byIdT<CatalogUser>(userId, sdba);
+  if (user?.isDisabled) return null;
   return user;
+}
+
+async function getUserIdByEmail(email: string) {
+  return await lib.doc.byCode('Catalog.User', email, sdba) || await getUserIdByAccountEntraID(email);
+}
+
+async function getUserIdByAccountEntraID(id: string) {
+  if (!id) return null;
+  const normalizeId = () => {
+    const [base] = id.split('#ext#');
+    return `${base.replace('@', '_')}#ext#@sushimasternet.onmicrosoft.com`;
+  }
+  const query = `
+  SELECT TOP 1
+    u.id 
+  FROM 
+    [dbo].[Catalog.User.v] u WITH (NOEXPAND) 
+    INNER JOIN dbo.[Catalog.Person.v] pers WITH (NOEXPAND) 
+      ON u.[Person] = pers.id AND
+      pers.AccountEntraID = @p1`;
+  const qRes = await sdba.oneOrNone<{ id: string }>(query, [normalizeId()]);
+
+  return qRes?.id ?? null;
 }
 
 router.post('/login', async (req, res, next) => {
   try {
-    const instance = axios.create({ baseURL: 'https://graph.microsoft.com' });
-    instance.defaults.headers.common['Authorization'] = `Bearer ${req.body.token}`;
-    const me = (await instance.get('/v1.0/me/')).data;
     const mail = req.body.email;
     const user = await getUser(mail);
     if (!user) { return res.status(401).json({ message: 'Auth failed' }); }
 
-    let photoArraybuffer; let photo;
+    const instance = axios.create({ baseURL: 'https://graph.microsoft.com' });
+    instance.defaults.headers.common['Authorization'] = `Bearer ${req.body.token}`;
+    const me = (await instance.get('/v1.0/me/')).data;
+
+    let photo;
     try {
-      photoArraybuffer = (await instance.get('/v1.0/me/photos/48x48/$value', { responseType: 'arraybuffer' })).data;
+      const photoArraybuffer = (await instance.get('/v1.0/me/photos/48x48/$value', { responseType: 'arraybuffer' })).data;
       photo = Buffer.from(photoArraybuffer, 'binary').toString('base64');
     } catch { }
 
     const payload: IJWTPayload = {
-      email: me.userPrincipalName,
+      email: user.code,
       description: me.displayName,
-      isAdmin: user.isAdmin === true ? true : false,
+      isAdmin: user.isAdmin === true,
       roles: await getUserRoles(user),
       env: getUserEnviroment(user),
     };
@@ -69,7 +101,7 @@ router.get('/account', authHTTP, async (req, res, next) => {
     const payload: IJWTPayload = {
       email: user.code,
       description: user.description,
-      isAdmin: user.isAdmin === true ? true : false,
+      isAdmin: user.isAdmin === true,
       roles: await getUserRoles(user),
       env: getUserEnviroment(user),
     };
@@ -85,7 +117,7 @@ router.post('/refresh', authHTTP, async (req, res, next) => {
     const new_payload: IJWTPayload = {
       email: user.id,
       description: user.description,
-      isAdmin: user.isAdmin === true ? true : false,
+      isAdmin: user.isAdmin === true,
       roles: await getUserRoles(user),
       env: getUserEnviroment(user),
     };
