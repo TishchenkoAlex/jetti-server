@@ -81,7 +81,7 @@ router.post('/login', async (req, res, next) => {
     } catch { }
 
     const payload: IJWTPayload = {
-      email: user.code,
+      email: user.code ?? me.userPrincipalName,
       description: me.displayName,
       isAdmin: user.isAdmin === true,
       roles: await getUserRoles(user),
