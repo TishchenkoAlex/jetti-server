@@ -109,6 +109,7 @@ router.get('/account', authHTTP, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+
 router.post('/refresh', authHTTP, async (req, res, next) => {
   try {
     const payload: IJWTPayload = (<any>req).user;
