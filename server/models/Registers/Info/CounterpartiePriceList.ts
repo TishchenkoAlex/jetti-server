@@ -4,6 +4,7 @@ import { JRegisterInfo, RegisterInfo } from 'jetti-middle';
 @JRegisterInfo({
   type: 'Register.Info.CounterpartiePriceList',
   description: 'Цены контрагентов',
+  pruningMethod: 'sliceLast'
 })
 export class RegisterInfoCounterpartiePriceList extends RegisterInfo {
 

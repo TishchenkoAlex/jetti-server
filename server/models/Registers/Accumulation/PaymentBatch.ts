@@ -3,7 +3,8 @@ import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
 @JRegisterAccumulation({
   type: 'Register.Accumulation.PaymentBatch',
-  description: 'Партии предоплат'
+  description: 'Партии предоплат',
+  pruningMethod: 'balance'
 })
 export class RegisterAccumulationPaymentBatch extends RegisterAccumulation {
 
@@ -28,7 +29,7 @@ export class RegisterAccumulationPaymentBatch extends RegisterAccumulation {
   @Props({ type: 'number', resource: true })
   Qty = 0;
 
-  @Props({ type: 'number', resource: true })
+  @Props({ type: 'number', resource: true, balanceCalculationFormula: `[Amount]/[Qty]` })
   Price = 0;
 
   @Props({ type: 'number', resource: true })
@@ -37,7 +38,7 @@ export class RegisterAccumulationPaymentBatch extends RegisterAccumulation {
   @Props({ type: 'number', resource: true })
   AmountInBalance = 0;
 
-  @Props({ type: 'Types.Document', required: true, dimension: true})
+  @Props({ type: 'Types.Document', required: true, dimension: true })
   batch: Ref = null;
 
   constructor(init: Partial<RegisterAccumulationPaymentBatch>) {

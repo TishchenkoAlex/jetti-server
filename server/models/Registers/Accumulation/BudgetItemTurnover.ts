@@ -3,7 +3,8 @@ import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
 @JRegisterAccumulation({
   type: 'Register.Accumulation.BudgetItemTurnover',
-  description: 'Обороты бюджетов'
+  description: 'Обороты бюджетов',
+  pruningMethod: 'balance'
 })
 export class RegisterAccumulationBudgetItemTurnover extends RegisterAccumulation {
 
@@ -49,7 +50,7 @@ export class RegisterAccumulationBudgetItemTurnover extends RegisterAccumulation
   @Props({ type: 'number', resource: true })
   Qty = 0;
 
-  constructor (init: Partial<RegisterAccumulationBudgetItemTurnover>) {
+  constructor(init: Partial<RegisterAccumulationBudgetItemTurnover>) {
     super(init);
     Object.assign(this, init);
   }

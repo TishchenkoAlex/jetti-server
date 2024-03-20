@@ -2,7 +2,8 @@ import { Props, Ref, JRegisterAccumulation, RegisterAccumulation } from 'jetti-m
 
 @JRegisterAccumulation({
   type: 'Register.Accumulation.AccountablePersons',
-  description: 'Расчеты с подотчетными'
+  description: 'Расчеты с подотчетными',
+  pruningMethod: 'balance'
 })
 export class RegisterAccumulationAccountablePersons extends RegisterAccumulation {
 

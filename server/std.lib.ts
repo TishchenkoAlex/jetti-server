@@ -9,7 +9,7 @@ import {
   Type, RegisterInfo, PropOptions, RegisterAccumulationOptions
 } from 'jetti-middle';
 import { createDocumentServer, DocumentBaseServer } from './models/documents.factory.server';
-import { createRegisterAccumulation as createAccumulationRegister, RegisterAccumulationTypes, } from './models/Registers/Accumulation/factory';
+import { createRegisterAccumulation as createAccumulationRegister, RegisterAccumulationTypes, registeredRegisterAccumulationTypes, } from './models/Registers/Accumulation/factory';
 import { adminMode, postDocument, unpostDocument, setPostedSate, IUpdateInsertDocumentOptions, upsertDocument } from './routes/utils/post';
 import { MSSQL } from './mssql';
 import { v1 } from 'uuid';
@@ -26,7 +26,7 @@ import { createDocument } from './models/documents.factory';
 import * as iconv from 'iconv-lite';
 import { DocumentOperation } from './models/Documents/Document.Operation';
 import { DocumentOperationServer } from './models/Documents/Document.Operation.server';
-import { createRegisterInfo } from './models/Registers/Info/factory';
+import { createRegisterInfo, registeredRegisterInfoTypes } from './models/Registers/Info/factory';
 import { createFormServer, FormBaseServer } from './models/Forms/form.factory.server';
 import { Event } from './fuctions/Event';
 import { JETTI_POOL_META } from './sql.pool.meta';
@@ -137,6 +137,7 @@ export interface JTL {
     propsByType: (type: string, operation?: string, tx?: MSSQL) => Promise<{ [x: string]: PropOptions }>,
     propByType: (type: string, operation?: string, tx?: MSSQL) => Promise<PropOptions | RegisterAccumulationOptions>,
     config: () => Map<string, IConfigSchema>
+    registersTypes: () => { accumulation: string[], info: string[] },
     getStoredInTablesTypes: () => { [x: string]: boolean }
   };
   util: {
@@ -233,6 +234,7 @@ export const lib: JTL = {
     propsByType,
     propByType,
     config,
+    registersTypes,
     getStoredInTablesTypes
   },
   info: {
@@ -803,6 +805,14 @@ async function updateSQLViewsByOperationId(id: string, tx?: MSSQL, withSecurityP
     } catch (error) {
       if (queries.indexOf(querText)) throw new Error(error);
     }
+  }
+}
+
+
+function registersTypes() {
+  return {
+    accumulation: registeredRegisterAccumulationTypes(),
+    info: registeredRegisterInfoTypes()
   }
 }
 

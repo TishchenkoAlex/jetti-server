@@ -93,6 +93,10 @@ export const RegisteredRegisterAccumulation: IRegisteredRegisterAccumulation[] =
   { type: 'Register.Accumulation.MoneyDocuments', Class: RegisterAccumulationMoneyDocuments },
 ];
 
+export function registeredRegisterAccumulationTypes() {
+  return RegisteredRegisterAccumulation.map(({ type }) => type);
+}
+
 export function createRegisterAccumulation(init: Partial<RegisterAccumulation>) {
   const doc = RegisteredRegisterAccumulation.find(el => el.type === init.type);
   if (doc) return new doc.Class({ type: init.type, ...init });
