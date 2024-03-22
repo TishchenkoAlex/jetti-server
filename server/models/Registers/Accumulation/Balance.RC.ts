@@ -3,7 +3,8 @@ import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
 @JRegisterAccumulation({
   type: 'Register.Accumulation.Balance.RC',
-  description: 'Активы/Пассивы (ЦФО)'
+  description: 'Активы/Пассивы (ЦФО)',
+  pruningMethod: 'balance'
 })
 export class RegisterAccumulationBalanceRC extends RegisterAccumulation {
 

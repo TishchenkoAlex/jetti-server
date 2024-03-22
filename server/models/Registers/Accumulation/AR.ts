@@ -3,7 +3,8 @@ import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
 @JRegisterAccumulation({
   type: 'Register.Accumulation.AR',
-  description: 'Расчеты с клиентами'
+  description: 'Расчеты с клиентами',
+  pruningMethod: 'balance'
 })
 export class RegisterAccumulationAR extends RegisterAccumulation {
 

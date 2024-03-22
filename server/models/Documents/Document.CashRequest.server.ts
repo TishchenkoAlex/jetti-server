@@ -563,6 +563,7 @@ export class DocumentCashRequestServer extends DocumentCashRequest implements IS
         // AP
         Registers.Accumulation.push(new RegisterAccumulationAP({
           kind: false,
+          date: this.PayDay,
           AO: this.Contract,
           Department: this.Department,
           Supplier: this.CashRecipient,

@@ -3,7 +3,8 @@ import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
 @JRegisterAccumulation({
   type: 'Register.Accumulation.Bank',
-  description: 'Денежные средства безналичные'
+  description: 'Денежные средства безналичные',
+  pruningMethod: 'balance'
 })
 export class RegisterAccumulationBank extends RegisterAccumulation {
 

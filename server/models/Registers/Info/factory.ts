@@ -102,6 +102,10 @@ const RegisteredRegisterInfo: IRegisteredRegisterInfo[] = [
     { type: 'Register.Info.TaxCheck', Class: RegisterInfoTaxCheck },
 ];
 
+export function registeredRegisterInfoTypes() {
+    return RegisteredRegisterInfo.map(({ type }) => type);
+}
+
 export function createRegisterInfo<T extends RegisterInfo>(init: Partial<T>): T {
     const doc = RegisteredRegisterInfo.find(el => el.type === init.type);
     if (doc) return (new doc.Class(init) as T);
