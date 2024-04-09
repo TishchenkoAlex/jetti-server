@@ -1,11 +1,19 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.Inventory',
-  description: 'Товары на складах'
+  description: 'Товары на складах',
+  pruningMethod: 'balance'
 })
 export class RegisterAccumulationInventory extends RegisterAccumulation {
+
+  @Props({ type: 'Catalog.Storehouse', required: true, dimension: true })
+  Storehouse: Ref = null;
+
+  @Props({ type: 'Catalog.Product', required: true, dimension: true })
+  SKU: Ref = null;
 
   @Props({ type: 'Catalog.Operation.Type' })
   OperationType: Ref = null;
@@ -39,12 +47,6 @@ export class RegisterAccumulationInventory extends RegisterAccumulation {
 
   @Props({ type: 'Catalog.Balance.Analytics' })
   BalanceOutAnalytics: Ref = null;
-
-  @Props({ type: 'Catalog.Storehouse', required: true, dimension: true })
-  Storehouse: Ref = null;
-
-  @Props({ type: 'Catalog.Product', required: true, dimension: true })
-  SKU: Ref = null;
 
   @Props({ type: 'Types.Document', required: true })
   batch: Ref = null;

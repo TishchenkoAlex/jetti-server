@@ -1,9 +1,11 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.PromotionPoints',
-  description: 'Бонусные баллы'
+  description: 'Бонусные баллы',
+  pruningMethod: 'balance'
 })
 
 export class RegisterAccumulationPromotionPoints extends RegisterAccumulation {
@@ -12,9 +14,6 @@ export class RegisterAccumulationPromotionPoints extends RegisterAccumulation {
 
   @Props({ type: 'Catalog.Department', dimension: true })
   Department: Ref = null;
-
-  @Props({ type: 'string', dimension: true })
-  OrderId = '';
 
   @Props({ type: 'Catalog.RetailClient', dimension: true })
   OwnerInner: Ref = null;
@@ -28,8 +27,11 @@ export class RegisterAccumulationPromotionPoints extends RegisterAccumulation {
   @Props({ type: 'Catalog.Currency', required: true, dimension: true })
   currency: Ref = null;
 
-  @Props({ type: 'Types.Document', dimension: true })
+  @Props({ type: 'Types.Document'})
   batch: Ref = null;
+
+  @Props({ type: 'string'})
+  OrderId = '';
 
   @Props({ type: 'date' })
   ExpiredAt = null;

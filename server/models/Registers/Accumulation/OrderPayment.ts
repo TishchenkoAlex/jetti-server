@@ -1,10 +1,12 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.OrderPayment',
-  description: 'Оплата заказов'
+  description: 'Оплата заказов' 
 })
+
 export class RegisterAccumulationOrderPayment extends RegisterAccumulation {
 
   @Props({ type: 'string', dimension: true })

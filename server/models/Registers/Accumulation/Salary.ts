@@ -1,9 +1,11 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.Salary',
-  description: 'Расчеты с сотрудниками'
+  description: 'Расчеты с сотрудниками',
+  pruningMethod: 'balance'
 })
 export class RegisterAccumulationSalary extends RegisterAccumulation {
 
@@ -22,19 +24,19 @@ export class RegisterAccumulationSalary extends RegisterAccumulation {
   @Props({ type: 'Catalog.Person', required: true, dimension: true })
   Employee: Ref = null;
 
-  @Props({ type: 'enum', dimension: true, value: ['INCOME', 'EXPENSE', 'PAID'] })
-  SalaryKind = 'INCOME';
-
   @Props({ type: 'Catalog.Salary.Analytics', required: true, dimension: true })
   Analytics: Ref = null;
 
-  @Props({ type: 'Types.Catalog', required: false, dimension: true })
+  @Props({ type: 'enum', value: ['INCOME', 'EXPENSE', 'PAID']})
+  SalaryKind = 'INCOME';
+
+  @Props({ type: 'Types.Catalog', required: false})
   PL: Ref = null;
 
-  @Props({ type: 'Types.Catalog', required: false, dimension: true })
+  @Props({ type: 'Types.Catalog', required: false})
   PLAnalytics: Ref = null;
 
-  @Props({ type: 'enum', value: ['APPROVED', 'PREPARED'], dimension: true })
+  @Props({ type: 'enum', value: ['APPROVED', 'PREPARED']})
   Status = 'APPROVED';
 
   @Props({ type: 'boolean' })

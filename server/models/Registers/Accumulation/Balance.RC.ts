@@ -1,10 +1,10 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.Balance.RC',
-  description: 'Активы/Пассивы (ЦФО)',
-  pruningMethod: 'balance'
+  description: 'Активы/Пассивы (ЦФО)'
 })
 export class RegisterAccumulationBalanceRC extends RegisterAccumulation {
 

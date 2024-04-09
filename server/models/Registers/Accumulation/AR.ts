@@ -1,6 +1,7 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.AR',
   description: 'Расчеты с клиентами',
@@ -11,14 +12,14 @@ export class RegisterAccumulationAR extends RegisterAccumulation {
   @Props({ type: 'Catalog.Currency', required: true, dimension: true })
   currency: Ref = null;
 
-  @Props({ type: 'Catalog.Department' })
-  Department: Ref = null;
-
   @Props({ type: 'Types.Document', dimension: true })
   AO: Ref = null;
 
   @Props({ type: 'Catalog.Counterpartie', required: true, dimension: true })
   Customer: Ref = null;
+
+  @Props({ type: 'Catalog.Department' })
+  Department: Ref = null;
 
   @Props({ type: 'date' })
   PayDay = new Date();

@@ -1,10 +1,12 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.StaffingTable',
   description: 'Занятые позиции штатного расписания'
 })
+
 export class RegisterAccumulationStaffingTable extends RegisterAccumulation {
 
   @Props({ type: 'Catalog.Department', dimension: true })
@@ -25,14 +27,14 @@ export class RegisterAccumulationStaffingTable extends RegisterAccumulation {
   @Props({ type: 'Catalog.Person', dimension: true })
   Person: Ref = null;
 
-  @Props({ type: 'number', resource: true })
-  SalaryRate = 0;
-
   @Props({ type: 'Catalog.Salary.Analytics', dimension: true })
   SalaryAnalytic: Ref = null;
 
   @Props({ type: 'Catalog.Currency', dimension: true })
   currency: Ref = null;
+
+  @Props({ type: 'number', resource: true })
+  SalaryRate = 0;
 
   @Props({ type: 'number', resource: true })
   Amount = 0;

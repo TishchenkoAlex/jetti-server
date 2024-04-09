@@ -1,10 +1,10 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.BudgetItemTurnover',
-  description: 'Обороты бюджетов',
-  pruningMethod: 'balance'
+  description: 'Обороты бюджетов'
 })
 export class RegisterAccumulationBudgetItemTurnover extends RegisterAccumulation {
 
@@ -17,19 +17,19 @@ export class RegisterAccumulationBudgetItemTurnover extends RegisterAccumulation
   @Props({ type: 'Catalog.BudgetItem', dimension: true })
   BudgetItem: Ref = null;
 
-  @Props({ type: 'Types.Catalog' })
+  @Props({ type: 'Types.Catalog', dimension: true })
   Anatitic1: Ref = null;
 
-  @Props({ type: 'Types.Catalog', })
+  @Props({ type: 'Types.Catalog', dimension: true })
   Anatitic2: Ref = null;
 
-  @Props({ type: 'Types.Catalog' })
+  @Props({ type: 'Types.Catalog', dimension: true })
   Anatitic3: Ref = null;
 
-  @Props({ type: 'Types.Catalog' })
+  @Props({ type: 'Types.Catalog', dimension: true })
   Anatitic4: Ref = null;
 
-  @Props({ type: 'Types.Catalog' })
+  @Props({ type: 'Types.Catalog', dimension: true })
   Anatitic5: Ref = null;
 
   @Props({ type: 'Catalog.Currency', required: true, dimension: true })

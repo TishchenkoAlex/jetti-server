@@ -1,10 +1,12 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.EmployeeTimekeeping',
   description: 'Данные табельного учета рабочего времени сотрудника'
 })
+
 export class RegisterAccumulationEmployeeTimekeeping extends RegisterAccumulation {
 
   @Props({ type: 'boolean', required: true, dimension: true })
