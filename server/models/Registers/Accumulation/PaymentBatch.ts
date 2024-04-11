@@ -41,7 +41,7 @@ export class RegisterAccumulationPaymentBatch extends RegisterAccumulation {
 
   @Props({ type: 'number', resource: true })
   AmountInBalance = 0;
-
+  
   constructor(init: Partial<RegisterAccumulationPaymentBatch>) {
     super(init);
     Object.assign(this, init);
