@@ -4,6 +4,7 @@ import { JRegisterInfo, RegisterInfo } from 'jetti-middle';
 @JRegisterInfo({
   type: 'Register.Info.AdditionalProps',
   description: 'Additional props',
+  pruningMethod : 'nonBalanceProp'
 })
 export class RegisterInfoAdditionalProps extends RegisterInfo {
 

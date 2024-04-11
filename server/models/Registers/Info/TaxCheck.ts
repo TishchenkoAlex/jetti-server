@@ -4,6 +4,7 @@ import { JRegisterInfo, RegisterInfo } from 'jetti-middle';
 @JRegisterInfo({
   type: 'Register.Info.TaxCheck',
   description: 'Чеки',
+  pruningMethod : 'nonBalance'
 })
 export class RegisterInfoTaxCheck extends RegisterInfo {
 
