@@ -1,6 +1,7 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.Acquiring',
   description: 'Расчеты по эквайрингу',
@@ -8,19 +9,22 @@ import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 })
 export class RegisterAccumulationAcquiring extends RegisterAccumulation {
 
+  @Props({ type: 'Catalog.Currency', dimension: true })
+  currency: Ref = null;
+
   @Props({ type: 'Catalog.AcquiringTerminal', dimension: true })
   AcquiringTerminal: Ref = null;
 
-  @Props({ type: 'string', label: 'Merchant' })
+  @Props({ type: 'string', label: 'Merchant', dimension: true  })
   AcquiringTerminalCode1 = '';
-
-  @Props({ type: 'Catalog.Operation.Type', dimension: true })
-  OperationType: Ref = null;
 
   @Props({ type: 'Catalog.Department', dimension: true })
   Department: Ref = null;
 
-  @Props({ type: 'Catalog.CashFlow', dimension: true })
+  @Props({ type: 'Catalog.Operation.Type'})
+  OperationType: Ref = null;
+
+  @Props({ type: 'Catalog.CashFlow'})
   CashFlow: Ref = null;
 
   @Props({ type: 'string' })
@@ -29,8 +33,14 @@ export class RegisterAccumulationAcquiring extends RegisterAccumulation {
   @Props({ type: 'date' })
   PayDay = new Date();
 
-  @Props({ type: 'Catalog.Currency', dimension: true })
-  currency: Ref = null;
+  @Props({ type: 'date' })
+  DateOperation = null;
+
+  @Props({ type: 'date' })
+  DatePaid = null;
+
+  @Props({ type: 'string' })
+  AuthorizationCode = '';
 
   @Props({ type: 'number', resource: true })
   Amount = 0;
@@ -43,15 +53,6 @@ export class RegisterAccumulationAcquiring extends RegisterAccumulation {
 
   @Props({ type: 'number', resource: true })
   AmountPaid = 0;
-
-  @Props({ type: 'date' })
-  DateOperation = null;
-
-  @Props({ type: 'date' })
-  DatePaid = null;
-
-  @Props({ type: 'string' })
-  AuthorizationCode = '';
 
   constructor(init: Partial<RegisterAccumulationAcquiring>) {
     super(init);

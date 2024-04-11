@@ -1,16 +1,18 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.Investment.Analytics',
-  description: 'Аналитика инвестиций'
+  description: 'Аналитика инвестиций',
+  pruningMethod: 'balance'
 })
 export class RegisterAccumulationInvestmentAnalytics extends RegisterAccumulation {
 
   @Props({ type: 'Catalog.Department' })
   Department: Ref = null;
 
-  @Props({ type: 'enum', dimension: true, value: ['ALLUNIC', 'JETTI', 'X100FINANCE'] })
+  @Props({ type: 'enum', value: ['ALLUNIC', 'JETTI', 'X100FINANCE'], dimension: true})
   SourceTransaction = 'JETTI';
 
   @Props({ type: 'Document.Operation', dimension: true })

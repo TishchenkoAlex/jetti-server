@@ -1,17 +1,16 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.CharityAnalytic',
-  description: 'Аналитика благотворительности'
+  description: 'Аналитика благотворительности',
+  pruningMethod: 'balance'
 })
 export class RegisterAccumulationCharityAnalytic extends RegisterAccumulation {
 
-  @Props({ type: 'Catalog.Operation.Type', dimension: true })
-  Analytics: Ref = null;
-
-  @Props({ type: 'Catalog.Operation.Type', dimension: true })
-  MovementType: Ref = null;
+  @Props({ type: 'Catalog.Currency', required: true, dimension: true })
+  currency: Ref = null;
 
   @Props({ type: 'Types.CounterpartieOrPerson', dimension: true })
   Creator: Ref = null;
@@ -28,11 +27,14 @@ export class RegisterAccumulationCharityAnalytic extends RegisterAccumulation {
   @Props({ type: 'Catalog.Documents', dimension: true })
   Batch: Ref = null;
 
-  @Props({ type: 'Catalog.Catalogs', dimension: true })
+  @Props({ type: 'Catalog.Catalogs'})
   Source: Ref = null;
 
-  @Props({ type: 'Catalog.Currency', required: true, dimension: true })
-  currency: Ref = null;
+  @Props({ type: 'Catalog.Operation.Type'})
+  Analytics: Ref = null;
+
+  @Props({ type: 'Catalog.Operation.Type'})
+  MovementType: Ref = null;
 
   @Props({ type: 'number', resource: true })
   Amount = 0;

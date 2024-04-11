@@ -1,11 +1,16 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.Intercompany',
-  description: 'Интеркомпани'
+  description: 'Интеркомпани',
+  pruningMethod: 'balance'
 })
 export class RegisterAccumulationIntercompany extends RegisterAccumulation {
+
+  @Props({ type: 'Catalog.Currency', dimension: true })
+  currency: Ref = null;
 
   @Props({ type: 'Catalog.Company', dimension: true })
   Intercompany: Ref = null;
@@ -24,9 +29,6 @@ export class RegisterAccumulationIntercompany extends RegisterAccumulation {
 
   @Props({ type: 'Types.Catalog' })
   Analytics: Ref = null;
-
-  @Props({ type: 'Catalog.Currency' })
-  currency: Ref = null;
 
   @Props({ type: 'number', resource: true })
   Amount = 0;

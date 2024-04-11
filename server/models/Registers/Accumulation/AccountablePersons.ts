@@ -1,10 +1,12 @@
 import { Props, Ref, JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.AccountablePersons',
   description: 'Расчеты с подотчетными',
   pruningMethod: 'balance'
 })
+
 export class RegisterAccumulationAccountablePersons extends RegisterAccumulation {
 
   @Props({ type: 'Catalog.Currency', required: true, dimension: true })

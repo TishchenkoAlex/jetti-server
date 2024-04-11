@@ -1,9 +1,11 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.Depreciation',
-  description: 'Амортизация'
+  description: 'Амортизация',
+  pruningMethod: 'balance'
 })
 export class RegisterAccumulationDepreciation extends RegisterAccumulation {
 
@@ -19,7 +21,7 @@ export class RegisterAccumulationDepreciation extends RegisterAccumulation {
   @Props({ type: 'Catalog.Person', required: true, dimension: true })
   ResponsiblePerson: Ref = null;
 
-  @Props({ type: 'Catalog.ObjectsExploitation', required: true })
+  @Props({ type: 'Catalog.ObjectsExploitation', required: true, dimension: true })
   OE: Ref = null;
 
   @Props({ type: 'number', resource: true })

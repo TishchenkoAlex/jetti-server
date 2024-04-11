@@ -1,6 +1,7 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.PaymentBatch',
   description: 'Партии предоплат',
@@ -23,6 +24,9 @@ export class RegisterAccumulationPaymentBatch extends RegisterAccumulation {
   @Props({ type: 'Catalog.Currency', dimension: true })
   Currency: Ref = null;
 
+  @Props({ type: 'Types.Document', required: true, dimension: true })
+  batch: Ref = null;
+
   @Props({ type: 'date' })
   PayDay = null;
 
@@ -37,10 +41,7 @@ export class RegisterAccumulationPaymentBatch extends RegisterAccumulation {
 
   @Props({ type: 'number', resource: true })
   AmountInBalance = 0;
-
-  @Props({ type: 'Types.Document', required: true, dimension: true })
-  batch: Ref = null;
-
+  
   constructor(init: Partial<RegisterAccumulationPaymentBatch>) {
     super(init);
     Object.assign(this, init);

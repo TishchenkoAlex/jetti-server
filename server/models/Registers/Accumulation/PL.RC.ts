@@ -1,10 +1,12 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.PL.RC',
   description: 'Доходы/Расходы (ЦФО)'
 })
+
 export class RegisterAccumulationPLRC extends RegisterAccumulation {
 
   @Props({ type: 'Catalog.ResponsibilityCenter', dimension: true })

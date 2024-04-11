@@ -1,9 +1,11 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.Cash.Transit',
-  description: 'Денежные средства в пути'
+  description: 'Денежные средства в пути',
+  pruningMethod: 'balance'
 })
 export class RegisterAccumulationCashTransit extends RegisterAccumulation {
 

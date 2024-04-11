@@ -1,9 +1,11 @@
 import { Props, Ref } from 'jetti-middle';
 import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 
+/* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.Loan',
-  description: 'Расчеты по кредитам и депозитам'
+  description: 'Расчеты по кредитам и депозитам',
+  pruningMethod: 'balance'
 })
 export class RegisterAccumulationLoan extends RegisterAccumulation {
 
@@ -16,7 +18,7 @@ export class RegisterAccumulationLoan extends RegisterAccumulation {
   @Props({ type: 'Catalog.CashFlow', required: true, dimension: true })
   CashFlow: Ref = null;
 
-  @Props({ type: 'Catalog.Currency', required: true, dimension: true, isProtected: true })
+  @Props({ type: 'Catalog.Currency', required: true, isProtected: true, dimension: true })
   currency: Ref = null;
 
   @Props({
