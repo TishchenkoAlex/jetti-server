@@ -4,7 +4,8 @@ import { JRegisterAccumulation, RegisterAccumulation } from 'jetti-middle';
 /* Check for pruning */
 @JRegisterAccumulation({
   type: 'Register.Accumulation.BudgetItemTurnover',
-  description: 'Обороты бюджетов'
+  description: 'Обороты бюджетов',
+  pruningMethod: 'balance'
 })
 export class RegisterAccumulationBudgetItemTurnover extends RegisterAccumulation {
 
