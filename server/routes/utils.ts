@@ -25,3 +25,9 @@ router.post('/info/sliceLast', async (req: Request, res: Response, next: NextFun
     res.json(await lib.info.sliceLast(type, date, company, analytics, SDB(req)));
   } catch (err) { next(err); }
 });
+
+router.post('/version', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    res.json(1);
+  } catch (err) { next(err); }
+});
