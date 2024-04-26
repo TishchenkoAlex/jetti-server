@@ -81,6 +81,14 @@ export class MSSQL {
     }
   }
 
+  async adminMode(mode: boolean) {
+    await this.setSessionContextVariable('postMode', mode);
+  }
+
+  private async setSessionContextVariable(variable: string, value: any) {
+    await this.none(`EXEC sys.sp_set_session_context N'${variable}', N'${value}';`);
+  }
+
   private prepareSession(sql: string) {
     return `
       SET NOCOUNT ON;
@@ -266,7 +274,8 @@ export class MSSQL {
       return value;
   }
 
-  isRoleAvailable(role: string): boolean {
+  isRoleAvailable(role: string, strict = false): boolean {
+    if (strict) return (this.user?.roles || []).includes(role);
     return !this.user || !this.user.roles || this.user.roles.includes(role);
   }
 

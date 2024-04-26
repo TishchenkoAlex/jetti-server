@@ -1,6 +1,5 @@
-import { AllTypes, AllDocTypes } from './../../models/documents.types';
+import { AllTypes } from './../../models/documents.types';
 import { lib } from '../../std.lib';
-import { InsertRegistersIntoDB } from './InsertRegistersIntoDB';
 import { MSSQL } from '../../mssql';
 import { DocumentBaseServer, createDocumentServer } from '../../models/documents.factory.server';
 import { INoSqlDocument, Ref, Type } from 'jetti-middle';
@@ -9,32 +8,37 @@ export interface IUpdateInsertDocumentOptions { withExchangeInfo: boolean; }
 
 export async function postDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
 
-  const beforePost: (tx: MSSQL) => Promise<DocumentBaseServer> = serverDoc['serverModule']['beforePost'];
-  if (typeof beforePost === 'function') await beforePost(tx);
-  if (serverDoc.beforePost) await serverDoc.beforePost(tx);
+  throw `Deprecated method "postDocument"`
 
-  if (serverDoc.isDoc && serverDoc.onPost) {
-    const Registers = await serverDoc.onPost(tx);
-    await InsertRegistersIntoDB(serverDoc, Registers, tx);
-  }
+  // const beforePost: (tx: MSSQL) => Promise<DocumentBaseServer> = serverDoc['serverModule']['beforePost'];
+  // if (typeof beforePost === 'function') await beforePost(tx);
+  // if (serverDoc.beforePost) await serverDoc.beforePost(tx);
 
-  const afterPost: (tx: MSSQL) => Promise<DocumentBaseServer> = serverDoc['serverModule']['afterPost'];
-  if (typeof afterPost === 'function') await afterPost(tx);
-  if (serverDoc.afterPost) await serverDoc.afterPost(tx);
+  // if (serverDoc.isDoc && serverDoc.onPost) {
+  //   const Registers = await serverDoc.onPost(tx);
+  //   await InsertRegistersIntoDB(serverDoc, Registers, tx);
+  // }
+
+  // const afterPost: (tx: MSSQL) => Promise<DocumentBaseServer> = serverDoc['serverModule']['afterPost'];
+  // if (typeof afterPost === 'function') await afterPost(tx);
+  // if (serverDoc.afterPost) await serverDoc.afterPost(tx);
 
 }
 
 export async function unpostDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
   if (!serverDoc.isDoc) return;
-  const onUnPost: (tx: MSSQL) => Promise<DocumentBaseServer> = serverDoc['serverModule']['onUnPost'];
-  if (typeof onUnPost === 'function') await onUnPost(tx);
-  if (serverDoc.onUnPost) await serverDoc.onUnPost(tx);
+  throw `Deprecated method "unpostDocument"`
+  // const onUnPost: (tx: MSSQL) => Promise<DocumentBaseServer> = serverDoc['serverModule']['onUnPost'];
+  // if (typeof onUnPost === 'function') await onUnPost(tx);
+  // if (serverDoc.onUnPost) await serverDoc.onUnPost(tx);
 
-  await tx.none(`
-    DELETE FROM "Register.Info" WHERE document = @p1;
-    DELETE FROM "Register.Account" WHERE document = @p1;
-    DELETE FROM "Accumulation" WHERE document = @p1;
-  `, [serverDoc.id, serverDoc.date]);
+  // await DocumentsMovements.beforeDelete(serverDoc.id, tx);
+
+  // await tx.none(`
+  //   DELETE FROM "Register.Info" WHERE document = @p1;
+  //   DELETE FROM "Register.Account" WHERE document = @p1;
+  //   DELETE FROM "Accumulation" WHERE document = @p1;
+  // `, [serverDoc.id, serverDoc.date]);
 }
 
 export async function insertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
@@ -218,7 +222,7 @@ export async function setPostedSate(id: Ref, tx: MSSQL) {
 }
 
 export async function adminMode(mode: boolean, tx: MSSQL) {
-  await tx.none(`EXEC sys.sp_set_session_context N'postMode', N'${mode}';`);
+  await tx.adminMode(mode);
 }
 
 async function beforeSaveDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {

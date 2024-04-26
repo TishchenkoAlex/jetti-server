@@ -4,8 +4,9 @@
   "version": "0.0.2",
   "license": "MIT",
   "scripts": {
-    "start": "tsc && node dist/server/index.js",
-    "start_nodemon": "tsc && npx nodemon server/index.ts",
+    "start3001": "tsc && node dist/server/index.js port=3001 DISABLED_LIST_LOG=true",
+    "start": "tsc && node dist/server/index.js DISABLED_LIST_LOG=true",
+    "start_nodemon": "tsc && npx nodemon server/index.ts DISABLED_LIST_LOG=true",
     "tsc": "tsc",
     "build": "tsc && docker build -t eu.gcr.io/jetti-x100/jetti-api:latest . && docker push eu.gcr.io/jetti-x100/jetti-api:latest",
     "build2": "tsc && docker build -t x100jetti.azurecr.io/jetti-x100/jetti-api:latest . && docker push x100jetti.azurecr.io/jetti-x100/jetti-api:latest"

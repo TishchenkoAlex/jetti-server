@@ -3,6 +3,7 @@ import { MSSQL } from '../../mssql';
 import { lib } from '../../std.lib';
 import { filterBuilder, userContextFilter } from '../../fuctions/filterBuilder';
 import { DocListRequestBody, DocListResponse, FormListFilter, DocumentBase, Type } from 'jetti-middle';
+import { ARGS } from '../..';
 
 export async function List(params: DocListRequestBody & { used: string }, tx: MSSQL): Promise<DocListResponse> {
   params.filter = (params.filter || [])
@@ -139,7 +140,7 @@ SELECT * FROM(${QueryList}) d WHERE id IN(
       query = `${queryFilter.tempTable}SELECT TOP ${params.count + 1} * FROM(${QueryList}) d WHERE ${(queryFilter.where)} ${usedInQuery('>')} ${orderbyAfter} `;
   }
 
-  if (process.env.NODE_ENV !== 'production') console.log(query);
+  if (process.env.NODE_ENV !== 'production' && !ARGS.DISABLED_LIST_LOG) console.log(query);
   const data = await tx.manyOrNone<any>(query);
 
   return listPostProcess(data, params);

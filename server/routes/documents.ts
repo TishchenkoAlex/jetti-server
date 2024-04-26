@@ -1,7 +1,7 @@
 import { x100 } from './../x100.lib';
 import * as express from 'express';
 import { NextFunction, Request, Response } from 'express';
-import { createDocumentServer, DocumentBaseServer } from '../models/documents.factory.server';
+import { DocumentBaseServer, createDocumentServer } from '../models/documents.factory.server';
 import { DocTypes } from '../models/documents.types';
 import { DocumentOperation } from '../models/Documents/Document.Operation';
 import { lib } from './../std.lib';
@@ -18,6 +18,7 @@ import {
 import { createDocument } from '../models/documents.factory';
 import { FormListSettings } from 'jetti-middle/dist/common/classes/form-list';
 import { userContextFilter } from '../fuctions/filterBuilder';
+import { DocumentServer } from '../models/document.server';
 
 export const router = express.Router();
 
@@ -162,6 +163,21 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
+      const docServer = await DocumentServer.byId(req.params.id, tx);
+      if (!docServer) throw DocumentServer.errorNotExistId(req.params.id);
+      await docServer.setDeleted(!!!docServer.deleted);
+      res.json(await docServer.toViewModel());
+
+    });
+  } catch (err) { next(err); }
+});
+
+
+// Delete or UnDelete document
+router.delete('/deprecated2/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const sdb = SDB(req);
+    await sdb.tx(async tx => {
       await lib.util.adminMode(true, tx);
       try {
         const id: string = req.params.id;
@@ -178,6 +194,10 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
 
         serverDoc.deleted = !!!serverDoc.deleted;
         serverDoc.posted = false;
+
+        // if (serverDoc.isDoc) {
+        //   await RegistersMovements.beforeDelete(serverDoc.id, tx);
+        // }
 
         await tx.none(
           `UPDATE "Documents" SET deleted = @p3, posted = @p4, timestamp = GETDATE() WHERE id = @p1;
@@ -201,36 +221,7 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
   } catch (err) { next(err); }
 });
 
-router.post('/deprecated/save', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const sdb = SDB(req);
-    await sdb.tx(async tx => {
-      await lib.util.adminMode(true, tx);
-      try {
-        const doc: IFlatDocument = JSON.parse(JSON.stringify(req.body), dateReviverUTC);
-        if (!doc.code) doc.code = await lib.doc.docPrefix(doc.type, tx);
-        const serverDoc = await createDocumentServer(doc.type as DocTypes, doc, tx);
-        if (doc.ExchangeBase) {
-          serverDoc['ExchangeBase'] = doc.ExchangeBase;
-          serverDoc['ExchangeCode'] = doc.ExchangeCode;
-        }
-        if (serverDoc.timestamp) {
-          await updateDocument(serverDoc, tx);
-          if (serverDoc.posted && serverDoc.isDoc) {
-            await unpostDocument(serverDoc, tx);
-            await postDocument(serverDoc, tx);
-          }
-        } else {
-          await insertDocument(serverDoc, tx);
-        }
-        res.json((await buildViewModel(serverDoc, tx)));
-      } catch (ex) { throw new Error(ex); }
-      finally { await lib.util.adminMode(false, tx); }
-    });
-  } catch (err) { next(err); }
-});
-
-router.post('/save', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/deprecated2/save', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
@@ -255,7 +246,30 @@ router.post('/save', async (req: Request, res: Response, next: NextFunction) => 
   } catch (err) { next(err); }
 });
 
+router.post('/save', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const sdb = SDB(req);
+    await sdb.tx(async tx => {
+      const docServer = await DocumentServer.parse(req.body, tx)
+      await docServer.save();
+      res.json(await docServer.toViewModel());
+
+    });
+  } catch (err) { next(err); }
+});
+
 router.post('/savepost', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const sdb = SDB(req);
+    await sdb.tx(async tx => {
+      const docServer = await DocumentServer.parse(req.body, tx)
+      await docServer.post()
+      res.json(await docServer.toViewModel());
+    });
+  } catch (err) { next(err); }
+});
+
+router.post('/deprecated2/savepost', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
@@ -276,6 +290,7 @@ router.post('/savepost', async (req: Request, res: Response, next: NextFunction)
     });
   } catch (err) { next(err); }
 });
+
 
 router.post('/deprecated/savepost', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -326,7 +341,7 @@ router.post('/deprecated/post', async (req: Request, res: Response, next: NextFu
   } catch (err) { next(err); }
 });
 
-router.post('/post', async (req: Request, res: Response, next: NextFunction) => {
+router.post('unused/post', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
@@ -634,16 +649,12 @@ router.post('/setApprovingStatus/:id/:Status', async (req: Request, res: Respons
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
-      const sourse = await lib.doc.byId(req.params.id, tx);
-      if (sourse) {
-        if (!sourse.timestamp) throw new Error('source document not saved');
-        sourse['Status'] = req.params.Status;
-        const serverDoc = await createDocumentServer(sourse.type as DocTypes, sourse, tx);
-        await unpostDocument(serverDoc, tx);
-        await upsertDocument(serverDoc, tx);
-        await postDocument(serverDoc, tx);
-        res.json((await buildViewModel(serverDoc, tx)));
-      }
+      const flatDoc = await lib.doc.byId(req.params.id, tx);
+      if (!flatDoc) throw new Error(DocumentServer.errorNotExistId(req.params.id));
+      flatDoc['Status'] = req.params.Status;
+      const doc = await DocumentServer.instance(flatDoc, tx);
+      await doc.post();
+      res.json(await doc.toViewModel());
     });
   } catch (err) { next(err); }
 });
