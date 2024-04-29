@@ -753,9 +753,27 @@ async function turnover<T>(
 }
 
 export async function postById(id: Ref, tx: MSSQL) {
-  const docServer = await DocumentServer.byId(id!, tx);
-  if (!docServer) throw DocumentServer.errorNotExistId(id);
-  return await docServer.post();
+
+  let docServer: DocumentServer<any> | undefined = undefined;
+  let postRes;
+
+  try {
+    docServer = await DocumentServer.byId(id!, tx);
+    if (!docServer) throw DocumentServer.errorNotExistId(id);
+    postRes = await docServer.post();
+  } catch (error) {
+
+  }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[lib.postById]', error);
+    }
+  }
+
+  return postRes;
 }
 
 export async function _postById(id: Ref, tx: MSSQL) {
@@ -770,9 +788,27 @@ export async function _postById(id: Ref, tx: MSSQL) {
 }
 
 export async function unPostById(id: Ref, tx: MSSQL) {
-  const docServer = await DocumentServer.byId(id!, tx);
-  if (!docServer) throw DocumentServer.errorNotExistId(id);
-  return await docServer.unPost();
+
+  let docServer: DocumentServer<any> | undefined = undefined;
+  let postRes;
+
+  try {
+    const docServer = await DocumentServer.byId(id!, tx);
+    if (!docServer) throw DocumentServer.errorNotExistId(id);
+    postRes = await docServer.unPost();
+  } catch (error) {
+
+  }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[lib.unPostById]', error);
+    }
+  }
+
+  return postRes;
 }
 
 export async function _unPostById(id: Ref, tx: MSSQL) {

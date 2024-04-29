@@ -26,6 +26,7 @@ router.post('/login', async (req, res, next) => {
     const user = await getUser(email);
 
     const payload: IJWTPayload = {
+      timezoneOffset: req.body.timezoneOffset || 0,
       email,
       description: user ? user.description : 'exchange',
       isAdmin: true,

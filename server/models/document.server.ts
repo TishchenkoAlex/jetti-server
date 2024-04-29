@@ -20,6 +20,8 @@ const SQL_QUERY = {
     DELETE_DOCUMENT: `UPDATE "Documents" SET deleted = @p3, posted = @p4, timestamp = GETDATE() WHERE id = @p1;`
 }
 
+type asyncF = () => Promise<any>;
+
 export class DocumentServer<T extends DocumentBaseServer> {
 
     static errorNotExistId(id: Ref) {
@@ -70,6 +72,16 @@ export class DocumentServer<T extends DocumentBaseServer> {
     get docBase() {
         return this.doc;
     }
+
+    get afterTxCommitted(): asyncF[] {
+        return this._afterTxCommitted;
+    }
+
+    set afterTxCommitted(f: asyncF[]) {
+        this._afterTxCommitted.push(...f);
+    }
+
+    private _afterTxCommitted: asyncF[] = [];
 
     async toViewModel() {
         return await buildViewModel(this.doc, this.tx);

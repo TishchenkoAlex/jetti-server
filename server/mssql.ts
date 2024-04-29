@@ -68,6 +68,10 @@ export class MSSQL {
     return { email: this.email, isAdmin: this.isAdmin };
   }
 
+  get timezoneOffset(): number {
+    return this.user.timezoneOffset || 0;
+  }
+
   private setParams(params: any[], request: Request) {
     for (let i = 0; i < params.length; i++) {
       if (params[i] instanceof Date) {
