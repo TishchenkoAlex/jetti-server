@@ -88,6 +88,12 @@ const viewAction = async (req: Request, res: Response, next: NextFunction) => {
           const schema = ServerDoc.Props();
           Object.keys(schema).filter(p => schema[p].value !== undefined).forEach(p => ServerDoc[p] = schema[p].value);
           addIncomeParamsIntoDoc(params, ServerDoc);
+          if (sdb.timezoneOffset) {
+            const serverTimeOffset = (new Date).getTimezoneOffset();
+            const clientTimeOffset = sdb.timezoneOffset;
+            const diff = serverTimeOffset - clientTimeOffset;
+            ServerDoc.date = new Date(Date.now() + diff * 1000 * 60);
+          }
           if (userID) ServerDoc.user = userID;
           if (ServerDoc.onCreate) { await ServerDoc.onCreate(sdb); }
           break;
@@ -160,6 +166,9 @@ router.post('/view', viewAction);
 
 // Delete or UnDelete document
 router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+
+  let docServer: DocumentServer<any> | null = null;
+
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
@@ -170,6 +179,15 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
 
     });
   } catch (err) { next(err); }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[route.delete.afterTxCommitted]', error);
+    }
+  }
+
 });
 
 
@@ -247,6 +265,9 @@ router.post('/deprecated2/save', async (req: Request, res: Response, next: NextF
 });
 
 router.post('/save', async (req: Request, res: Response, next: NextFunction) => {
+
+  let docServer: DocumentServer<any> | null = null;
+
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
@@ -256,17 +277,39 @@ router.post('/save', async (req: Request, res: Response, next: NextFunction) => 
 
     });
   } catch (err) { next(err); }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[route.savepost.afterTxCommitted]', error);
+    }
+  }
+
 });
 
 router.post('/savepost', async (req: Request, res: Response, next: NextFunction) => {
+
+  let docServer: DocumentServer<any> | null = null;
+
   try {
     const sdb = SDB(req);
+
     await sdb.tx(async tx => {
-      const docServer = await DocumentServer.parse(req.body, tx)
+      docServer = await DocumentServer.parse(req.body, tx)
       await docServer.post()
       res.json(await docServer.toViewModel());
     });
   } catch (err) { next(err); }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[route.savepost.afterTxCommitted]', error);
+    }
+  }
+
 });
 
 router.post('/deprecated2/savepost', async (req: Request, res: Response, next: NextFunction) => {

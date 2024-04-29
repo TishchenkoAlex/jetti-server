@@ -32,7 +32,7 @@ export class RegisterRlsPeriod {
         return new Map<string, number>(value.map(e => [e.company, e.date.getTime()]))
     }
 
-    static updatePartitionInCache(rlsPartition: RLS_PARTITION) {
+    static async updatePartitionInCache(rlsPartition: RLS_PARTITION) {
         lib.cache.update(CONST.CACHE_KEY[rlsPartition]);
     }
 

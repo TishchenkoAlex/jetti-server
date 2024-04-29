@@ -105,7 +105,7 @@ export abstract class RegistersMovements {
 
     protected static readonly checksRules: rules = {
         before: [checkReadonlyPeriod, checkClosedPeriodPartitionInventory, checkClosedPeriodPartitionAll],
-        after: [checkRlsUpdate],
+        after: [],
     }
 
     static get ActiveMovementPartitionTypes() {
@@ -198,9 +198,9 @@ export class RegistersMovementsInsertOperation extends RegistersMovements {
             .join('\n')
             .replace(/\'undefined\'|\'null\'/g, 'NULL')
 
-        const db = !!this.context?.rlsPartition ? lib.util.jettiPoolTx() : this.tx;
+        if (!!this.context?.rlsPartition) this.document.afterTxCommitted = [() => { console.log('Inside insert'); return RegisterRlsPeriod.updatePartitionInCache(this.context?.rlsPartition!) }];
 
-        if (query) { await db.none(query); }
+        if (query) { await this.tx.none(query); }
     }
 
     private minDateFromMovements(): IMovementsMinDates {
@@ -285,8 +285,8 @@ export class RegistersMovementsDeleteOperation extends RegistersMovements {
     }
 
     async commit() {
-        const db = !!this.context?.rlsPartition ? lib.util.jettiPoolTx() : this.tx;
-        await db.none(CONST.DELETE_QUERY, [this.docBase.id, this.docBase.date]);
+        if (!!this.context?.rlsPartition) this.document.afterTxCommitted = [() => { console.log('Inside delete'); return RegisterRlsPeriod.updatePartitionInCache(this.context?.rlsPartition!) }];
+        await this.tx.none(CONST.DELETE_QUERY, [this.docBase.id, this.docBase.date]);
     }
 
     private minDateFromMovements(): IMovementsMinDates {

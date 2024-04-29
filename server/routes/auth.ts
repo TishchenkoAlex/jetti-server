@@ -11,7 +11,7 @@ import { JETTI_POOL } from '../sql.pool.jetti';
 import { lib } from '../std.lib';
 import { CatalogSubSystem } from '../models/Catalogs/Catalog.SubSystem';
 import { createDocument } from '../models/documents.factory';
-import { DocumentOptions, Ref, IFlatDocument, INoSqlDocument, IJWTPayload } from 'jetti-middle';
+import { DocumentOptions, INoSqlDocument, IJWTPayload } from 'jetti-middle';
 import { createForm } from '../models/Forms/form.factory';
 import { CatalogOperationGroup } from '../models/Catalogs/Catalog.Operation.Group';
 
@@ -81,6 +81,7 @@ router.post('/login', async (req, res, next) => {
     } catch { }
 
     const payload: IJWTPayload = {
+      timezoneOffset: req.body.timezoneOffset,
       email: user.code ?? me.userPrincipalName,
       description: me.displayName,
       isAdmin: user.isAdmin === true,
@@ -99,6 +100,7 @@ router.get('/account', authHTTP, async (req, res, next) => {
     const user = await getUser((<any>req).user.email);
     if (!user) { return res.status(401).json({ message: 'Auth failed' }); }
     const payload: IJWTPayload = {
+      timezoneOffset: req.body.timezoneOffset,
       email: user.code,
       description: user.description,
       isAdmin: user.isAdmin === true,
@@ -116,6 +118,7 @@ router.post('/refresh', authHTTP, async (req, res, next) => {
     const user = await getUser(payload.email);
     if (!user) { return res.status(401).json({ message: 'Auth failed' }); }
     const new_payload: IJWTPayload = {
+      timezoneOffset: req.body.timezoneOffset,
       email: user.id,
       description: user.description,
       isAdmin: user.isAdmin === true,

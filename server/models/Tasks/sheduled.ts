@@ -4,6 +4,7 @@ import PostAfterEchangeServer from '../Forms/Form.PostAfterEchange.server';
 export async function startSheduledTasks() {
 
   const user: IJWTPayload = {
+    timezoneOffset: 0,
     description: 'user for task sheduler',
     email: '',
     isAdmin: true,
