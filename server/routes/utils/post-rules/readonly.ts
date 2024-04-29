@@ -11,6 +11,6 @@ export function checkReadonlyPeriod({ minDate, roles }: IRuleContext) {
 }
 
 function checkMovementDateInReadonlyPeriod(movementDate: number | undefined) {
-    const isReadonly = (movementDate ?? 0) <= READONLY_DATE;
+    const isReadonly = (movementDate ?? 0) < READONLY_DATE;
     if (isReadonly) throw READONLY_ERROR;
 }
