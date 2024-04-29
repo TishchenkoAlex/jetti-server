@@ -131,7 +131,7 @@ export abstract class RegistersMovements {
 
     protected doChecksRules(key: keyof rules) {
         for (const rule of RegistersMovements.checksRules[key]) {
-            lib.log.logIfDev('[RegistersMovements.execRules]', key, JSON.stringify(this.context));
+            // lib.log.logIfDev('[RegistersMovements.execRules]', key, JSON.stringify(this.context));
             rule(this.context!);
         }
     }

@@ -1281,6 +1281,6 @@ function newEvent(init: Partial<Event>) {
 }
 
 function logIfDev(...args: any[]): void {
-  !Global.isProd && console.log(args);
+  if (!Global.isProd) console.log(args);
 }
 
