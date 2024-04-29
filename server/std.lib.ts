@@ -757,13 +757,9 @@ export async function postById(id: Ref, tx: MSSQL) {
   let docServer: DocumentServer<any> | undefined = undefined;
   let postRes;
 
-  try {
-    docServer = await DocumentServer.byId(id!, tx);
-    if (!docServer) throw DocumentServer.errorNotExistId(id);
-    postRes = await docServer.post();
-  } catch (error) {
-
-  }
+  docServer = await DocumentServer.byId(id!, tx);
+  if (!docServer) throw DocumentServer.errorNotExistId(id);
+  postRes = await docServer.post();
 
   if (!!docServer) {
     try {
@@ -792,13 +788,11 @@ export async function unPostById(id: Ref, tx: MSSQL) {
   let docServer: DocumentServer<any> | undefined = undefined;
   let postRes;
 
-  try {
-    const docServer = await DocumentServer.byId(id!, tx);
-    if (!docServer) throw DocumentServer.errorNotExistId(id);
-    postRes = await docServer.unPost();
-  } catch (error) {
 
-  }
+  docServer = await DocumentServer.byId(id!, tx);
+  if (!docServer) throw DocumentServer.errorNotExistId(id);
+  postRes = await docServer.unPost();
+
 
   if (!!docServer) {
     try {
