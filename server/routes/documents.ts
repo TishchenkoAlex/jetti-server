@@ -81,6 +81,15 @@ const viewAction = async (req: Request, res: Response, next: NextFunction) => {
         }
       };
 
+      const docDate = (baseDate: number) => {
+        if (sdb.timezoneOffset) {
+          const serverTimeOffset = (new Date).getTimezoneOffset();
+          const clientTimeOffset = sdb.timezoneOffset;
+          const diff = serverTimeOffset - clientTimeOffset;
+          return new Date(baseDate + diff * 1000 * 60);
+        }
+      }
+
       const command = req.query.new ? 'new' : req.query.copy ? 'copy' : req.query.base ? 'base' : req.query.history ? 'history' : '';
       switch (command) {
         case 'new':
@@ -88,12 +97,7 @@ const viewAction = async (req: Request, res: Response, next: NextFunction) => {
           const schema = ServerDoc.Props();
           Object.keys(schema).filter(p => schema[p].value !== undefined).forEach(p => ServerDoc[p] = schema[p].value);
           addIncomeParamsIntoDoc(params, ServerDoc);
-          if (sdb.timezoneOffset) {
-            const serverTimeOffset = (new Date).getTimezoneOffset();
-            const clientTimeOffset = sdb.timezoneOffset;
-            const diff = serverTimeOffset - clientTimeOffset;
-            ServerDoc.date = new Date(Date.now() + diff * 1000 * 60);
-          }
+          ServerDoc.date = docDate(Date.now()) || ServerDoc.date;
           if (userID) ServerDoc.user = userID;
           if (ServerDoc.onCreate) { await ServerDoc.onCreate(sdb); }
           break;
@@ -101,8 +105,12 @@ const viewAction = async (req: Request, res: Response, next: NextFunction) => {
           const copy = await lib.doc.byId(req.query.copy as Ref, sdb);
           if (!copy) throw new Error(`base document ${req.query.copy} for copy is not found!`);
           const copyDoc = await createDocumentServer(type, copy, sdb);
-          copyDoc.id = id; copyDoc.date = ServerDoc.date; copyDoc.code = '';
-          copyDoc.posted = false; copyDoc.deleted = false; copyDoc.timestamp = null;
+          copyDoc.id = id;
+          copyDoc.date = docDate(ServerDoc.date.getTime()) || ServerDoc.date;
+          copyDoc.code = '';
+          copyDoc.posted = false;
+          copyDoc.deleted = false;
+          copyDoc.timestamp = null;
           copyDoc.parent = copyDoc.parent;
           if (userID) copyDoc.user = userID;
           const notCopied = ServerDoc.getPropsWithOption('isNotCopy', true);
