@@ -1,11 +1,12 @@
 import * as express from 'express';
 import { NextFunction, Request, Response } from 'express';
-import { createDocumentServer, DocumentBaseServer } from '../models/documents.factory.server';
+import { DocumentBaseServer } from '../models/documents.factory.server';
 import { lib } from './../std.lib';
 import { MSSQL } from '../mssql';
 import { SDB } from './middleware/db-sessions';
 import { JETTI_POOL } from '../sql.pool.jetti';
 import { INoSqlDocument, dateReviverUTC } from 'jetti-middle';
+import { DocumentServer } from '../models/document.server';
 
 export const router = express.Router();
 
@@ -186,36 +187,11 @@ router.delete('/document/:id', async (req: Request, res: Response, next: NextFun
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
-      await lib.util.adminMode(true, tx);
       try {
-        const id: string = req.params.id;
-        const doc = await lib.doc.byId(id, tx);
-        if (!doc) throw new Error(`API - Delete: document with id '${id}' not found.`);
-
-        const serverDoc = await createDocumentServer(doc.type, doc, tx);
-
-        if (!doc.deleted) {
-          const beforeDelete: (tx: MSSQL) => Promise<void> = serverDoc['serverModule']['beforeDelete'];
-          if (typeof beforeDelete === 'function') await beforeDelete(tx);
-          if (serverDoc.beforeDelete) await serverDoc.beforeDelete(tx);
-        }
-
-        serverDoc.deleted = !!!serverDoc.deleted;
-        serverDoc.posted = false;
-
-        await tx.none(`
-          DELETE FROM "Register.Account" WHERE document = @p1;
-          DELETE FROM "Register.Info" WHERE document = @p1;
-          DELETE FROM "Accumulation" WHERE document = @p1;
-          UPDATE "Documents" SET deleted = @p3, posted = @p4, timestamp = GETDATE() WHERE id = @p1;
-        `, [id, serverDoc.date, serverDoc.deleted, 0]);
-
-        if (!doc.deleted) {
-          const afterDelete: (tx: MSSQL) => Promise<void> = serverDoc['serverModule']['afterDelete'];
-          if (typeof afterDelete === 'function') await afterDelete(tx);
-          if (serverDoc && serverDoc.afterDelete) await serverDoc.afterDelete(tx);
-        }
-        res.json({ Status: 'OK' });
+      const doc = await DocumentServer.byId(req.params.id, tx);
+      if (!doc) throw new Error(`API - Delete: document with id '${req.params.id}' not found.`);
+      await doc.setDeleted(!!!doc.deleted);
+      res.json({ Status: 'OK' });
       } catch (ex) { res.status(500).json({ ...ex, Error: ex.message }); }
       finally { await lib.util.adminMode(false, tx); }
     });
