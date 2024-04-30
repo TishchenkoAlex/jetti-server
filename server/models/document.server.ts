@@ -3,7 +3,7 @@ import { MSSQL } from "../mssql";
 import { DocumentBaseServer, createDocumentServer } from "./documents.factory.server";
 import { DocTypes } from "./documents.types";
 import { lib } from "../std.lib";
-import { upsertDocument } from "../routes/utils/post";
+import { setPostedSate, upsertDocument } from "../routes/utils/post";
 import { buildViewModel } from "../routes/documents";
 import { PostResult } from "./post.interfaces";
 import { RegistersMovements } from "./registers.movements";
@@ -57,6 +57,10 @@ export class DocumentServer<T extends DocumentBaseServer> {
 
     constructor(private readonly doc: T, private tx: MSSQL) { }
 
+    get id() {
+        return this.doc?.id;
+    }
+
     get type() {
         return this.doc?.type;
     }
@@ -89,6 +93,43 @@ export class DocumentServer<T extends DocumentBaseServer> {
 
     private async newCode() {
         return await lib.doc.docPrefix(this.doc.type, this.tx);
+    }
+
+    static async unPostById(id: Ref, tx: MSSQL) {
+        try {
+            if (!id) throw this.errorNotExistId(id);
+            await lib.util.adminMode(true, tx);
+            const docServer = await this.byId(id, tx);
+            if (!docServer) throw this.errorNotExistId(id);
+            docServer.doc.posted = false;
+            await docServer.deleteMovements();
+            await docServer.upsert();
+            return docServer;
+        } catch (ex) {
+            throw new Error(ex);
+        }
+        finally {
+            await lib.util.adminMode(false, tx);
+        }
+    }
+
+    static async postById(id: string, tx: MSSQL) {
+        try {
+            if (!id) throw this.errorNotExistId(id);
+            await lib.util.adminMode(true, tx);
+            const serverDoc = await setPostedSate(id, tx);
+            if (!serverDoc) throw this.errorNotExistId(id);
+            const docServer = new DocumentServer(serverDoc, tx);
+            await docServer.deleteMovements();
+            if (serverDoc.deleted === false)
+                await docServer.insertMovements();
+            return docServer;
+        } catch (ex) {
+            throw new Error(ex);
+        }
+        finally {
+            await lib.util.adminMode(false, tx);
+        }
     }
 
     async setDeleted(deleted: boolean) {
@@ -131,7 +172,6 @@ export class DocumentServer<T extends DocumentBaseServer> {
             this.doc.posted = options?.postQueue === undefined;
             await this.deleteMovements();
             await this.upsert(options);
-
             if (this.doc.posted)
                 await this.insertMovements();
             else
