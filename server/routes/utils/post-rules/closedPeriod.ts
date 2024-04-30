@@ -4,6 +4,7 @@ import { RLS_PARTITION, RegisterRlsPeriod } from "../../../models/register.info.
 const CONST = {
     INVENTORY: {
         REGISTER_TYPE: 'Register.Accumulation.Inventory',
+        ROLE: 'Cost calculation',
         QUERY: `SELECT TOP 1 r.id FROM [Accumulation] r 
         INNER JOIN [dbo].[Register.Info.RLS.Period]  rls WITH(NOEXPAND)
         ON r.document = @p1 
@@ -32,7 +33,8 @@ const CONST = {
 }
 
 
-export function checkClosedPeriodPartitionInventory({ minDate, operation }: IRuleContext) {
+export function checkClosedPeriodPartitionInventory({ minDate, operation, roles }: IRuleContext) {
+    if (roles.includes(CONST.INVENTORY.ROLE)) return;
     const companies = minDate.byType.find(e => e.type === 'inventory')?.companies || [];
     const outdated = companies.find(e => RegisterRlsPeriod.isDateInClosedPeriod(e.date, e.company as string, RLS_PARTITION.INVENTORY));
     if (outdated) throw CONST.INVENTORY.ERROR[operation];
