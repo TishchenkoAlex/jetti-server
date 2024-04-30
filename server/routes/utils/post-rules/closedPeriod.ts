@@ -18,7 +18,7 @@ const CONST = {
         }
     },
     ALL: {
-        ROLE: 'ignore closed period',
+        ROLE: 'Ignore closed period',
         QUERY: `SELECT TOP 1 r.id FROM [Accumulation] r 
         INNER JOIN [dbo].[Register.Info.RLS.Period]  rls WITH(NOEXPAND)
         ON r.document = @p1 
