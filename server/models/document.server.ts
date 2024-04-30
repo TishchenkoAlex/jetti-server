@@ -57,6 +57,10 @@ export class DocumentServer<T extends DocumentBaseServer> {
 
     constructor(private readonly doc: T, private tx: MSSQL) { }
 
+    get id() {
+        return this.doc?.id;
+    }
+
     get type() {
         return this.doc?.type;
     }
@@ -91,31 +95,41 @@ export class DocumentServer<T extends DocumentBaseServer> {
         return await lib.doc.docPrefix(this.doc.type, this.tx);
     }
 
-    static async postById(id: string, tx: MSSQL) {
-        if (!id) throw this.errorNotExistId(id);
-        await lib.util.adminMode(true, tx);
-        let docServer: DocumentServer<any> | undefined = undefined;
+    static async unPostById(id: Ref, tx: MSSQL) {
         try {
-            const serverDoc = await setPostedSate(id, tx);
-            if (!serverDoc) throw this.errorNotExistId(id);
-            docServer = new DocumentServer(serverDoc, tx);
+            if (!id) throw this.errorNotExistId(id);
+            await lib.util.adminMode(true, tx);
+            const docServer = await this.byId(id, tx);
+            if (!docServer) throw this.errorNotExistId(id);
+            docServer.doc.posted = false;
             await docServer.deleteMovements();
-            if (serverDoc.deleted === false)
-                await docServer.insertMovements();
+            await docServer.upsert();
+            return docServer;
         } catch (ex) {
             throw new Error(ex);
         }
         finally {
             await lib.util.adminMode(false, tx);
         }
+    }
 
+    static async postById(id: string, tx: MSSQL) {
         try {
-            await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
-        } catch (error) {
-            console.error('[postById]', error);
+            if (!id) throw this.errorNotExistId(id);
+            await lib.util.adminMode(true, tx);
+            const serverDoc = await setPostedSate(id, tx);
+            if (!serverDoc) throw this.errorNotExistId(id);
+            const docServer = new DocumentServer(serverDoc, tx);
+            await docServer.deleteMovements();
+            if (serverDoc.deleted === false)
+                await docServer.insertMovements();
+            return docServer;
+        } catch (ex) {
+            throw new Error(ex);
         }
-
-        return docServer.doc;
+        finally {
+            await lib.util.adminMode(false, tx);
+        }
     }
 
     async setDeleted(deleted: boolean) {

@@ -415,24 +415,47 @@ router.post('unused/post', async (req: Request, res: Response, next: NextFunctio
 
 // Post by id (without returns posted object to client, for post in cicle many docs)
 router.get('/post/:id', async (req: Request, res: Response, next: NextFunction) => {
+
+  let docServer: DocumentServer<any> | null = null;
+
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
-      const { id, posted } = await DocumentServer.postById(req.params.id, tx);
-      res.json({ id, posted });
+      const docServer = await DocumentServer.postById(req.params.id, tx);
+      res.json({ id: docServer.id, posted: docServer.posted });
     });
   } catch (err) { next(err); }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[route.post/:id]', error);
+    }
+  }
+
 });
 
 // unPost by id (without returns posted object to client, for post in cicle many docs)
 router.get('/unpost/:id', async (req: Request, res: Response, next: NextFunction) => {
+
+  let docServer: DocumentServer<any> | null = null;
+
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
-      const { id, posted } = await lib.doc.unPostById(req.params.id, tx);
-      res.json({ id, posted });
+      const docServer = await DocumentServer.unPostById(req.params.id, tx);
+      res.json({ id: docServer.id, posted: docServer.posted });
     });
   } catch (err) { next(err); }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[route.unpost/:id]', error);
+    }
+  }
 });
 
 // Get raw document by id

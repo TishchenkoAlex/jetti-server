@@ -88,8 +88,8 @@ export interface JTL {
     Descendants: (id: Ref, tx: MSSQL) => Promise<{ id: Ref, parent: Ref }[] | null>;
     haveDescendants: (id: Ref, tx: MSSQL) => Promise<boolean>;
     formControlRef: (id: Ref, tx: MSSQL) => Promise<RefValue | null>;
-    postById: (id: Ref, tx: MSSQL) => Promise<DocumentBaseServer>;
-    unPostById: (id: Ref, tx: MSSQL) => Promise<DocumentBaseServer>;
+    postById: (id: Ref, tx: MSSQL) => Promise<DocumentServer<any>>;
+    unPostById: (id: Ref, tx: MSSQL) => Promise<DocumentServer<any>>;
     createDoc: <T extends DocumentBase>(type: string, document?: IFlatDocument) => Promise<T>;
     createDocServer: <T extends DocumentBaseServer>(type: string, document: IFlatDocument | undefined, tx: MSSQL) => Promise<T>;
     createDocServerById: <T extends DocumentBaseServer>(id: string, tx: MSSQL) => Promise<T | null>;
@@ -769,24 +769,26 @@ export async function _postById(id: Ref, tx: MSSQL) {
 
 export async function unPostById(id: Ref, tx: MSSQL) {
 
-  let docServer: DocumentServer<any> | undefined = undefined;
-  let postRes;
+  return await DocumentServer.unPostById(id, tx);
+
+  // let docServer: DocumentServer<any> | undefined = undefined;
+  // let postRes;
 
 
-  docServer = await DocumentServer.byId(id!, tx);
-  if (!docServer) throw DocumentServer.errorNotExistId(id);
-  postRes = await docServer.unPost();
+  // docServer = await DocumentServer.byId(id!, tx);
+  // if (!docServer) throw DocumentServer.errorNotExistId(id);
+  // postRes = await docServer.unPost();
 
 
-  if (!!docServer) {
-    try {
-      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
-    } catch (error) {
-      console.error('[lib.unPostById]', error);
-    }
-  }
+  // if (!!docServer) {
+  //   try {
+  //     await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+  //   } catch (error) {
+  //     console.error('[lib.unPostById]', error);
+  //   }
+  // }
 
-  return postRes;
+  // return postRes;
 }
 
 export async function _unPostById(id: Ref, tx: MSSQL) {
