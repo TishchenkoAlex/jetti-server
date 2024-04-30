@@ -3,7 +3,7 @@ import { MSSQL } from "../mssql";
 import { DocumentBaseServer, createDocumentServer } from "./documents.factory.server";
 import { DocTypes } from "./documents.types";
 import { lib } from "../std.lib";
-import { upsertDocument } from "../routes/utils/post";
+import { setPostedSate, upsertDocument } from "../routes/utils/post";
 import { buildViewModel } from "../routes/documents";
 import { PostResult } from "./post.interfaces";
 import { RegistersMovements } from "./registers.movements";
@@ -91,6 +91,33 @@ export class DocumentServer<T extends DocumentBaseServer> {
         return await lib.doc.docPrefix(this.doc.type, this.tx);
     }
 
+    static async postById(id: string, tx: MSSQL) {
+        if (!id) throw this.errorNotExistId(id);
+        await lib.util.adminMode(true, tx);
+        let docServer: DocumentServer<any> | undefined = undefined;
+        try {
+            const serverDoc = await setPostedSate(id, tx);
+            if (!serverDoc) throw this.errorNotExistId(id);
+            docServer = new DocumentServer(serverDoc, tx);
+            await docServer.deleteMovements();
+            if (serverDoc.deleted === false)
+                await docServer.insertMovements();
+        } catch (ex) {
+            throw new Error(ex);
+        }
+        finally {
+            await lib.util.adminMode(false, tx);
+        }
+
+        try {
+            await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+        } catch (error) {
+            console.error('[postById]', error);
+        }
+
+        return docServer.doc;
+    }
+
     async setDeleted(deleted: boolean) {
         if (deleted === this.deleted) return this.doc;
         if (deleted) await this.handleLifeCycleEvent(DocLiveCycleEvent.beforeDelete);
@@ -131,7 +158,6 @@ export class DocumentServer<T extends DocumentBaseServer> {
             this.doc.posted = options?.postQueue === undefined;
             await this.deleteMovements();
             await this.upsert(options);
-
             if (this.doc.posted)
                 await this.insertMovements();
             else

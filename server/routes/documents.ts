@@ -418,7 +418,7 @@ router.get('/post/:id', async (req: Request, res: Response, next: NextFunction) 
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
-      const { id, posted } = await lib.doc.postById(req.params.id, tx);
+      const { id, posted } = await DocumentServer.postById(req.params.id, tx);
       res.json({ id, posted });
     });
   } catch (err) { next(err); }

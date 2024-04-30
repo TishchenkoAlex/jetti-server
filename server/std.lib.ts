@@ -753,23 +753,7 @@ async function turnover<T>(
 }
 
 export async function postById(id: Ref, tx: MSSQL) {
-
-  let docServer: DocumentServer<any> | undefined = undefined;
-  let postRes;
-
-  docServer = await DocumentServer.byId(id!, tx);
-  if (!docServer) throw DocumentServer.errorNotExistId(id);
-  postRes = await docServer.post();
-
-  if (!!docServer) {
-    try {
-      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
-    } catch (error) {
-      console.error('[lib.postById]', error);
-    }
-  }
-
-  return postRes;
+  return await DocumentServer.postById(id!, tx);
 }
 
 export async function _postById(id: Ref, tx: MSSQL) {
