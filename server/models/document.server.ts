@@ -150,12 +150,12 @@ export class DocumentServer<T extends DocumentBaseServer> {
         return this.doc;
     }
 
-    async unPost() {
+    async unPost(options?: { postQueue?: number, withExchangeInfo?: boolean }) {
         try {
             await this.tx.adminMode(true);
             this.doc.posted = false;
             await this.deleteMovements();
-            await this.upsert();
+            await this.upsert(options);
             return this.doc;
         } catch (error) {
             throw new Error(error);

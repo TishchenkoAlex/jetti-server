@@ -154,8 +154,11 @@ router.post('/document', async (req: Request, res: Response, next: NextFunction)
           }
         }
 
-        await lib.doc.saveDoc(
-          docServer,
+        if (docServer.deleted && docServer.posted) {
+          docServer.posted = false;
+        }
+
+        await lib.doc.saveDoc(docServer,
           tx,
           options.queueFlow,
           { withExchangeInfo: !!(docServer['ExchangeBase'] || docServer['ExchangeCode']) }
@@ -188,10 +191,10 @@ router.delete('/document/:id', async (req: Request, res: Response, next: NextFun
     const sdb = SDB(req);
     await sdb.tx(async tx => {
       try {
-      const doc = await DocumentServer.byId(req.params.id, tx);
-      if (!doc) throw new Error(`API - Delete: document with id '${req.params.id}' not found.`);
-      await doc.setDeleted(!!!doc.deleted);
-      res.json({ Status: 'OK' });
+        const doc = await DocumentServer.byId(req.params.id, tx);
+        if (!doc) throw new Error(`API - Delete: document with id '${req.params.id}' not found.`);
+        await doc.setDeleted(!!!doc.deleted);
+        res.json({ Status: 'OK' });
       } catch (ex) { res.status(500).json({ ...ex, Error: ex.message }); }
       finally { await lib.util.adminMode(false, tx); }
     });
