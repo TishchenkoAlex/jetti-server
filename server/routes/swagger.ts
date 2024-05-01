@@ -158,7 +158,7 @@ router.post('/document', async (req: Request, res: Response, next: NextFunction)
           docServer.posted = false;
         }
 
-        await lib.doc.saveDoc(docServer,
+        await saveDoc(docServer,
           tx,
           options.queueFlow,
           { withExchangeInfo: !!(docServer['ExchangeBase'] || docServer['ExchangeCode']) }
@@ -185,6 +185,19 @@ router.post('/document', async (req: Request, res: Response, next: NextFunction)
     });
   } catch (err) { next(err); }
 });
+
+async function saveDoc(
+  doc: DocumentBaseServer
+  , tx: MSSQL
+  , postQueue?: number
+  , opts?: any): Promise<DocumentBaseServer> {
+  const docServer = new DocumentServer(doc, tx);
+  if (doc.isDoc && doc.posted)
+    return await docServer.post({ postQueue, ...(opts || {}) });
+  else
+    return await docServer.unPost();
+}
+
 
 router.delete('/document/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
