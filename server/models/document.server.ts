@@ -28,31 +28,31 @@ export class DocumentServer<T extends DocumentBaseServer> {
         return `Document with id "${id}" is not exist`;
     }
 
-    static async byId(id: string, tx: MSSQL) {
+    static async byId<T extends DocumentBaseServer = DocumentBaseServer>(id: string, tx: MSSQL) {
         if (!id) return;
         const doc = await lib.doc.byId(id, tx);
         if (!doc) return;
-        return await this.instance(doc, tx);
+        return await this.instance<T>(doc, tx);
     }
 
-    static async instance(data: IFlatDocument, tx: MSSQL) {
-        const doc = await createDocumentServer(data.type, data, tx);
-        return new DocumentServer(doc, tx);
+    static async instance<T extends DocumentBaseServer = DocumentBaseServer>(data: IFlatDocument, tx: MSSQL) {
+        const doc = await createDocumentServer<T>(data.type, data, tx);
+        return new DocumentServer<T>(doc, tx);
     }
 
-    static async new(type: DocTypes, tx: MSSQL) {
-        const doc = await createDocumentServer(type, undefined, tx);
-        return new DocumentServer(doc, tx);
+    static async new<T extends DocumentBaseServer = DocumentBaseServer>(type: DocTypes, tx: MSSQL) {
+        const doc = await createDocumentServer<T>(type, undefined, tx);
+        return new DocumentServer<T>(doc, tx);
     }
 
-    static async parse(data: string, tx: MSSQL) {
+    static async parse<T extends DocumentBaseServer = DocumentBaseServer>(data: string, tx: MSSQL) {
         const docFlat: IFlatDocument = JSON.parse(JSON.stringify(data), dateReviverUTC);
-        const doc = await createDocumentServer(docFlat.type, docFlat, tx);
+        const doc = await createDocumentServer<T>(docFlat.type, docFlat, tx);
         if (docFlat.ExchangeBase) {
             doc['ExchangeBase'] = docFlat.ExchangeBase;
             doc['ExchangeCode'] = docFlat.ExchangeCode;
         }
-        return new DocumentServer(doc, tx);
+        return new DocumentServer<T>(doc, tx);
     }
 
     constructor(private readonly doc: T, private tx: MSSQL) { }
@@ -79,6 +79,14 @@ export class DocumentServer<T extends DocumentBaseServer> {
 
     get afterTxCommitted(): asyncF[] {
         return this._afterTxCommitted;
+    }
+
+    get props() {
+        return this.docBase.Props();
+    }
+
+    get prop() {
+        return this.docBase.Prop();
     }
 
     set afterTxCommitted(f: asyncF[]) {

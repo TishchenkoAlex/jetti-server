@@ -99,7 +99,7 @@ import { CatalogBusinessCalendar } from './Catalogs/Catalog.BusinessCalendar';
 import { IFlatDocument } from 'jetti-middle';
 import { CatalogMoneyDocument } from './Catalogs/Catalog.MoneyDocument';
 
-export function createDocument<T extends DocumentBase>(type: string, document?: IFlatDocument): T {
+export function createDocument<T extends DocumentBase>(type: string, document?: Partial<IFlatDocument>): T {
 
   let result: DocumentBase;
   const doc = RegisteredDocuments().get(type);
@@ -124,7 +124,7 @@ export function createDocument<T extends DocumentBase>(type: string, document?: 
     const ArrayProps = Object.keys(result).filter(k => Array.isArray(result[k]));
     ArrayProps.forEach(prop => result[prop].length = 0);
   }
-  if (document) result.map(document);
+  if (document) Object.assign(result, document)
   if (!result.company) result.company = '00000000-0000-0000-0000-000000000000';
   return result as T;
 }

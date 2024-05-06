@@ -180,7 +180,10 @@ router.post('/document', async (req: Request, res: Response, next: NextFunction)
         noSqlDoc!.docByKeys = docByKeys;
         res.json(noSqlDoc);
 
-      } catch (ex) { res.statusCode = 405; res.json(`Unknow error: ${JSON.stringify(ex.message)}`); }
+      } catch (ex) {
+        res.statusCode = 405;
+        res.json(`Unknow error: ${JSON.stringify(ex.message)}`);
+      }
       finally { await lib.util.adminMode(false, tx); }
     });
   } catch (err) { next(err); }

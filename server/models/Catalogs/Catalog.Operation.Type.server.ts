@@ -12,8 +12,10 @@ export class CatalogOperationTypeServer extends CatalogOperationType implements 
 
     if (document) this.map(document);
     if (this['isExtended']) return true;
-
+    
     this['isExtended'] = true;
+    
+    if (document?.isfolder) return false;
     const model = await this.getModel(tx, this.parent);
     if (!model) return false;
 
