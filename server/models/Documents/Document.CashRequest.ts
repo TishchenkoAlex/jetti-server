@@ -115,7 +115,7 @@ export class DocumentCashRequest extends DocumentBase {
       'Прочий расход ДС',
       'Перемещение ДС',
       'Внутренний займ',
-      'Выдача займа контрагенту',
+      'Выдача займа (МУЛЬТИВАЛЮТНАЯ)',
       'Возврат оплаты клиенту',
       'Выплата заработной платы',
       'Выплата заработной платы без ведомости',
@@ -227,6 +227,7 @@ export class DocumentCashRequest extends DocumentBase {
   @Props({
     type: 'Catalog.Loan',
     hiddenInList: true,
+    onChangeServer: true,
     label: 'Договор кредита/займа',
     owner: [
       { dependsOn: 'CashRecipient', filterBy: 'owner' },
@@ -390,6 +391,12 @@ export class DocumentCashRequest extends DocumentBase {
 
   @Props({ type: 'date', label: 'Конец периода' })
   EndDate = '';
+
+  @Props({ type: 'number', label: 'Сумма в валюте договора', style: { width: '100px', textAlign: 'right' } })
+  AmountLoan = null;
+
+  @Props({ type: 'Catalog.Currency', label: 'Валюта договора', onChangeServer: true})
+  CurrencyLoan: Ref = null;
 
   @Props({
     type: 'table', required: false, order: 1,
