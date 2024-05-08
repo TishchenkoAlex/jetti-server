@@ -175,12 +175,12 @@ router.post('/view', viewAction);
 // Delete or UnDelete document
 router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
 
-  let docServer: DocumentServer<any> | null = null;
+  let docServer: DocumentServer<any> | undefined = undefined;
 
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
-      const docServer = await DocumentServer.byId(req.params.id, tx);
+      docServer = await DocumentServer.byId(req.params.id, tx);
       if (!docServer) throw DocumentServer.errorNotExistId(req.params.id);
       await docServer.setDeleted(!!!docServer.deleted);
       res.json(await docServer.toViewModel());
@@ -279,7 +279,7 @@ router.post('/save', async (req: Request, res: Response, next: NextFunction) => 
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
-      const docServer = await DocumentServer.parse(req.body, tx)
+      docServer = await DocumentServer.parse(req.body, tx)
       await docServer.save();
       res.json(await docServer.toViewModel());
 
@@ -421,7 +421,7 @@ router.get('/post/:id', async (req: Request, res: Response, next: NextFunction) 
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
-      const docServer = await DocumentServer.postById(req.params.id, tx);
+      docServer = await DocumentServer.postById(req.params.id, tx);
       res.json({ id: docServer.id, posted: docServer.posted });
     });
   } catch (err) { next(err); }
@@ -444,7 +444,7 @@ router.get('/unpost/:id', async (req: Request, res: Response, next: NextFunction
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
-      const docServer = await DocumentServer.unPostById(req.params.id, tx);
+      docServer = await DocumentServer.unPostById(req.params.id, tx);
       res.json({ id: docServer.id, posted: docServer.posted });
     });
   } catch (err) { next(err); }
