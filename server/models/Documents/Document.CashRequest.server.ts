@@ -618,7 +618,9 @@ export class DocumentCashRequestServer extends DocumentCashRequest implements IS
         currency: сurrency,
         CashFlow: this.CashFlow,
         OperationType: this.Operation,
-        Loan: this.Operation === 'Выдача займа (МУЛЬТИВАЛЮТНАЯ)' ? this.Loan : null
+        Loan: this.Operation === 'Выдача займа (МУЛЬТИВАЛЮТНАЯ)' ? this.Loan : null,
+        CashOrBank: this.Operation === 'Выдача займа (МУЛЬТИВАЛЮТНАЯ)' ? this.CashOrBank : null,
+        BankAccountPerson: this.Operation === 'Выдача займа (МУЛЬТИВАЛЮТНАЯ)' ? this.CashRecipientBankAccount : null,
       });
       if (this.Operation === 'Выплата заработной платы без ведомости' && this.CashKind === 'CASH') movements.Contract = this.PersonContract;
       Registers.Accumulation.push(movements);
