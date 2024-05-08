@@ -13,6 +13,7 @@ export const bpApiHost = 'https://bp.x100-group.com/JettiProcesses/hs';
 export const LOGIC_USECASHREQUESTAPPROVING = process.env.LOGIC_USECASHREQUESTAPPROVING || '0';
 export const REGISTER_ACCUMULATION_SOURCE = process.env.REGISTER_ACCUMULATION_SOURCE || '';
 export const TRANSFORMED_REGISTER_MOVEMENTS_TABLE = '[dbo].[Register.Accumulation.Balance.RC]';
+export const ADD_PROPS_GROUP_ID = process.env.ADD_PROPS_GROUP_ID || '';
 
 const DB_PORT = parseInt(process.env.DB_PORT as string, undefined);
 

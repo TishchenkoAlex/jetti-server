@@ -1,3 +1,4 @@
+import { ADD_PROPS_GROUP_ID } from "../env/environment";
 import { MSSQL } from "../mssql";
 import { lib } from "../std.lib";
 import { CatalogOperationType } from "./Catalogs/Catalog.Operation.Type";
@@ -22,6 +23,7 @@ const byOwner = `SELECT top 1 id FROM [Catalog.Operation.Type.v] with (noexpand)
 export class AdditionalProps {
 
     static type = addPropsDocType;
+    static readonly groupId = ADD_PROPS_GROUP_ID;
 
     static availableModelsByType(type: string, tx: MSSQL) {
         return tx.manyOrNone<{ id: string, description: string }>(availableModelsByType, [type]);

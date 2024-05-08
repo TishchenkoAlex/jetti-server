@@ -60,6 +60,8 @@ spec:
           value: "2"
         - name: NODE_ENV
           value: production
+        - name: ADD_PROPS_GROUP_ID
+          value: 114EDE30-7845-11EB-A5B6-D9E8BA5F5F16          
         image: eu.gcr.io/jetti-x100/jetti-api:latest
         imagePullPolicy: Always
         name: jetti
