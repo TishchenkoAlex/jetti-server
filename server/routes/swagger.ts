@@ -194,8 +194,9 @@ async function saveDoc(
   const docServer = new DocumentServer(doc, tx);
   if (doc.isDoc && doc.posted)
     return await docServer.post({ postQueue, ...(opts || {}) });
-  else
+  if (doc.isDoc)
     return await docServer.unPost();
+  return await docServer.save();
 }
 
 
