@@ -102,8 +102,8 @@ export class DocumentServer<T extends DocumentBaseServer> {
             const docServer = await this.byId(id, tx);
             if (!docServer) throw this.errorNotExistId(id);
             docServer.doc.posted = false;
-            await docServer.deleteMovements();
             await docServer.upsert();
+            await docServer.deleteMovements();
             return docServer;
         } catch (ex) {
             throw new Error(ex);
@@ -154,8 +154,8 @@ export class DocumentServer<T extends DocumentBaseServer> {
         try {
             await this.tx.adminMode(true);
             this.doc.posted = false;
-            await this.deleteMovements();
             await this.upsert(options);
+            await this.deleteMovements();
             return this.doc;
         } catch (error) {
             throw new Error(error);
@@ -170,8 +170,8 @@ export class DocumentServer<T extends DocumentBaseServer> {
             await this.tx.adminMode(true);
             this.doc.code = this.doc.code || await this.newCode();
             this.doc.posted = options?.postQueue === undefined;
-            await this.deleteMovements();
             await this.upsert(options);
+            await this.deleteMovements();
             if (this.doc.posted)
                 await this.insertMovements();
             else
