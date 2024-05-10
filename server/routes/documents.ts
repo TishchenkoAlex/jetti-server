@@ -160,7 +160,8 @@ router.get('/restore/:type/:id', async (req: Request, res: Response, next: NextF
     const type = req.params.type as DocTypes;
     const settings = new FormListSettings();
     const history = await lib.doc.historyById(id, sdb);
-    const ServerDoc = await createDocumentServer(type, history!, sdb);
+    const current = await lib.doc.byId(history!.id, sdb);
+    const ServerDoc = await createDocumentServer(type, { ...history!, posted: current!.posted, deleted: current!.deleted }, sdb);
     ServerDoc.timestamp = new Date();
     const model = (await buildViewModel<DocumentBase>(ServerDoc, sdb))!;
     const columnsDef = buildColumnDef(ServerDoc.Props(), settings);
