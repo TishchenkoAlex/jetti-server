@@ -18,6 +18,7 @@ export class DocumentCashRequestRegistryServer extends DocumentCashRequestRegist
 
   async dynamicOperation(tx: MSSQL) {
     return (await lib.doc.byId(DocumentCashRequestRegistryServer.DynamicOperationId, tx)) as CatalogOperation;
+    
   }
 
   async dynamicPostScript(tx: MSSQL) {
