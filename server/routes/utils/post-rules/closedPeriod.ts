@@ -13,8 +13,8 @@ const CONST = {
         AND rls.partition = N'INVENTORY'
         AND r.date <= rls.date`,
         ERROR: {
-            DELETE: 'DELETE forbidden for closed data period in register "Inventory"',
-            INSERT: 'INSERT forbidden for closed data period in register "Inventory"',
+            DELETE: 'DELETE forbidden for closed data period in register "INVENTORY"',
+            INSERT: 'INSERT forbidden for closed data period in register "INVENTORY"',
         }
     },
     ALL: {
@@ -26,8 +26,8 @@ const CONST = {
         AND rls.partition = N'ALL'
         AND r.date <= rls.date`,
         ERROR: {
-            DELETE: 'DELETE forbidden for closed data period',
-            INSERT: 'INSERT forbidden for closed data period',
+            DELETE: 'DELETE forbidden for closed data period ALL',
+            INSERT: 'INSERT forbidden for closed data period ALL',
         }
     }
 }
