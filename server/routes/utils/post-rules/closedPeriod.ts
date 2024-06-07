@@ -34,7 +34,7 @@ const CONST = {
 
 
 export function checkClosedPeriodPartitionInventory({ minDate, operation, roles }: IRuleContext) {
-    if (roles.includes(CONST.INVENTORY.ROLE)) return;
+    // if (roles.includes(CONST.INVENTORY.ROLE)) return;
     const companies = minDate.byType.find(e => e.type === 'inventory')?.companies || [];
     const outdated = companies.find(e => RegisterRlsPeriod.isDateInClosedPeriod(e.date, e.company as string, RLS_PARTITION.INVENTORY));
     if (outdated) throw CONST.INVENTORY.ERROR[operation];
