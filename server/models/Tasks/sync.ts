@@ -3,6 +3,7 @@ import { lib } from '../../std.lib';
 import { MSSQL } from '../../mssql';
 import { Ref } from 'jetti-middle';
 import { TASKS_POOL } from '../../sql.pool.tasks';
+import { DocumentServer } from '../document.server';
 
 export default async function (job: Queue.Job) {
   const params = job.data;
@@ -36,7 +37,8 @@ export default async function (job: Queue.Job) {
         offset = offset + 1;
         job.data.message = `${params.companyName}, ${offset} of ${count}, last doc -> [${doc.description}]`;
         try {
-          await sdbq.tx(async tx => { await lib.doc.postById(doc.id, tx); });
+          await postDoc(doc.id, sdbq);
+          // await sdbq.tx(async tx => { await lib.doc.postById(doc.id, tx); });
         } catch (ex) {
           job.data.message = `!${ex}, ${job.data.message}`;
         }
@@ -47,4 +49,17 @@ export default async function (job: Queue.Job) {
     await job.progress(100);
   } catch (ex) { throw ex; }
   finally { await lib.util.adminMode(false, sdbq); }
+}
+
+
+async function postDoc(docId: Ref, sdb: MSSQL) {
+  let docServer: DocumentServer<any> | null = null;
+
+  await sdb.tx(async tx => {
+    docServer = await DocumentServer.postById(docId!, tx);
+  });
+
+  if (!!docServer) {
+    await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+  }
 }
