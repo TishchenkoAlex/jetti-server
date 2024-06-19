@@ -37,7 +37,7 @@ export class JCache implements CacheStorage {
     };
 
     set(key: string, value: any) {
-        console.info('[JCache.set]', key, '\n', value);
+        console.info('[JCache.set]', key);
         this.storage.set(key, value);
     };
 }
