@@ -58,6 +58,7 @@
         , [ProductPackage]
         , [Product]
         , [Currency]
+        , [batch]
         , SUM(ISNULL([Qty], 0)) [Qty]
         , SUM(ISNULL([Qty.In], 0)) [Qty.In]
         , SUM(ISNULL([Qty.Out], 0)) [Qty.Out]
@@ -70,7 +71,6 @@
         , SUM(ISNULL([AmountInBalance], 0)) [AmountInBalance]
         , SUM(ISNULL([AmountInBalance.In], 0)) [AmountInBalance.In]
         , SUM(ISNULL([AmountInBalance.Out], 0)) [AmountInBalance.Out]
-        , [batch]
         , COUNT_BIG(*) AS COUNT
       FROM [dbo].[Register.Accumulation.PaymentBatch]
       GROUP BY
@@ -895,10 +895,16 @@
         , [RetailNetwork]
         , [Department]
         , [Customer]
+        , [Aggregator]
         , [Product]
         , [Analytic]
         , [Manager]
+        , [DeliveryType]
+        , [OrderSource]
+        , [ParentOrderSource]
+        , [RetailClient]
         , [Storehouse]
+        , [Courier]
         , SUM(ISNULL([Cost], 0)) [Cost]
         , SUM(ISNULL([Cost.In], 0)) [Cost.In]
         , SUM(ISNULL([Cost.Out], 0)) [Cost.Out]
@@ -929,10 +935,16 @@
         , [RetailNetwork]
         , [Department]
         , [Customer]
+        , [Aggregator]
         , [Product]
         , [Analytic]
         , [Manager]
+        , [DeliveryType]
+        , [OrderSource]
+        , [ParentOrderSource]
+        , [RetailClient]
         , [Storehouse]
+        , [Courier]
       GO
       CREATE UNIQUE CLUSTERED INDEX [Register.Accumulation.Sales.TO] ON [dbo].[Register.Accumulation.Sales.TO.v] (
           [date],
@@ -941,10 +953,16 @@
         , [RetailNetwork]
         , [Department]
         , [Customer]
+        , [Aggregator]
         , [Product]
         , [Analytic]
         , [Manager]
-        , [Storehouse]);
+        , [DeliveryType]
+        , [OrderSource]
+        , [ParentOrderSource]
+        , [RetailClient]
+        , [Storehouse]
+        , [Courier]);
       GO
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.Sales.TO] AS SELECT * FROM [dbo].[Register.Accumulation.Sales.TO.v] WITH (NOEXPAND);
       GO
@@ -964,11 +982,7 @@
         , [Department]
         , [Person]
         , [Employee]
-        , [SalaryKind]
         , [Analytics]
-        , [PL]
-        , [PLAnalytics]
-        , [Status]
         , SUM(ISNULL([Amount], 0)) [Amount]
         , SUM(ISNULL([Amount.In], 0)) [Amount.In]
         , SUM(ISNULL([Amount.Out], 0)) [Amount.Out]
@@ -988,11 +1002,7 @@
         , [Department]
         , [Person]
         , [Employee]
-        , [SalaryKind]
         , [Analytics]
-        , [PL]
-        , [PLAnalytics]
-        , [Status]
       GO
       CREATE UNIQUE CLUSTERED INDEX [Register.Accumulation.Salary.TO] ON [dbo].[Register.Accumulation.Salary.TO.v] (
           [date],
@@ -1002,11 +1012,7 @@
         , [Department]
         , [Person]
         , [Employee]
-        , [SalaryKind]
-        , [Analytics]
-        , [PL]
-        , [PLAnalytics]
-        , [Status]);
+        , [Analytics]);
       GO
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.Salary.TO] AS SELECT * FROM [dbo].[Register.Accumulation.Salary.TO.v] WITH (NOEXPAND);
       GO
@@ -1025,6 +1031,7 @@
         , [currency]
         , [Department]
         , [ResponsiblePerson]
+        , [OE]
         , SUM(ISNULL([Amount], 0)) [Amount]
         , SUM(ISNULL([Amount.In], 0)) [Amount.In]
         , SUM(ISNULL([Amount.Out], 0)) [Amount.Out]
@@ -1043,6 +1050,7 @@
         , [currency]
         , [Department]
         , [ResponsiblePerson]
+        , [OE]
       GO
       CREATE UNIQUE CLUSTERED INDEX [Register.Accumulation.Depreciation.TO] ON [dbo].[Register.Accumulation.Depreciation.TO.v] (
           [date],
@@ -1050,7 +1058,8 @@
         , [OperationType]
         , [currency]
         , [Department]
-        , [ResponsiblePerson]);
+        , [ResponsiblePerson]
+        , [OE]);
       GO
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.Depreciation.TO] AS SELECT * FROM [dbo].[Register.Accumulation.Depreciation.TO.v] WITH (NOEXPAND);
       GO
@@ -1066,19 +1075,11 @@
           DATEADD(DAY, 1, CAST(EOMONTH([date], -1) AS DATE)) [date]
         , [company]
         , [currency]
-        , [CashFlow]
-        , [Status]
         , [CashRequest]
-        , [Contract]
         , [BankAccountPerson]
-        , [Department]
         , [OperationType]
-        , [Loan]
-        , [CashOrBank]
         , [CashRecipient]
-        , [ExpenseOrBalance]
-        , [ExpenseAnalytics]
-        , [BalanceAnalytics]
+        , [Status]
         , SUM(ISNULL([Amount], 0)) [Amount]
         , SUM(ISNULL([Amount.In], 0)) [Amount.In]
         , SUM(ISNULL([Amount.Out], 0)) [Amount.Out]
@@ -1088,37 +1089,21 @@
           DATEADD(DAY, 1, CAST(EOMONTH([date], -1) AS DATE))
         , [company]
         , [currency]
-        , [CashFlow]
-        , [Status]
         , [CashRequest]
-        , [Contract]
         , [BankAccountPerson]
-        , [Department]
         , [OperationType]
-        , [Loan]
-        , [CashOrBank]
         , [CashRecipient]
-        , [ExpenseOrBalance]
-        , [ExpenseAnalytics]
-        , [BalanceAnalytics]
+        , [Status]
       GO
       CREATE UNIQUE CLUSTERED INDEX [Register.Accumulation.CashToPay.TO] ON [dbo].[Register.Accumulation.CashToPay.TO.v] (
           [date],
           [company]
         , [currency]
-        , [CashFlow]
-        , [Status]
         , [CashRequest]
-        , [Contract]
         , [BankAccountPerson]
-        , [Department]
         , [OperationType]
-        , [Loan]
-        , [CashOrBank]
         , [CashRecipient]
-        , [ExpenseOrBalance]
-        , [ExpenseAnalytics]
-        , [BalanceAnalytics]);
+        , [Status]);
       GO
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.CashToPay.TO] AS SELECT * FROM [dbo].[Register.Accumulation.CashToPay.TO.v] WITH (NOEXPAND);
       GO
@@ -1133,15 +1118,12 @@
       SELECT
           DATEADD(DAY, 1, CAST(EOMONTH([date], -1) AS DATE)) [date]
         , [company]
-        , [Analytics]
-        , [MovementType]
+        , [currency]
         , [Creator]
         , [CreatorContract]
         , [Recipient]
         , [RecipientContract]
         , [Batch]
-        , [Source]
-        , [currency]
         , SUM(ISNULL([Amount], 0)) [Amount]
         , SUM(ISNULL([Amount.In], 0)) [Amount.In]
         , SUM(ISNULL([Amount.Out], 0)) [Amount.Out]
@@ -1156,28 +1138,22 @@
       GROUP BY
           DATEADD(DAY, 1, CAST(EOMONTH([date], -1) AS DATE))
         , [company]
-        , [Analytics]
-        , [MovementType]
+        , [currency]
         , [Creator]
         , [CreatorContract]
         , [Recipient]
         , [RecipientContract]
         , [Batch]
-        , [Source]
-        , [currency]
       GO
       CREATE UNIQUE CLUSTERED INDEX [Register.Accumulation.CharityAnalytic.TO] ON [dbo].[Register.Accumulation.CharityAnalytic.TO.v] (
           [date],
           [company]
-        , [Analytics]
-        , [MovementType]
+        , [currency]
         , [Creator]
         , [CreatorContract]
         , [Recipient]
         , [RecipientContract]
-        , [Batch]
-        , [Source]
-        , [currency]);
+        , [Batch]);
       GO
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.CharityAnalytic.TO] AS SELECT * FROM [dbo].[Register.Accumulation.CharityAnalytic.TO.v] WITH (NOEXPAND);
       GO
@@ -1195,6 +1171,11 @@
         , [Department]
         , [Scenario]
         , [BudgetItem]
+        , [Anatitic1]
+        , [Anatitic2]
+        , [Anatitic3]
+        , [Anatitic4]
+        , [Anatitic5]
         , [currency]
         , SUM(ISNULL([Amount], 0)) [Amount]
         , SUM(ISNULL([Amount.In], 0)) [Amount.In]
@@ -1219,6 +1200,11 @@
         , [Department]
         , [Scenario]
         , [BudgetItem]
+        , [Anatitic1]
+        , [Anatitic2]
+        , [Anatitic3]
+        , [Anatitic4]
+        , [Anatitic5]
         , [currency]
       GO
       CREATE UNIQUE CLUSTERED INDEX [Register.Accumulation.BudgetItemTurnover.TO] ON [dbo].[Register.Accumulation.BudgetItemTurnover.TO.v] (
@@ -1227,6 +1213,11 @@
         , [Department]
         , [Scenario]
         , [BudgetItem]
+        , [Anatitic1]
+        , [Anatitic2]
+        , [Anatitic3]
+        , [Anatitic4]
+        , [Anatitic5]
         , [currency]);
       GO
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.BudgetItemTurnover.TO] AS SELECT * FROM [dbo].[Register.Accumulation.BudgetItemTurnover.TO.v] WITH (NOEXPAND);
@@ -1242,6 +1233,7 @@
       SELECT
           DATEADD(DAY, 1, CAST(EOMONTH([date], -1) AS DATE)) [date]
         , [company]
+        , [currency]
         , [Intercompany]
         , [LegalCompanySender]
         , [LegalCompanyRecipient]
@@ -1259,6 +1251,7 @@
       GROUP BY
           DATEADD(DAY, 1, CAST(EOMONTH([date], -1) AS DATE))
         , [company]
+        , [currency]
         , [Intercompany]
         , [LegalCompanySender]
         , [LegalCompanyRecipient]
@@ -1266,6 +1259,7 @@
       CREATE UNIQUE CLUSTERED INDEX [Register.Accumulation.Intercompany.TO] ON [dbo].[Register.Accumulation.Intercompany.TO.v] (
           [date],
           [company]
+        , [currency]
         , [Intercompany]
         , [LegalCompanySender]
         , [LegalCompanyRecipient]);
@@ -1283,11 +1277,10 @@
       SELECT
           DATEADD(DAY, 1, CAST(EOMONTH([date], -1) AS DATE)) [date]
         , [company]
-        , [AcquiringTerminal]
-        , [OperationType]
-        , [Department]
-        , [CashFlow]
         , [currency]
+        , [AcquiringTerminal]
+        , [AcquiringTerminalCode1]
+        , [Department]
         , SUM(ISNULL([Amount], 0)) [Amount]
         , SUM(ISNULL([Amount.In], 0)) [Amount.In]
         , SUM(ISNULL([Amount.Out], 0)) [Amount.Out]
@@ -1305,20 +1298,18 @@
       GROUP BY
           DATEADD(DAY, 1, CAST(EOMONTH([date], -1) AS DATE))
         , [company]
-        , [AcquiringTerminal]
-        , [OperationType]
-        , [Department]
-        , [CashFlow]
         , [currency]
+        , [AcquiringTerminal]
+        , [AcquiringTerminalCode1]
+        , [Department]
       GO
       CREATE UNIQUE CLUSTERED INDEX [Register.Accumulation.Acquiring.TO] ON [dbo].[Register.Accumulation.Acquiring.TO.v] (
           [date],
           [company]
+        , [currency]
         , [AcquiringTerminal]
-        , [OperationType]
-        , [Department]
-        , [CashFlow]
-        , [currency]);
+        , [AcquiringTerminalCode1]
+        , [Department]);
       GO
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.Acquiring.TO] AS SELECT * FROM [dbo].[Register.Accumulation.Acquiring.TO.v] WITH (NOEXPAND);
       GO
@@ -1335,12 +1326,10 @@
         , [company]
         , [RetailNetwork]
         , [Department]
-        , [OrderId]
         , [OwnerInner]
         , [OwnerExternal]
         , [PromotionChannel]
         , [currency]
-        , [batch]
         , SUM(ISNULL([Qty], 0)) [Qty]
         , SUM(ISNULL([Qty.In], 0)) [Qty.In]
         , SUM(ISNULL([Qty.Out], 0)) [Qty.Out]
@@ -1360,24 +1349,20 @@
         , [company]
         , [RetailNetwork]
         , [Department]
-        , [OrderId]
         , [OwnerInner]
         , [OwnerExternal]
         , [PromotionChannel]
         , [currency]
-        , [batch]
       GO
       CREATE UNIQUE CLUSTERED INDEX [Register.Accumulation.PromotionPoints.TO] ON [dbo].[Register.Accumulation.PromotionPoints.TO.v] (
           [date],
           [company]
         , [RetailNetwork]
         , [Department]
-        , [OrderId]
         , [OwnerInner]
         , [OwnerExternal]
         , [PromotionChannel]
-        , [currency]
-        , [batch]);
+        , [currency]);
       GO
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.PromotionPoints.TO] AS SELECT * FROM [dbo].[Register.Accumulation.PromotionPoints.TO.v] WITH (NOEXPAND);
       GO
@@ -1398,11 +1383,11 @@
         , [StaffingTablePosition]
         , [Employee]
         , [Person]
+        , [SalaryAnalytic]
+        , [currency]
         , SUM(ISNULL([SalaryRate], 0)) [SalaryRate]
         , SUM(ISNULL([SalaryRate.In], 0)) [SalaryRate.In]
         , SUM(ISNULL([SalaryRate.Out], 0)) [SalaryRate.Out]
-        , [SalaryAnalytic]
-        , [currency]
         , SUM(ISNULL([Amount], 0)) [Amount]
         , SUM(ISNULL([Amount.In], 0)) [Amount.In]
         , SUM(ISNULL([Amount.Out], 0)) [Amount.Out]
@@ -1450,7 +1435,6 @@
         , [company]
         , [currency]
         , [MoneyDocument]
-        , [Sourse]
         , SUM(ISNULL([Amount], 0)) [Amount]
         , SUM(ISNULL([Amount.In], 0)) [Amount.In]
         , SUM(ISNULL([Amount.Out], 0)) [Amount.Out]
@@ -1467,14 +1451,12 @@
         , [company]
         , [currency]
         , [MoneyDocument]
-        , [Sourse]
       GO
       CREATE UNIQUE CLUSTERED INDEX [Register.Accumulation.MoneyDocuments.TO] ON [dbo].[Register.Accumulation.MoneyDocuments.TO.v] (
           [date],
           [company]
         , [currency]
-        , [MoneyDocument]
-        , [Sourse]);
+        , [MoneyDocument]);
       GO
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.MoneyDocuments.TO] AS SELECT * FROM [dbo].[Register.Accumulation.MoneyDocuments.TO.v] WITH (NOEXPAND);
       GO

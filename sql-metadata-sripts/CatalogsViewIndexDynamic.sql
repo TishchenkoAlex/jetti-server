@@ -55,6 +55,9 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isDefault"')), 0) [isDefault]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Code1"')), '') [Code1]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isLocal"')), 0) [isLocal]
+, ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isSoftTerminal"')), 0) [isSoftTerminal]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."OwnerTerminal"')) [OwnerTerminal]
+, ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isDisabled"')), 0) [isDisabled]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.AcquiringTerminal';
 GO
@@ -87,7 +90,7 @@ GO
 CREATE OR ALTER VIEW dbo.[Catalog.Advertising.v] WITH SCHEMABINDING AS
 SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."kind"')), '') [kind]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."kind"')), '') [kind]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."shortDescription"')), '') [shortDescription]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."fullDescription"')), '') [fullDescription]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isActive"')), 0) [isActive]
@@ -95,7 +98,7 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."dateTill"'),127) [dateTill]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."availableCron"')), '') [availableCron]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."slug"')), '') [slug]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."typeAction"')), '') [typeAction]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."typeAction"')), '') [typeAction]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."valueAction"')), '') [valueAction]
 , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."slugIndex"')), 0) [slugIndex]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."retailNetwork"')) [retailNetwork]
@@ -119,6 +122,46 @@ GRANT SELECT ON dbo.[Catalog.Advertising.v] TO jetti;
 RAISERROR('Catalog.Advertising end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Advertising ------------------------------
+
+
+------------------------------ BEGIN Catalog.Attachment ------------------------------
+
+RAISERROR('Catalog.Attachment start', 0 ,1) WITH NOWAIT;
+DROP TABLE IF EXISTS dbo.[Catalog.Attachment.v]
+GO
+
+DROP TRIGGER IF EXISTS dbo.[Catalog.Attachment.t]
+GO
+
+CREATE OR ALTER VIEW dbo.[Catalog.Attachment.v] WITH SCHEMABINDING AS
+SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."owner"')) [owner]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."AttachmentType"')) [AttachmentType]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Storage"')), '') [Storage]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Tags"')), '') [Tags]
+, ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."FileSize"')), 0) [FileSize]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."FileName"')), '') [FileName]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."MIMEType"')), '') [MIMEType]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Hash"')), '') [Hash]
+FROM dbo.[Documents]
+WHERE [type] = N'Catalog.Attachment';
+GO
+
+CREATE UNIQUE CLUSTERED INDEX [Catalog.Attachment.v] ON [Catalog.Attachment.v](id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Attachment.v.deleted] ON [Catalog.Attachment.v](deleted,description,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Attachment.v.code.f] ON [Catalog.Attachment.v](parent,isfolder,code,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Attachment.v.description.f] ON [Catalog.Attachment.v](parent,isfolder,description,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Attachment.v.description] ON [Catalog.Attachment.v](description,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Attachment.v.code] ON [Catalog.Attachment.v](code,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Attachment.v.user] ON [Catalog.Attachment.v]([user],id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Attachment.v.company] ON [Catalog.Attachment.v](company,id);
+GO
+
+GRANT SELECT ON dbo.[Catalog.Attachment.v] TO jetti;
+RAISERROR('Catalog.Attachment end', 0 ,1) WITH NOWAIT;
+
+------------------------------ END Catalog.Attachment ------------------------------
 
 
 ------------------------------ BEGIN Catalog.BRMRules ------------------------------
@@ -181,7 +224,7 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."PriceType"')) [PriceType]
 , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."GeocodeRadius"')), 0) [GeocodeRadius]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."CallCenterPhone"')), '') [CallCenterPhone]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."SalaryRateRegion"')), '') [SalaryRateRegion]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."SalaryRateRegion"')), '') [SalaryRateRegion]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.BusinessRegion';
 GO
@@ -249,8 +292,8 @@ CREATE OR ALTER VIEW dbo.[Catalog.Contract.v] WITH SCHEMABINDING AS
 SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."owner"')) [owner]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."Status"')), '') [Status]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."kind"')), '') [kind]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."Status"')), '') [Status]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."kind"')), '') [kind]
 , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."StartDate"'),127) [StartDate]
 , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."EndDate"'),127) [EndDate]
 , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Indulgence"')), 0) [Indulgence]
@@ -263,13 +306,13 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."ResponsiblePerson"')) [ResponsiblePerson]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isDefault"')), 0) [isDefault]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."notAccounting"')), 0) [notAccounting]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."RoyaltyArrangements"')), '') [RoyaltyArrangements]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."RoyaltyArrangements"')), '') [RoyaltyArrangements]
 , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."RoyaltyDelayTo"'),127) [RoyaltyDelayTo]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."PaymentKC"')), '') [PaymentKC]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."PaymentKC"')), '') [PaymentKC]
 , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."RoyaltyPercent"')), 0) [RoyaltyPercent]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."PaymentOVM"')), '') [PaymentOVM]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."PaymentOKK"')), '') [PaymentOKK]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."PaymentKRO"')), '') [PaymentKRO]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."PaymentOVM"')), '') [PaymentOVM]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."PaymentOKK"')), '') [PaymentOKK]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."PaymentKRO"')), '') [PaymentKRO]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."OtherServices"')), '') [OtherServices]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Department"')) [Department]
 FROM dbo.[Documents]
@@ -304,7 +347,7 @@ GO
 CREATE OR ALTER VIEW dbo.[Catalog.Counterpartie.v] WITH SCHEMABINDING AS
 SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."kind"')), '') [kind]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."kind"')), '') [kind]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."FullName"')), '') [FullName]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Department"')) [Department]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."Client"')), 0) [Client]
@@ -354,7 +397,7 @@ GO
 CREATE OR ALTER VIEW dbo.[Catalog.Department.Company.v] WITH SCHEMABINDING AS
 SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."kind"')), '') [kind]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."kind"')), '') [kind]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."ShortName"')), '') [ShortName]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."SecurityGroup"')), '') [SecurityGroup]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Department"')) [Department]
@@ -429,6 +472,7 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."KindInvestorGroup"')) [KindInvestorGroup]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."NameAD"')), '') [NameAD]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Product"')) [Product]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."ResponsibilityCenter"')) [ResponsibilityCenter]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.InvestorGroup';
 GO
@@ -531,20 +575,20 @@ GO
 CREATE OR ALTER VIEW dbo.[Catalog.Loan.v] WITH SCHEMABINDING AS
 SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
-, TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."PayDay"'),127) [PayDay]
-, TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."CloseDay"'),127) [CloseDay]
-, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."owner"')) [owner]
-, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."OwnerBankAccount"')) [OwnerBankAccount]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."CashKind"')), '') [CashKind]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."kind"')), '') [kind]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."Status"')), '') [Status]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."Status"')), '') [Status]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."InvestorGroup"')) [InvestorGroup]
-, ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."InterestRate"')), 0) [InterestRate]
-, TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."InterestDeadline"'),127) [InterestDeadline]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."loanType"')) [loanType]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Department"')) [Department]
-, ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."AmountLoan"')), 0) [AmountLoan]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."currency"')) [currency]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."kind"')), '') [kind]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."owner"')) [owner]
+, TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."PayDay"'),127) [PayDay]
+, TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."CloseDay"'),127) [CloseDay]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."CashKind"')), '') [CashKind]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."OwnerBankAccount"')) [OwnerBankAccount]
+, ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."InterestRate"')), 0) [InterestRate]
+, TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."InterestDeadline"'),127) [InterestDeadline]
+, ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."AmountLoan"')), 0) [AmountLoan]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Country"')) [Country]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Lot"')) [Lot]
 , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."LotQty"')), 0) [LotQty]
@@ -692,11 +736,13 @@ GO
 CREATE OR ALTER VIEW dbo.[Catalog.OrderSource.v] WITH SCHEMABINDING AS
 SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."Kind"')), '') [Kind]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."SourceType"')), '') [SourceType]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."Kind"')), '') [Kind]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."SourceType"')), '') [SourceType]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Country"')) [Country]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Counterpartie"')) [Counterpartie]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."venusHubSource"')), '') [venusHubSource]
+, ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."ExportSaturation"')), 0) [ExportSaturation]
+, ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."ExportDeliveryZones"')), 0) [ExportDeliveryZones]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.OrderSource';
 GO
@@ -730,7 +776,7 @@ CREATE OR ALTER VIEW dbo.[Catalog.Person.v] WITH SCHEMABINDING AS
 SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."ParentPerson"')) [ParentPerson]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."Gender"')), '') [Gender]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."Gender"')), '') [Gender]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."FirstName"')), '') [FirstName]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."LastName"')), '') [LastName]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."MiddleName"')), '') [MiddleName]
@@ -759,6 +805,7 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Pincode"')), '') [Pincode]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."Fired"')), 0) [Fired]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."PayoutBlocked"')), 0) [PayoutBlocked]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."AccountEntraID"')), '') [AccountEntraID]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.Person';
 GO
@@ -766,8 +813,10 @@ GO
 CREATE UNIQUE CLUSTERED INDEX [Catalog.Person.v] ON [Catalog.Person.v](id);
 CREATE NONCLUSTERED INDEX [Catalog.Person.v.AccountAD.u] ON [Catalog.Person.v]([AccountAD]) INCLUDE([company],[description],[id]);
 CREATE NONCLUSTERED INDEX [Catalog.Person.v.SMAccount.u] ON [Catalog.Person.v]([SMAccount]) INCLUDE([company],[description],[id]);
+CREATE NONCLUSTERED INDEX [Catalog.Person.v.AccountEntraID.u] ON [Catalog.Person.v]([AccountEntraID]) INCLUDE([company],[description],[id]);
 CREATE NONCLUSTERED INDEX [Catalog.Person.v.AccountAD.c] ON [Catalog.Person.v]([AccountAD]) INCLUDE([company]);
 CREATE NONCLUSTERED INDEX [Catalog.Person.v.SMAccount.c] ON [Catalog.Person.v]([SMAccount]) INCLUDE([company]);
+CREATE NONCLUSTERED INDEX [Catalog.Person.v.AccountEntraID.c] ON [Catalog.Person.v]([AccountEntraID]) INCLUDE([company]);
 CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Person.v.deleted] ON [Catalog.Person.v](deleted,description,id);
 CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Person.v.code.f] ON [Catalog.Person.v](parent,isfolder,code,id);
 CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Person.v.description.f] ON [Catalog.Person.v](parent,isfolder,description,id);
@@ -800,11 +849,11 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."SalaryProject"')) [SalaryProject]
 , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."OpenDate"'),127) [OpenDate]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."CardId"')), '') [CardId]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."CardBank"')), '') [CardBank]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."CardBank"')), '') [CardBank]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."CryptoWalletId"')), '') [CryptoWalletId]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."CryptoNetwork"')), '') [CryptoNetwork]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."CryptoNetwork"')), '') [CryptoNetwork]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."PersonExchangeId"')), '') [PersonExchangeId]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."PersonExchangeValue"')), '') [PersonExchangeValue]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."PersonExchangeValue"')), '') [PersonExchangeValue]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."CorporateBankAccount"')), '') [CorporateBankAccount]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."CorporateBankCode"')), '') [CorporateBankCode]
 FROM dbo.[Documents]
@@ -841,11 +890,11 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."owner"')) [owner]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."currency"')) [currency]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."Status"')), '') [Status]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."Status"')), '') [Status]
 , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."StartDate"'),127) [StartDate]
 , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."EndDate"'),127) [EndDate]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."BankAccount"')) [BankAccount]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."Kind"')), '') [Kind]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."Kind"')), '') [Kind]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.Person.Contract';
 GO
@@ -901,7 +950,7 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Proteins"')), 0) [Proteins]
 , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."CookingTime"')), 0) [CookingTime]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Composition"')), '') [Composition]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."CookingPlace"')), '') [CookingPlace]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."CookingPlace"')), '') [CookingPlace]
 , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Order"')), 0) [Order]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Barcode"')), '') [Barcode]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Eancode"')), '') [Eancode]
@@ -975,6 +1024,40 @@ RAISERROR('Catalog.ProductCategory end', 0 ,1) WITH NOWAIT;
 ------------------------------ END Catalog.ProductCategory ------------------------------
 
 
+------------------------------ BEGIN Catalog.ProductKind ------------------------------
+
+RAISERROR('Catalog.ProductKind start', 0 ,1) WITH NOWAIT;
+DROP TABLE IF EXISTS dbo.[Catalog.ProductKind.v]
+GO
+
+DROP TRIGGER IF EXISTS dbo.[Catalog.ProductKind.t]
+GO
+
+CREATE OR ALTER VIEW dbo.[Catalog.ProductKind.v] WITH SCHEMABINDING AS
+SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."ProductType"')), '') [ProductType]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."ShareType"')) [ShareType]
+FROM dbo.[Documents]
+WHERE [type] = N'Catalog.ProductKind';
+GO
+
+CREATE UNIQUE CLUSTERED INDEX [Catalog.ProductKind.v] ON [Catalog.ProductKind.v](id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ProductKind.v.deleted] ON [Catalog.ProductKind.v](deleted,description,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ProductKind.v.code.f] ON [Catalog.ProductKind.v](parent,isfolder,code,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ProductKind.v.description.f] ON [Catalog.ProductKind.v](parent,isfolder,description,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ProductKind.v.description] ON [Catalog.ProductKind.v](description,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ProductKind.v.code] ON [Catalog.ProductKind.v](code,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ProductKind.v.user] ON [Catalog.ProductKind.v]([user],id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ProductKind.v.company] ON [Catalog.ProductKind.v](company,id);
+GO
+
+GRANT SELECT ON dbo.[Catalog.ProductKind.v] TO jetti;
+RAISERROR('Catalog.ProductKind end', 0 ,1) WITH NOWAIT;
+
+------------------------------ END Catalog.ProductKind ------------------------------
+
+
 ------------------------------ BEGIN Catalog.ReasonTypes ------------------------------
 
 RAISERROR('Catalog.ReasonTypes start', 0 ,1) WITH NOWAIT;
@@ -990,7 +1073,8 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."WriteOff"')), 0) [WriteOff]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Expense"')) [Expense]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."ExpenseAnalynic"')) [ExpenseAnalynic]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."Kind"')), '') [Kind]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."Kind"')), '') [Kind]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."Destination"')), '') [Destination]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.ReasonTypes';
 GO
@@ -1023,7 +1107,7 @@ GO
 CREATE OR ALTER VIEW dbo.[Catalog.RetailClient.v] WITH SCHEMABINDING AS
 SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."Gender"')), '') [Gender]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."Gender"')), '') [Gender]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isBlocked"')), 0) [isBlocked]
 , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."CreateDate"'),127) [CreateDate]
 , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."Birthday"'),127) [Birthday]
@@ -1035,7 +1119,7 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."RetailNetwork"')) [RetailNetwork]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."BusinessRegion"')) [BusinessRegion]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."SailplayId"')), '') [SailplayId]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."Source"')), '') [Source]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."Source"')), '') [Source]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Address"')), '') [Address]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.RetailClient';
@@ -1077,17 +1161,19 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Country"')) [Country]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Currency"')) [Currency]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."customerSupportPhone"')), '') [customerSupportPhone]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."DefaultMapService"')), '') [DefaultMapService]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."DefaultMapService"')), '') [DefaultMapService]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isDeleted"')), 0) [isDeleted]
 , ISNULL(TRY_CONVERT(NVARCHAR(250), JSON_VALUE(doc,N'$."keyVaultURL"')), '') [keyVaultURL]
 , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."maxTotalOrder"')), 0) [maxTotalOrder]
 , ISNULL(TRY_CONVERT(NVARCHAR(250), JSON_VALUE(doc,N'$."PlaceHolder"')), '') [PlaceHolder]
 , ISNULL(TRY_CONVERT(NVARCHAR(250), JSON_VALUE(doc,N'$."publicOfferUrl"')), '') [publicOfferUrl]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."ServiceProduct"')) [ServiceProduct]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."smsGateway"')), '') [smsGateway]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."smsGateway"')), '') [smsGateway]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."usePriceByAggregator"')), 0) [usePriceByAggregator]
 , ISNULL(TRY_CONVERT(NVARCHAR(250), JSON_VALUE(doc,N'$."sailplayCredentials"')), '') [sailplayCredentials]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Slug"')), '') [Slug]
+, ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isCashRequestRecipientApprovingUsed"')), 0) [isCashRequestRecipientApprovingUsed]
+, ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isCashRequestCFRecipientApprovingUsed"')), 0) [isCashRequestCFRecipientApprovingUsed]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.RetailNetwork';
 GO
@@ -1122,7 +1208,7 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Brand"')) [Brand]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."MainProduct"')) [MainProduct]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."Status"')), '') [Status]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."Status"')), '') [Status]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."FullDescription"')), '') [FullDescription]
 , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."StartDate"'),127) [StartDate]
 , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."EndDate"'),127) [EndDate]
@@ -1198,7 +1284,7 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Carrier"')) [Carrier]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Model"')), '') [Model]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."RegNumber"')), '') [RegNumber]
-, ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."kind"')), '') [kind]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."kind"')), '') [kind]
 , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Carrying"')), 0) [Carrying]
 , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Capacity"')), 0) [Capacity]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."ModelTrailer"')), '') [ModelTrailer]

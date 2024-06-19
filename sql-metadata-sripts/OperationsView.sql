@@ -55,6 +55,8 @@
         , d.[MaxOrdersPerHour] [MaxOrdersPerHour]
         , d.[provider] [provider]
         , d.[outletId] [outletId]
+        , d.[hiddenClientPhone] [hiddenClientPhone]
+        , d.[isAllowedToChangeOrderStatusToReady] [isAllowedToChangeOrderStatusToReady]
         , d.[isPlanningSemifinished] [isPlanningSemifinished]
         , d.[PickupTimeOpen] [PickupTimeOpen]
         , d.[PickupTimeClose] [PickupTimeClose]
