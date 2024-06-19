@@ -47,7 +47,7 @@ export class SQLGenegatorMetadata {
         }
         case 'enum': {
           return `
-        , TRY_CONVERT(VARCHAR(36), JSON_VALUE(data, '$."${prop}"')) [${prop}]`;
+        , TRY_CONVERT(VARCHAR(150), JSON_VALUE(data, '$."${prop}"')) [${prop}]`;
         }
         default: {
           return `
