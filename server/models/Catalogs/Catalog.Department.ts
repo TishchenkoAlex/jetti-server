@@ -110,6 +110,9 @@ export class CatalogDepartment extends DocumentBase {
   @Props({ type: 'number', required: false, isAdditional: true, label: 'Площадь (торговая) кв.м.', isNotCopy: true })
   AreaTrade = '';
 
+  @Props({ type: 'number', required: false, isAdditional: true, label: 'Этаж', isNotCopy: true })
+  Floor = '';
+
   @Props({ type: 'enum', value: ['ANALYTICS', 'SYNTHETICS', 'NONE'] })
   IntegrationType = '';
 
