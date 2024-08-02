@@ -17,7 +17,8 @@ router.post('/login', async (req, res, next) => {
     if (!password) { return res.status(401).json({ message: 'Auth failed: password required' }); }
     if (!(
       email === 'exchange@sushi-master.net' ||
-      email === 'setka.service.account@sushi-master.net'
+      email === 'setka.service.account@sushi-master.net' ||
+      email === 'kolpakov.d@sushi-master.net'
     )) {
       return res.status(401).json({ message: 'Auth failed: wrong user name' });
     }
