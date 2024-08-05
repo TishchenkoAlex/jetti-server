@@ -136,8 +136,9 @@ export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
   const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
   const jsonDoc = JSON.stringify(noSqlDocument);
   const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
+  const operationFilter = serverDoc.type === 'Document.Operation' ? `Documents.operation = '${serverDoc['Operation']}'` : 'Documents.operation IS NULL';
 
-  const response = <INoSqlDocument>await tx.oneOrNone<INoSqlDocument>(`
+  const query = `
   DECLARE @DocId UNIQUEIDENTIFIER;
 
   SELECT @DocId = id FROM Documents WHERE id = @p2;
@@ -175,7 +176,7 @@ export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
   BEGIN
     UPDATE Documents
         SET
-          type = i.type, parent = i.parent,
+          parent = i.parent,
           date = i.date, code = i.code, description = i.description,
           posted = i.posted, deleted = i.deleted, isfolder = i.isfolder,
           "user" = i."user", company = i.company, info = i.info, timestamp = GETDATE(), doc = i.doc
@@ -183,9 +184,7 @@ export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
         FROM (
           SELECT *
           FROM OPENJSON(@p1) WITH (
-            [id] UNIQUEIDENTIFIER,
             [date] DATETIME,
-            [type] NVARCHAR(100),
             [code] NVARCHAR(36),
             [description] NVARCHAR(150),
             [posted] BIT,
@@ -201,10 +200,15 @@ export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
             ,[ExchangeBase] NVARCHAR(50)` : ''}
           )
         ) i
-      WHERE Documents.id = i.id;
+      WHERE
+      ${operationFilter} AND
+      Documents.type = N'${serverDoc.type}' AND
+      Documents.id = @DocId;
   END
 
-  SELECT * FROM Documents WHERE id = @p2`, [jsonDoc, serverDoc.id]);
+  SELECT * FROM Documents WHERE id = @p2`;
+
+  const response = <INoSqlDocument>await tx.oneOrNone<INoSqlDocument>(query, [jsonDoc, serverDoc.id]);
 
   await afterSaveDocument(serverDoc, tx);
 
