@@ -129,19 +129,20 @@ export async function updateDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
   return serverDoc;
 }
 
-export async function _upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
+export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
 
   await beforeSaveDocument(serverDoc, tx);
 
   const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
   const jsonDoc = JSON.stringify(noSqlDocument);
   const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
-  const operationFilter = serverDoc.type === 'Document.Operation' ? `Documents.operation = '${serverDoc['Operation']}'` : 'Documents.operation IS NULL';
+  const operationFilter = serverDoc.type === 'Document.Operation' ? `Documents.operation = @Operation` : 'Documents.operation IS NULL';
 
   const query = `
   DECLARE @DocId UNIQUEIDENTIFIER;
+  DECLARE @Operation UNIQUEIDENTIFIER;
 
-  SELECT @DocId = id FROM Documents WHERE id = @p2;
+  SELECT @DocId = id, @Operation = operation FROM Documents WHERE id = @p2;
 
   IF @DocId IS NULL
   BEGIN
@@ -201,7 +202,7 @@ export async function _upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, 
           )
         ) i
       WHERE
-      ${operationFilter} AND
+     ${operationFilter} AND
       Documents.type = N'${serverDoc.type}' AND
       Documents.id = @DocId;
   END
@@ -216,7 +217,7 @@ export async function _upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, 
   return serverDoc;
 }
 
-export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
+export async function _upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
 
   await beforeSaveDocument(serverDoc, tx);
 
