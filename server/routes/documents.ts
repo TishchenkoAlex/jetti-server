@@ -415,7 +415,7 @@ router.post('unused/post', async (req: Request, res: Response, next: NextFunctio
 });
 
 // Post by id (without returns posted object to client, for post in cicle many docs)
-router.get('/post/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/deprecated/post/:id', async (req: Request, res: Response, next: NextFunction) => {
 
   let docServer: DocumentServer<any> | null = null;
 
@@ -437,8 +437,34 @@ router.get('/post/:id', async (req: Request, res: Response, next: NextFunction) 
 
 });
 
+
+router.get('/post/:id', async (req: Request, res: Response, next: NextFunction) => {
+
+  let docServer: DocumentServer<any> | undefined;
+
+  try {
+    const sdb = SDB(req);
+
+    await sdb.tx(async tx => {
+      docServer = await DocumentServer.byId(req.params.id, tx)
+      if (!docServer) throw DocumentServer.errorNotExistId(req.params.id);
+      await docServer.post();
+      res.json({ id: docServer.id, posted: docServer.posted });
+    });
+  } catch (err) { next(err); }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[route.post.id.afterTxCommitted]', error);
+    }
+  }
+
+});
+
 // unPost by id (without returns posted object to client, for post in cicle many docs)
-router.get('/unpost/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/deprecated/unpost/:id', async (req: Request, res: Response, next: NextFunction) => {
 
   let docServer: DocumentServer<any> | null = null;
 
@@ -455,6 +481,31 @@ router.get('/unpost/:id', async (req: Request, res: Response, next: NextFunction
       await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
     } catch (error) {
       console.error('[route.unpost/:id]', error);
+    }
+  }
+});
+
+
+router.get('/unpost/:id', async (req: Request, res: Response, next: NextFunction) => {
+
+  let docServer: DocumentServer<any> | undefined;
+
+  try {
+    const sdb = SDB(req);
+
+    await sdb.tx(async tx => {
+      docServer = await DocumentServer.byId(req.params.id, tx)
+      if (!docServer) throw DocumentServer.errorNotExistId(req.params.id);
+      await docServer.unPost();
+      res.json({ id: docServer.id, posted: docServer.posted });
+    });
+  } catch (err) { next(err); }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[route.unpost.id.afterTxCommitted]', error);
     }
   }
 });
