@@ -809,9 +809,9 @@ function taskPoolTx(): MSSQL {
     { email: 'service@service.com', isAdmin: true, description: 'service account', env: {}, roles: [] });
 }
 
-async function executeGETRequest(opts: { baseURL: string, query: string }): Promise<any> {
+async function executeGETRequest(opts: { baseURL: string, query: string, config?: any }): Promise<any> {
   const instance = axios.create({ baseURL: opts.baseURL });
-  return await instance.get(opts.query);
+  return await instance.get(opts.query, opts.config);
 }
 
 async function executePOSTRequest(opts: { url: string, data: any, config?: any }): Promise<any> {
