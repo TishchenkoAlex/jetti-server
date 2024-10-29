@@ -170,7 +170,8 @@ export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
         ${withExchangeInfo ? `
         ,[ExchangeCode] NVARCHAR(50)
         ,[ExchangeBase] NVARCHAR(50)` : ''}
-      );
+      )
+      WHERE [type] = N'${noSqlDocument!.type}';
   END
 
   IF NOT @DocId IS NULL
