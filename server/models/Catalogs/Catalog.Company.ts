@@ -89,4 +89,7 @@ export class CatalogCompany extends DocumentBase {
   @Props({ type: 'enum', value: ['ACTIVE', 'CLOSED'], isIndexed: true, isAdditional: true })
   Status = 'ACTIVE';
 
+  @Props({ type: 'Catalog.Person' })
+  CEO: Ref = null;
+
 }
