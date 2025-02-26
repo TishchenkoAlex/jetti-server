@@ -68,9 +68,14 @@ router.post('/BP/StartProcess', async (req: Request, res: Response, next: NextFu
 
     if (OperationTypeID === 'Выплата заработной платы без ведомости' && DocumentID) {
       const tx = SDB(req);
-      const servDoc = await lib.doc.createDocServerById(DocumentID, tx);
-      const err = await servDoc!['checkTaxCheck'](tx);
-      if (err) return res.json({error: true, message: err});
+      const isRoleAvailable = await lib.util.isRoleAvailable('Cash request checkTaxCheck OFF', tx);
+      if (isRoleAvailable) {
+        console.debug(`DISABLED`, `BP/StartProcess`, `checkTaxCheck`, `isRoleAvailable('Cash request checkTaxCheck OFF', tx)`);
+      } else {
+        const servDoc = await lib.doc.createDocServerById(DocumentID, tx);
+        const err = await servDoc!['checkTaxCheck'](tx);
+        if (err) return res.json({ error: true, message: err });
+      }
     }
 
     const instance = axios.create({ baseURL: bpApiHost });
