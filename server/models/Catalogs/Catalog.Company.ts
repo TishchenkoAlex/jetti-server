@@ -92,4 +92,7 @@ export class CatalogCompany extends DocumentBase {
   @Props({ type: 'Catalog.Person' })
   CEO: Ref = null;
 
+  @Props({ type: 'string', isAdditional: true })
+  TrueApiToken = '';
+
 }

@@ -9,6 +9,7 @@
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Operation"')) [Operation]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Amount"')), 0) [Amount]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."currency"')) [currency]
+      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."PackingCameraSettings"')), '') [PackingCameraSettings]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Department"')) [Department]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."FrontType"')), '') [FrontType]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."MainStoreHouse"')) [MainStoreHouse]
@@ -27,13 +28,13 @@
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."timeZoneOffset"')), '') [timeZoneOffset]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."addressCheck"')), '') [addressCheck]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."addressSMS"')), '') [addressSMS]
-      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."organisationCheck"')), '') [organisationCheck]
+      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."defaultDeliveryTime"')), 0) [defaultDeliveryTime]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."defaultCoockingTime"')), 0) [defaultCoockingTime]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."currentCoockingTime"')), 0) [currentCoockingTime]
       , TRY_CONVERT(DATETIME, JSON_VALUE(doc,N'$."currentCookingTimeExpiredAt"'),127) [currentCookingTimeExpiredAt]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."CookingTimeshift"')), 0) [CookingTimeshift]
       , TRY_CONVERT(DATETIME, JSON_VALUE(doc,N'$."CookingTimeshiftExpiredAt"'),127) [CookingTimeshiftExpiredAt]
-      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."defaultDeliveryTime"')), 0) [defaultDeliveryTime]
+      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."organisationCheck"')), '') [organisationCheck]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."DeliveryTimeShift"')), 0) [DeliveryTimeShift]
       , TRY_CONVERT(DATETIME, JSON_VALUE(doc,N'$."DeliveryTimeShiftExpiredAt"'),127) [DeliveryTimeShiftExpiredAt]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."iikoTerminalId"')), '') [iikoTerminalId]
@@ -54,6 +55,7 @@
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."hiddenClientPhone"')), 0) [hiddenClientPhone]
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isAllowedToChangeOrderStatusToReady"')), 0) [isAllowedToChangeOrderStatusToReady]
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isPlanningSemifinished"')), 0) [isPlanningSemifinished]
+      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."floor"')), 0) [floor]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."PickupTimeOpen"')), '') [PickupTimeOpen]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."PickupTimeClose"')), '') [PickupTimeClose]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."DeliveryTimeOpen"')), '') [DeliveryTimeOpen]
@@ -131,6 +133,7 @@ GRANT SELECT ON dbo.[Operation.AutoAdditionSettings.v]TO jetti;
       , TRY_CONVERT(DATETIME, JSON_VALUE(doc,N'$."StartDate"'),127) [StartDate]
       , TRY_CONVERT(DATETIME, JSON_VALUE(doc,N'$."EndDate"'),127) [EndDate]
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."ChecksLoaded"')), 0) [ChecksLoaded]
+      , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."FinChecksLoaded"')), 0) [FinChecksLoaded]
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."ProductionCalculated"')), 0) [ProductionCalculated]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."startBalance"')), 0) [startBalance]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."endBalance"')), 0) [endBalance]
@@ -181,6 +184,7 @@ GRANT SELECT ON dbo.[Operation.CashShifts.v]TO jetti;
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Aggregator"')) [Aggregator]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."DeliveryArea"')), 0) [DeliveryArea]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Courier"')) [Courier]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."ReasonTypes"')) [ReasonTypes]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."counterpartyId"')), '') [counterpartyId]
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."RetailClient"')) [RetailClient]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."orderId"')), '') [orderId]
@@ -309,6 +313,50 @@ GRANT SELECT ON dbo.[Operation.OnlineSalesManagementSettings.v]TO jetti;
       RAISERROR('Operation.OnlineSalesManagementSettings finish', 0 ,1) WITH NOWAIT;
       
 ------------------------------ BEGIN Operation.OnlineSalesManagementSettings ------------------------------
+
+      
+------------------------------ BEGIN Operation.RegistrationAndAnalyticsBrand ------------------------------
+
+      RAISERROR('Operation.RegistrationAndAnalyticsBrand start', 0 ,1) WITH NOWAIT;
+      CREATE OR ALTER VIEW dbo.[Operation.RegistrationAndAnalyticsBrand.v] WITH SCHEMABINDING AS 
+      SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Group"')) [Group]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Operation"')) [Operation]
+      , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."Amount"')), 0) [Amount]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."currency"')) [currency]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Brand"')) [Brand]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Country"')) [Country]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Status"')) [Status]
+      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Brand_Name"')), '') [Brand_Name]
+      , ISNULL(TRY_CONVERT(NVARCHAR(250), JSON_VALUE(doc,N'$."Link_Application"')), '') [Link_Application]
+      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."No_Application"')), '') [No_Application]
+      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."No_Registration"')), '') [No_Registration]
+      , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."Due_To"'),127) [Due_To]
+      , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."Date_Application"'),127) [Date_Application]
+      , TRY_CONVERT(DATE, JSON_VALUE(doc,N'$."Date_Registration"'),127) [Date_Registration]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."AssigneePerson"')) [AssigneePerson]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Kind_Application"')) [Kind_Application]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."Brand_Type"')) [Brand_Type]
+      , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."AssigneeCounterpartie"')) [AssigneeCounterpartie]
+      , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."Active_Application"')), 0) [Active_Application]
+      FROM dbo.[Documents]
+      WHERE [operation] = '0D940B50-6E80-11EF-955E-2DB1F3E8EE38'
+; 
+GO
+CREATE UNIQUE CLUSTERED INDEX [Operation.RegistrationAndAnalyticsBrand.v] ON [Operation.RegistrationAndAnalyticsBrand.v](id);
+      CREATE UNIQUE NONCLUSTERED INDEX[Operation.RegistrationAndAnalyticsBrand.v.date] ON[Operation.RegistrationAndAnalyticsBrand.v](date, id) INCLUDE([company]);
+      CREATE UNIQUE NONCLUSTERED INDEX [Operation.RegistrationAndAnalyticsBrand.v.parent] ON [Operation.RegistrationAndAnalyticsBrand.v](parent,id);
+      CREATE UNIQUE NONCLUSTERED INDEX [Operation.RegistrationAndAnalyticsBrand.v.deleted] ON [Operation.RegistrationAndAnalyticsBrand.v](deleted,date,id);
+      CREATE UNIQUE NONCLUSTERED INDEX [Operation.RegistrationAndAnalyticsBrand.v.code] ON [Operation.RegistrationAndAnalyticsBrand.v](code,id);
+      CREATE UNIQUE NONCLUSTERED INDEX [Operation.RegistrationAndAnalyticsBrand.v.user] ON [Operation.RegistrationAndAnalyticsBrand.v]([user],id);
+      CREATE UNIQUE NONCLUSTERED INDEX [Operation.RegistrationAndAnalyticsBrand.v.company] ON [Operation.RegistrationAndAnalyticsBrand.v](company,id);
+      
+GO
+GRANT SELECT ON dbo.[Operation.RegistrationAndAnalyticsBrand.v]TO jetti; 
+      RAISERROR('Operation.RegistrationAndAnalyticsBrand finish', 0 ,1) WITH NOWAIT;
+      
+------------------------------ BEGIN Operation.RegistrationAndAnalyticsBrand ------------------------------
 
       
 ------------------------------ BEGIN Operation.Registry_Share_Sert ------------------------------
