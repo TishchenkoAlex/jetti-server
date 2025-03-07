@@ -13,6 +13,7 @@
         , ISNULL([Operation.v].description, '') [Operation.value], d.[Operation] [Operation.id], [Operation.v].type [Operation.type]
         , d.[Amount] [Amount]
         , ISNULL([currency.v].description, '') [currency.value], d.[currency] [currency.id], [currency.v].type [currency.type]
+        , d.[PackingCameraSettings] [PackingCameraSettings]
         , ISNULL([Department.v].description, '') [Department.value], d.[Department] [Department.id], [Department.v].type [Department.type]
         , d.[FrontType] [FrontType]
         , ISNULL([MainStoreHouse.v].description, '') [MainStoreHouse.value], d.[MainStoreHouse] [MainStoreHouse.id], [MainStoreHouse.v].type [MainStoreHouse.type]
@@ -31,13 +32,13 @@
         , d.[timeZoneOffset] [timeZoneOffset]
         , d.[addressCheck] [addressCheck]
         , d.[addressSMS] [addressSMS]
-        , d.[organisationCheck] [organisationCheck]
+        , d.[defaultDeliveryTime] [defaultDeliveryTime]
         , d.[defaultCoockingTime] [defaultCoockingTime]
         , d.[currentCoockingTime] [currentCoockingTime]
         , d.[currentCookingTimeExpiredAt] [currentCookingTimeExpiredAt]
         , d.[CookingTimeshift] [CookingTimeshift]
         , d.[CookingTimeshiftExpiredAt] [CookingTimeshiftExpiredAt]
-        , d.[defaultDeliveryTime] [defaultDeliveryTime]
+        , d.[organisationCheck] [organisationCheck]
         , d.[DeliveryTimeShift] [DeliveryTimeShift]
         , d.[DeliveryTimeShiftExpiredAt] [DeliveryTimeShiftExpiredAt]
         , d.[iikoTerminalId] [iikoTerminalId]
@@ -58,6 +59,7 @@
         , d.[hiddenClientPhone] [hiddenClientPhone]
         , d.[isAllowedToChangeOrderStatusToReady] [isAllowedToChangeOrderStatusToReady]
         , d.[isPlanningSemifinished] [isPlanningSemifinished]
+        , d.[floor] [floor]
         , d.[PickupTimeOpen] [PickupTimeOpen]
         , d.[PickupTimeClose] [PickupTimeClose]
         , d.[DeliveryTimeOpen] [DeliveryTimeOpen]
@@ -142,6 +144,7 @@ GO
         , d.[StartDate] [StartDate]
         , d.[EndDate] [EndDate]
         , d.[ChecksLoaded] [ChecksLoaded]
+        , d.[FinChecksLoaded] [FinChecksLoaded]
         , d.[ProductionCalculated] [ProductionCalculated]
         , d.[startBalance] [startBalance]
         , d.[endBalance] [endBalance]
@@ -195,6 +198,7 @@ GO
         , ISNULL([Aggregator.v].description, '') [Aggregator.value], d.[Aggregator] [Aggregator.id], [Aggregator.v].type [Aggregator.type]
         , d.[DeliveryArea] [DeliveryArea]
         , ISNULL([Courier.v].description, '') [Courier.value], d.[Courier] [Courier.id], [Courier.v].type [Courier.type]
+        , ISNULL([ReasonTypes.v].description, '') [ReasonTypes.value], d.[ReasonTypes] [ReasonTypes.id], [ReasonTypes.v].type [ReasonTypes.type]
         , d.[counterpartyId] [counterpartyId]
         , ISNULL([RetailClient.v].description, '') [RetailClient.value], d.[RetailClient] [RetailClient.id], [RetailClient.v].type [RetailClient.type]
         , d.[orderId] [orderId]
@@ -214,6 +218,7 @@ GO
         LEFT JOIN dbo.[Catalog.OrderSource.v] [ParentOrderSource.v] WITH (NOEXPAND) ON [ParentOrderSource.v].id = d.[ParentOrderSource]
         LEFT JOIN dbo.[Catalog.Counterpartie.v] [Aggregator.v] WITH (NOEXPAND) ON [Aggregator.v].id = d.[Aggregator]
         LEFT JOIN dbo.[Catalog.Person.v] [Courier.v] WITH (NOEXPAND) ON [Courier.v].id = d.[Courier]
+        LEFT JOIN dbo.[Catalog.ReasonTypes.v] [ReasonTypes.v] WITH (NOEXPAND) ON [ReasonTypes.v].id = d.[ReasonTypes]
         LEFT JOIN dbo.[Catalog.RetailClient.v] [RetailClient.v] WITH (NOEXPAND) ON [RetailClient.v].id = d.[RetailClient]
     ; 
 GO
@@ -340,6 +345,58 @@ GO
 
       
 ------------------------------ END Operation.OnlineSalesManagementSettings ------------------------------
+
+------------------------------ BEGIN Operation.RegistrationAndAnalyticsBrand ------------------------------
+
+      CREATE OR ALTER VIEW dbo.[Operation.RegistrationAndAnalyticsBrand] AS
+      
+      SELECT
+        d.id, d.type, d.date, d.code, d.description "RegistrationAndAnalyticsBrand",  d.posted, d.deleted, d.isfolder, d.timestamp, d.version
+        , ISNULL("parent".description, '') "parent.value", d."parent" "parent.id", "parent".type "parent.type"
+        , ISNULL("company".description, '') "company.value", d."company" "company.id", "company".type "company.type"
+        , ISNULL("user".description, '') "user.value", d."user" "user.id", "user".type "user.type"
+        , ISNULL([workflow.v].description, '') [workflow.value], d.[workflow] [workflow.id], [workflow.v].type [workflow.type]
+        , ISNULL([Group.v].description, '') [Group.value], d.[Group] [Group.id], [Group.v].type [Group.type]
+        , ISNULL([Operation.v].description, '') [Operation.value], d.[Operation] [Operation.id], [Operation.v].type [Operation.type]
+        , d.[Amount] [Amount]
+        , ISNULL([currency.v].description, '') [currency.value], d.[currency] [currency.id], [currency.v].type [currency.type]
+        , ISNULL([Brand.v].description, '') [Brand.value], d.[Brand] [Brand.id], [Brand.v].type [Brand.type]
+        , ISNULL([Country.v].description, '') [Country.value], d.[Country] [Country.id], [Country.v].type [Country.type]
+        , ISNULL([Status.v].description, '') [Status.value], d.[Status] [Status.id], [Status.v].type [Status.type]
+        , d.[Brand_Name] [Brand_Name]
+        , d.[Link_Application] [Link_Application]
+        , d.[No_Application] [No_Application]
+        , d.[No_Registration] [No_Registration]
+        , d.[Due_To] [Due_To]
+        , d.[Date_Application] [Date_Application]
+        , d.[Date_Registration] [Date_Registration]
+        , ISNULL([AssigneePerson.v].description, '') [AssigneePerson.value], d.[AssigneePerson] [AssigneePerson.id], [AssigneePerson.v].type [AssigneePerson.type]
+        , ISNULL([Kind_Application.v].description, '') [Kind_Application.value], d.[Kind_Application] [Kind_Application.id], [Kind_Application.v].type [Kind_Application.type]
+        , ISNULL([Brand_Type.v].description, '') [Brand_Type.value], d.[Brand_Type] [Brand_Type.id], [Brand_Type.v].type [Brand_Type.type]
+        , ISNULL([AssigneeCounterpartie.v].description, '') [AssigneeCounterpartie.value], d.[AssigneeCounterpartie] [AssigneeCounterpartie.id], [AssigneeCounterpartie.v].type [AssigneeCounterpartie.type]
+        , d.[Active_Application] [Active_Application]
+      FROM [Operation.RegistrationAndAnalyticsBrand.v] d WITH (NOEXPAND)
+        LEFT JOIN dbo.[Documents] [parent] ON [parent].id = d.[parent]
+        LEFT JOIN dbo.[Catalog.User.v] [user] WITH (NOEXPAND) ON [user].id = d.[user]
+        LEFT JOIN dbo.[Catalog.Company.v] [company] WITH (NOEXPAND) ON [company].id = d.company
+        LEFT JOIN dbo.[Document.WorkFlow.v] [workflow.v] WITH (NOEXPAND) ON [workflow.v].id = d.[workflow]
+        LEFT JOIN dbo.[Catalog.Operation.Group.v] [Group.v] WITH (NOEXPAND) ON [Group.v].id = d.[Group]
+        LEFT JOIN dbo.[Catalog.Operation.v] [Operation.v] WITH (NOEXPAND) ON [Operation.v].id = d.[Operation]
+        LEFT JOIN dbo.[Catalog.Currency.v] [currency.v] WITH (NOEXPAND) ON [currency.v].id = d.[currency]
+        LEFT JOIN dbo.[Catalog.Brand.v] [Brand.v] WITH (NOEXPAND) ON [Brand.v].id = d.[Brand]
+        LEFT JOIN dbo.[Catalog.Country.v] [Country.v] WITH (NOEXPAND) ON [Country.v].id = d.[Country]
+        LEFT JOIN dbo.[Catalog.Operation.Type.v] [Status.v] WITH (NOEXPAND) ON [Status.v].id = d.[Status]
+        LEFT JOIN dbo.[Catalog.Person.v] [AssigneePerson.v] WITH (NOEXPAND) ON [AssigneePerson.v].id = d.[AssigneePerson]
+        LEFT JOIN dbo.[Catalog.Operation.Type.v] [Kind_Application.v] WITH (NOEXPAND) ON [Kind_Application.v].id = d.[Kind_Application]
+        LEFT JOIN dbo.[Catalog.Operation.Type.v] [Brand_Type.v] WITH (NOEXPAND) ON [Brand_Type.v].id = d.[Brand_Type]
+        LEFT JOIN dbo.[Catalog.Counterpartie.v] [AssigneeCounterpartie.v] WITH (NOEXPAND) ON [AssigneeCounterpartie.v].id = d.[AssigneeCounterpartie]
+    ; 
+GO
+GRANT SELECT ON dbo.[Operation.RegistrationAndAnalyticsBrand] TO jetti;
+GO
+
+      
+------------------------------ END Operation.RegistrationAndAnalyticsBrand ------------------------------
 
 ------------------------------ BEGIN Operation.Registry_Share_Sert ------------------------------
 
