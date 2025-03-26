@@ -120,7 +120,8 @@ export class DocumentCashRequest extends DocumentBase {
       'Выплата заработной платы',
       'Выплата заработной платы без ведомости',
       'Оплата на карту',
-      'Выплата ЗП для самозанятых'
+      'Выплата ЗП для самозанятых',
+      'Выплата дивидендов'
     ]
   })
   Operation = 'Оплата поставщику';
@@ -411,6 +412,15 @@ export class DocumentCashRequest extends DocumentBase {
 
   @Props({
     type: 'table', required: false, order: 1,
+    onChange: function (doc: PayRollDividend, value: PayRollDividend[]) {
+      let Amount = 0; value.forEach(el => { Amount += el.Amount; });
+      return { Amount: Math.round(Amount * 100) / 100 };
+    }
+  })
+  PayRollsDividend: PayRollDividend[] = [new PayRollDividend()];
+
+  @Props({
+    type: 'table', required: false, order: 1,
     onChange: function (doc: Item, value: Item[]) {
       let Amount = 0; value.forEach(el => { Amount += el.Amount; });
       return { Amount: Math.round(Amount * 100) / 100 };
@@ -421,7 +431,6 @@ export class DocumentCashRequest extends DocumentBase {
 }
 
 export class PayRoll {
-
   @Props({ type: 'Catalog.Person', label: 'Сотрудник', style: { width: '350px' }, onChangeServer: true })
   Employee: Ref = null;
 
@@ -439,7 +448,17 @@ export class PayRoll {
     , owner: [{ dependsOn: 'Employee', filterBy: 'owner' }]
   })
   BankAccount: Ref = null;
+}
 
+export class PayRollDividend {
+  @Props({ type: 'Catalog.Person', label: 'Инвестор (Физ.лицо)', style: { width: '350px' } })
+  Person: Ref = null;
+
+  @Props({ type: 'number', label: 'К выплате', totals: 1 })
+  Amount = 0; 
+  
+  @Props({ type: 'string', label: 'Лицевой счет (JSON)', style: { width: '500px' }})
+  PersonBankAccountJson = '';
 }
 
 export class Item {
