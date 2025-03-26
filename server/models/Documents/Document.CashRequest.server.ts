@@ -607,6 +607,21 @@ export class DocumentCashRequestServer extends DocumentCashRequest implements IS
         })
         );
       });
+    } else if (this.Operation === 'Выплата дивидендов') {
+        this.PayRollsDividend.forEach(el => {
+          Registers.Accumulation.push(new RegisterAccumulationCashToPay({
+            kind: true,
+            CashRecipient: el.Person,
+            Amount: el.Amount,
+            date: this.PayDay,
+            PayDay: this.PayDay,
+            CashRequest: this.id,
+            currency: сurrency,
+            CashFlow: this.CashFlow,
+            OperationType: this.Operation
+          })
+          );
+        });
     } else {
       const movements = new RegisterAccumulationCashToPay({
         kind: true,
