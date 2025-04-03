@@ -453,6 +453,12 @@ export class PayRoll {
 export class PayRollDividend {
   @Props({ type: 'Catalog.Person', label: 'Инвестор (Физ.лицо)', style: { width: '350px' } })
   Person: Ref = null;
+  
+  @Props({ type: 'number', label: 'Дивиденды (начислено)', totals: 1 })
+  AmountDiv = 0; 
+
+  @Props({ type: 'number', label: 'НДФЛ (начислено)', totals: 1 })
+  Tax = 0; 
 
   @Props({ type: 'number', label: 'К выплате', totals: 1 })
   Amount = 0; 
