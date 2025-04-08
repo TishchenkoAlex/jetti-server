@@ -463,7 +463,7 @@ export class PayRollDividend {
   @Props({ type: 'number', label: 'К выплате', totals: 1 })
   Amount = 0; 
   
-  @Props({ type: 'string', label: 'Лицевой счет (JSON)', style: { width: '500px' }})
+  @Props({ type: 'json', label: 'Лицевой счет (JSON)', style: { width: '500px' }})
   PersonBankAccountJson = '';
 }
 
