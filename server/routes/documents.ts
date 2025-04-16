@@ -30,7 +30,7 @@ export async function buildViewModel<T>(ServerDoc: DocumentBase, tx: MSSQL) {
   const viewModel = await tx.oneOrNone<T>(viewModelQuery, [NoSqlDocument]);
   if (viewModel && ServerDoc.type == 'Document.CashRequest' && (ServerDoc['PayRollsDividend'] || []).length) {
     viewModel['PayRollsDividend']
-      .filter((e, i) => !e && !!ServerDoc['PayRollsDividend'][i].PersonBankAccountJson && typeof ServerDoc['PayRollsDividend'][i].PersonBankAccountJson == 'object')
+      .filter((e, i) => !e.PersonBankAccountJson && !!ServerDoc['PayRollsDividend'][i].PersonBankAccountJson && typeof ServerDoc['PayRollsDividend'][i].PersonBankAccountJson == 'object')
       .forEach((e, i) => e.PersonBankAccountJson = JSON.stringify(ServerDoc['PayRollsDividend'][i].PersonBankAccountJson));
   }
   return viewModel;
