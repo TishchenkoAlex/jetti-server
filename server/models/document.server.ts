@@ -7,6 +7,7 @@ import { setPostedSate, upsertDocument } from "../routes/utils/post";
 import { buildViewModel } from "../routes/documents";
 import { PostResult } from "./post.interfaces";
 import { RegistersMovements } from "./registers.movements";
+import { checkReadonlyPeriod, checkReadonlyPeriodRegisters } from "../routes/utils/post-rules/readonly";
 
 enum DocLiveCycleEvent {
     onUnPost = 'onUnPost',
@@ -132,8 +133,15 @@ export class DocumentServer<T extends DocumentBaseServer> {
         }
     }
 
+    checkReadonlyPeriod() {
+        checkReadonlyPeriod(this.doc.type, this.doc.date, (this.tx.user?.roles || []))
+    }
+
     async setDeleted(deleted: boolean) {
         if (deleted === this.deleted) return this.doc;
+        
+        this.checkReadonlyPeriod();
+
         if (deleted) await this.handleLifeCycleEvent(DocLiveCycleEvent.beforeDelete);
 
         if (this.doc.isDoc && deleted) {

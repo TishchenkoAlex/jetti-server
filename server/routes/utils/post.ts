@@ -3,6 +3,7 @@ import { lib } from '../../std.lib';
 import { MSSQL } from '../../mssql';
 import { DocumentBaseServer, createDocumentServer } from '../../models/documents.factory.server';
 import { INoSqlDocument, Ref, Type } from 'jetti-middle';
+import { READONLY } from './post-rules/readonly';
 
 export interface IUpdateInsertDocumentOptions { withExchangeInfo: boolean; }
 
@@ -131,6 +132,122 @@ export async function updateDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
 
 export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
 
+  const checkReadonlyPeriod = Type.isDocument(serverDoc.type) && !tx.isRoleAvailable(READONLY.ROLE);
+  if (checkReadonlyPeriod && serverDoc.date < READONLY.DATE) {
+    throw READONLY.ERROR;
+  }
+
+  await beforeSaveDocument(serverDoc, tx);
+
+  const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
+  const jsonDoc = JSON.stringify(noSqlDocument);
+  const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
+  const operationFilter = serverDoc.type === 'Document.Operation' ? `Documents.operation = @Operation` : 'Documents.operation IS NULL';
+
+  const query = `
+  DECLARE @DocId UNIQUEIDENTIFIER;
+  DECLARE @Operation UNIQUEIDENTIFIER;
+  DECLARE @DocDate DATETIME;
+  DECLARE @ReadonlyDate DATETIME;
+  DECLARE @CheckReadonlyPeriod BIT;
+  
+  SET @ReadonlyDate = @p3;
+  SET @CheckReadonlyPeriod = @p4;
+  
+  SELECT 
+    @DocId = id, 
+    @DocDate = [date], 
+    @Operation = operation 
+  FROM Documents 
+  WHERE id = @p2;
+  
+  IF @CheckReadonlyPeriod = 1 AND @DocId IS NOT NULL AND @DocDate IS NOT NULL AND @DocDate < @ReadonlyDate
+  BEGIN
+    THROW 51000, '${READONLY.ERROR}', 1;
+    RETURN;
+  END
+
+  IF @DocId IS NULL
+  BEGIN
+  INSERT INTO Documents(
+        [id], [type], [date], [code], [description], [posted], [deleted],
+        [parent], [isfolder], [company], [user], [info], [doc] ${withExchangeInfo ? ', [ExchangeCode], [ExchangeBase]' : ''})
+      SELECT
+        [id], [type], [date], [code], [description], [posted], [deleted],
+        [parent], [isfolder], [company], [user], [info], [doc]
+        ${withExchangeInfo ? ', [ExchangeCode], [ExchangeBase]' : ''}
+      FROM OPENJSON(@p1) WITH (
+        [id] UNIQUEIDENTIFIER,
+        [date] DATETIME,
+        [type] NVARCHAR(100),
+        [code] NVARCHAR(36),
+        [description] NVARCHAR(150),
+        [posted] BIT,
+        [deleted] BIT,
+        [parent] UNIQUEIDENTIFIER,
+        [isfolder] BIT,
+        [company] UNIQUEIDENTIFIER,
+        [user] UNIQUEIDENTIFIER,
+        [info] NVARCHAR(max),
+        [doc] NVARCHAR(max) N'$.doc' AS JSON
+        ${withExchangeInfo ? `
+        ,[ExchangeCode] NVARCHAR(50)
+        ,[ExchangeBase] NVARCHAR(50)` : ''}
+      )
+      WHERE [type] = N'${noSqlDocument!.type}';
+  END
+
+  IF NOT @DocId IS NULL
+  BEGIN
+    UPDATE Documents
+        SET
+          parent = i.parent,
+          date = i.date, code = i.code, description = i.description,
+          posted = i.posted, deleted = i.deleted, isfolder = i.isfolder,
+          "user" = i."user", company = i.company, info = i.info, timestamp = GETDATE(), doc = i.doc
+          ${withExchangeInfo ? ',ExchangeCode = i.ExchangeCode,  ExchangeBase = i.ExchangeBase' : ''}
+        FROM (
+          SELECT *
+          FROM OPENJSON(@p1) WITH (
+            [date] DATETIME,
+            [code] NVARCHAR(36),
+            [description] NVARCHAR(150),
+            [posted] BIT,
+            [deleted] BIT,
+            [isfolder] BIT,
+            [company] UNIQUEIDENTIFIER,
+            [user] UNIQUEIDENTIFIER,
+            [info] NVARCHAR(max),
+            [parent] UNIQUEIDENTIFIER,
+            [doc] NVARCHAR(max) N'$.doc' AS JSON
+            ${withExchangeInfo ? `
+            ,[ExchangeCode] NVARCHAR(50)
+            ,[ExchangeBase] NVARCHAR(50)` : ''}
+          )
+        ) i
+      WHERE
+     ${operationFilter} AND
+      Documents.type = N'${serverDoc.type}' AND
+      Documents.id = @DocId;
+  END
+
+  SELECT * FROM Documents WHERE id = @p2`;
+
+  const response = await tx.oneOrNone<INoSqlDocument>(query, [
+    jsonDoc,
+    serverDoc.id,
+    READONLY.DATE,
+    checkReadonlyPeriod
+  ]);
+
+  await afterSaveDocument(serverDoc, tx);
+
+  serverDoc.map(response!!);
+  return serverDoc;
+}
+
+export async function _upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
+
   await beforeSaveDocument(serverDoc, tx);
 
   const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
@@ -211,89 +328,6 @@ export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
   SELECT * FROM Documents WHERE id = @p2`;
 
   const response = <INoSqlDocument>await tx.oneOrNone<INoSqlDocument>(query, [jsonDoc, serverDoc.id]);
-
-  await afterSaveDocument(serverDoc, tx);
-
-  serverDoc.map(response);
-  return serverDoc;
-}
-
-export async function _upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
-
-  await beforeSaveDocument(serverDoc, tx);
-
-  const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
-  const jsonDoc = JSON.stringify(noSqlDocument);
-  const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
-
-  const response = <INoSqlDocument>await tx.oneOrNone<INoSqlDocument>(`
-  DECLARE @DocId UNIQUEIDENTIFIER;
-
-  SELECT @DocId = id FROM Documents WHERE id = @p2;
-
-  IF @DocId IS NULL
-  BEGIN
-  INSERT INTO Documents(
-        [id], [type], [date], [code], [description], [posted], [deleted],
-        [parent], [isfolder], [company], [user], [info], [doc] ${withExchangeInfo ? ', [ExchangeCode], [ExchangeBase]' : ''})
-      SELECT
-        [id], [type], [date], [code], [description], [posted], [deleted],
-        [parent], [isfolder], [company], [user], [info], [doc]
-        ${withExchangeInfo ? ', [ExchangeCode], [ExchangeBase]' : ''}
-      FROM OPENJSON(@p1) WITH (
-        [id] UNIQUEIDENTIFIER,
-        [date] DATETIME,
-        [type] NVARCHAR(100),
-        [code] NVARCHAR(36),
-        [description] NVARCHAR(150),
-        [posted] BIT,
-        [deleted] BIT,
-        [parent] UNIQUEIDENTIFIER,
-        [isfolder] BIT,
-        [company] UNIQUEIDENTIFIER,
-        [user] UNIQUEIDENTIFIER,
-        [info] NVARCHAR(max),
-        [doc] NVARCHAR(max) N'$.doc' AS JSON
-        ${withExchangeInfo ? `
-        ,[ExchangeCode] NVARCHAR(50)
-        ,[ExchangeBase] NVARCHAR(50)` : ''}
-      );
-  END
-
-  IF NOT @DocId IS NULL
-  BEGIN
-    UPDATE Documents
-        SET
-          type = i.type, parent = i.parent,
-          date = i.date, code = i.code, description = i.description,
-          posted = i.posted, deleted = i.deleted, isfolder = i.isfolder,
-          "user" = i."user", company = i.company, info = i.info, timestamp = GETDATE(), doc = i.doc
-          ${withExchangeInfo ? ',ExchangeCode = i.ExchangeCode,  ExchangeBase = i.ExchangeBase' : ''}
-        FROM (
-          SELECT *
-          FROM OPENJSON(@p1) WITH (
-            [id] UNIQUEIDENTIFIER,
-            [date] DATETIME,
-            [type] NVARCHAR(100),
-            [code] NVARCHAR(36),
-            [description] NVARCHAR(150),
-            [posted] BIT,
-            [deleted] BIT,
-            [isfolder] BIT,
-            [company] UNIQUEIDENTIFIER,
-            [user] UNIQUEIDENTIFIER,
-            [info] NVARCHAR(max),
-            [parent] UNIQUEIDENTIFIER,
-            [doc] NVARCHAR(max) N'$.doc' AS JSON
-            ${withExchangeInfo ? `
-            ,[ExchangeCode] NVARCHAR(50)
-            ,[ExchangeBase] NVARCHAR(50)` : ''}
-          )
-        ) i
-      WHERE Documents.id = i.id;
-  END
-
-  SELECT * FROM Documents WHERE id = @p2`, [jsonDoc, serverDoc.id]);
 
   await afterSaveDocument(serverDoc, tx);
 
