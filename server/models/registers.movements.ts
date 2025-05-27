@@ -8,7 +8,7 @@ import { RLS_PARTITION, RegisterRlsPeriod } from "./register.info.rls.period";
 import { lib } from "../std.lib";
 import { checkClosedPeriodPartitionAll, checkClosedPeriodPartitionInventory } from "../routes/utils/post-rules/closedPeriod";
 import { checkRlsUpdate } from "../routes/utils/post-rules/rlsUpdate";
-import { checkReadonlyPeriod } from "../routes/utils/post-rules/readonly";
+import { checkReadonlyPeriodRegisters } from "../routes/utils/post-rules/readonly";
 
 const CONST = {
     REGISTER_TYPE: {
@@ -104,7 +104,7 @@ export abstract class RegistersMovements {
     }
 
     protected static readonly checksRules: rules = {
-        before: [checkReadonlyPeriod, checkClosedPeriodPartitionInventory, checkClosedPeriodPartitionAll],
+        before: [checkReadonlyPeriodRegisters, checkClosedPeriodPartitionInventory, checkClosedPeriodPartitionAll],
         after: [],
     }
 
