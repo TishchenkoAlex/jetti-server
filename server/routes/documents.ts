@@ -1,7 +1,7 @@
 import { x100 } from './../x100.lib';
 import * as express from 'express';
 import { NextFunction, Request, Response } from 'express';
-import { createDocumentServer, DocumentBaseServer } from '../models/documents.factory.server';
+import { DocumentBaseServer, createDocumentServer } from '../models/documents.factory.server';
 import { DocTypes } from '../models/documents.types';
 import { DocumentOperation } from '../models/Documents/Document.Operation';
 import { lib } from './../std.lib';
@@ -18,6 +18,7 @@ import {
 import { createDocument } from '../models/documents.factory';
 import { FormListSettings } from 'jetti-middle/dist/common/classes/form-list';
 import { userContextFilter } from '../fuctions/filterBuilder';
+import { DocumentServer } from '../models/document.server';
 
 export const router = express.Router();
 
@@ -26,7 +27,13 @@ export async function buildViewModel<T>(ServerDoc: DocumentBase, tx: MSSQL) {
   const contextFilter = userContextFilter(tx.userContext, `d.company`);
   if (contextFilter) viewModelQuery += ` WHERE (1=1) ${contextFilter}`;
   const NoSqlDocument = JSON.stringify(lib.doc.noSqlDocument(ServerDoc));
-  return await tx.oneOrNone<T>(viewModelQuery, [NoSqlDocument]);
+  const viewModel = await tx.oneOrNone<T>(viewModelQuery, [NoSqlDocument]);
+  if (viewModel && ServerDoc.type == 'Document.CashRequest' && (ServerDoc['PayRollsDividend'] || []).length) {
+    viewModel['PayRollsDividend']
+      .filter((e, i) => !e.PersonBankAccountJson && !!ServerDoc['PayRollsDividend'][i].PersonBankAccountJson && typeof ServerDoc['PayRollsDividend'][i].PersonBankAccountJson == 'object')
+      .forEach((e, i) => e.PersonBankAccountJson = JSON.stringify(ServerDoc['PayRollsDividend'][i].PersonBankAccountJson));
+  }
+  return viewModel;
 }
 
 // Select documents list for UI (grids/list etc)
@@ -80,6 +87,15 @@ const viewAction = async (req: Request, res: Response, next: NextFunction) => {
         }
       };
 
+      const docDate = (baseDate: number) => {
+        if (sdb.timezoneOffset) {
+          const serverTimeOffset = (new Date).getTimezoneOffset();
+          const clientTimeOffset = sdb.timezoneOffset;
+          const diff = serverTimeOffset - clientTimeOffset;
+          return new Date(baseDate + diff * 1000 * 60);
+        }
+      }
+
       const command = req.query.new ? 'new' : req.query.copy ? 'copy' : req.query.base ? 'base' : req.query.history ? 'history' : '';
       switch (command) {
         case 'new':
@@ -87,6 +103,7 @@ const viewAction = async (req: Request, res: Response, next: NextFunction) => {
           const schema = ServerDoc.Props();
           Object.keys(schema).filter(p => schema[p].value !== undefined).forEach(p => ServerDoc[p] = schema[p].value);
           addIncomeParamsIntoDoc(params, ServerDoc);
+          ServerDoc.date = docDate(Date.now()) || ServerDoc.date;
           if (userID) ServerDoc.user = userID;
           if (ServerDoc.onCreate) { await ServerDoc.onCreate(sdb); }
           break;
@@ -94,8 +111,12 @@ const viewAction = async (req: Request, res: Response, next: NextFunction) => {
           const copy = await lib.doc.byId(req.query.copy as Ref, sdb);
           if (!copy) throw new Error(`base document ${req.query.copy} for copy is not found!`);
           const copyDoc = await createDocumentServer(type, copy, sdb);
-          copyDoc.id = id; copyDoc.date = ServerDoc.date; copyDoc.code = '';
-          copyDoc.posted = false; copyDoc.deleted = false; copyDoc.timestamp = null;
+          copyDoc.id = id;
+          copyDoc.date = docDate(ServerDoc.date.getTime()) || ServerDoc.date;
+          copyDoc.code = '';
+          copyDoc.posted = false;
+          copyDoc.deleted = false;
+          copyDoc.timestamp = null;
           copyDoc.parent = copyDoc.parent;
           if (userID) copyDoc.user = userID;
           const notCopied = ServerDoc.getPropsWithOption('isNotCopy', true);
@@ -145,7 +166,8 @@ router.get('/restore/:type/:id', async (req: Request, res: Response, next: NextF
     const type = req.params.type as DocTypes;
     const settings = new FormListSettings();
     const history = await lib.doc.historyById(id, sdb);
-    const ServerDoc = await createDocumentServer(type, history!, sdb);
+    const current = await lib.doc.byId(history!.id, sdb);
+    const ServerDoc = await createDocumentServer(type, { ...history!, posted: current!.posted, deleted: current!.deleted }, sdb);
     ServerDoc.timestamp = new Date();
     const model = (await buildViewModel<DocumentBase>(ServerDoc, sdb))!;
     const columnsDef = buildColumnDef(ServerDoc.Props(), settings);
@@ -159,6 +181,33 @@ router.post('/view', viewAction);
 
 // Delete or UnDelete document
 router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+
+  let docServer: DocumentServer<any> | undefined = undefined;
+
+  try {
+    const sdb = SDB(req);
+    await sdb.tx(async tx => {
+      docServer = await DocumentServer.byId(req.params.id, tx);
+      if (!docServer) throw DocumentServer.errorNotExistId(req.params.id);
+      await docServer.setDeleted(!!!docServer.deleted);
+      res.json(await docServer.toViewModel());
+
+    });
+  } catch (err) { next(err); }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[route.delete.afterTxCommitted]', error);
+    }
+  }
+
+});
+
+
+// Delete or UnDelete document
+router.delete('/deprecated2/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
@@ -178,6 +227,10 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
 
         serverDoc.deleted = !!!serverDoc.deleted;
         serverDoc.posted = false;
+
+        // if (serverDoc.isDoc) {
+        //   await RegistersMovements.beforeDelete(serverDoc.id, tx);
+        // }
 
         await tx.none(
           `UPDATE "Documents" SET deleted = @p3, posted = @p4, timestamp = GETDATE() WHERE id = @p1;
@@ -201,36 +254,7 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
   } catch (err) { next(err); }
 });
 
-router.post('/deprecated/save', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const sdb = SDB(req);
-    await sdb.tx(async tx => {
-      await lib.util.adminMode(true, tx);
-      try {
-        const doc: IFlatDocument = JSON.parse(JSON.stringify(req.body), dateReviverUTC);
-        if (!doc.code) doc.code = await lib.doc.docPrefix(doc.type, tx);
-        const serverDoc = await createDocumentServer(doc.type as DocTypes, doc, tx);
-        if (doc.ExchangeBase) {
-          serverDoc['ExchangeBase'] = doc.ExchangeBase;
-          serverDoc['ExchangeCode'] = doc.ExchangeCode;
-        }
-        if (serverDoc.timestamp) {
-          await updateDocument(serverDoc, tx);
-          if (serverDoc.posted && serverDoc.isDoc) {
-            await unpostDocument(serverDoc, tx);
-            await postDocument(serverDoc, tx);
-          }
-        } else {
-          await insertDocument(serverDoc, tx);
-        }
-        res.json((await buildViewModel(serverDoc, tx)));
-      } catch (ex) { throw new Error(ex); }
-      finally { await lib.util.adminMode(false, tx); }
-    });
-  } catch (err) { next(err); }
-});
-
-router.post('/save', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/deprecated2/save', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
@@ -255,7 +279,55 @@ router.post('/save', async (req: Request, res: Response, next: NextFunction) => 
   } catch (err) { next(err); }
 });
 
+router.post('/save', async (req: Request, res: Response, next: NextFunction) => {
+
+  let docServer: DocumentServer<any> | null = null;
+
+  try {
+    const sdb = SDB(req);
+    await sdb.tx(async tx => {
+      docServer = await DocumentServer.parse(req.body, tx)
+      await docServer.save();
+      res.json(await docServer.toViewModel());
+
+    });
+  } catch (err) { next(err); }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[route.savepost.afterTxCommitted]', error);
+    }
+  }
+
+});
+
 router.post('/savepost', async (req: Request, res: Response, next: NextFunction) => {
+
+  let docServer: DocumentServer<any> | null = null;
+
+  try {
+    const sdb = SDB(req);
+
+    await sdb.tx(async tx => {
+      docServer = await DocumentServer.parse(req.body, tx)
+      await docServer.post()
+      res.json(await docServer.toViewModel());
+    });
+  } catch (err) { next(err); }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[route.savepost.afterTxCommitted]', error);
+    }
+  }
+
+});
+
+router.post('/deprecated2/savepost', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
@@ -276,6 +348,7 @@ router.post('/savepost', async (req: Request, res: Response, next: NextFunction)
     });
   } catch (err) { next(err); }
 });
+
 
 router.post('/deprecated/savepost', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -326,7 +399,7 @@ router.post('/deprecated/post', async (req: Request, res: Response, next: NextFu
   } catch (err) { next(err); }
 });
 
-router.post('/post', async (req: Request, res: Response, next: NextFunction) => {
+router.post('unused/post', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
@@ -348,25 +421,99 @@ router.post('/post', async (req: Request, res: Response, next: NextFunction) => 
 });
 
 // Post by id (without returns posted object to client, for post in cicle many docs)
-router.get('/post/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/deprecated/post/:id', async (req: Request, res: Response, next: NextFunction) => {
+
+  let docServer: DocumentServer<any> | null = null;
+
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
-      const { id, posted } = await lib.doc.postById(req.params.id, tx);
-      res.json({ id, posted });
+      docServer = await DocumentServer.postById(req.params.id, tx);
+      res.json({ id: docServer.id, posted: docServer.posted });
     });
   } catch (err) { next(err); }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[route.post/:id]', error);
+    }
+  }
+
+});
+
+
+router.get('/post/:id', async (req: Request, res: Response, next: NextFunction) => {
+
+  let docServer: DocumentServer<any> | undefined;
+
+  try {
+    const sdb = SDB(req);
+
+    await sdb.tx(async tx => {
+      docServer = await DocumentServer.byId(req.params.id, tx)
+      if (!docServer) throw DocumentServer.errorNotExistId(req.params.id);
+      await docServer.post();
+      res.json({ id: docServer.id, posted: docServer.posted });
+    });
+  } catch (err) { next(err); }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[route.post.id.afterTxCommitted]', error);
+    }
+  }
+
 });
 
 // unPost by id (without returns posted object to client, for post in cicle many docs)
-router.get('/unpost/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/deprecated/unpost/:id', async (req: Request, res: Response, next: NextFunction) => {
+
+  let docServer: DocumentServer<any> | null = null;
+
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
-      const { id, posted } = await lib.doc.unPostById(req.params.id, tx);
-      res.json({ id, posted });
+      docServer = await DocumentServer.unPostById(req.params.id, tx);
+      res.json({ id: docServer.id, posted: docServer.posted });
     });
   } catch (err) { next(err); }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[route.unpost/:id]', error);
+    }
+  }
+});
+
+
+router.get('/unpost/:id', async (req: Request, res: Response, next: NextFunction) => {
+
+  let docServer: DocumentServer<any> | undefined;
+
+  try {
+    const sdb = SDB(req);
+
+    await sdb.tx(async tx => {
+      docServer = await DocumentServer.byId(req.params.id, tx)
+      if (!docServer) throw DocumentServer.errorNotExistId(req.params.id);
+      await docServer.unPost();
+      res.json({ id: docServer.id, posted: docServer.posted });
+    });
+  } catch (err) { next(err); }
+
+  if (!!docServer) {
+    try {
+      await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+    } catch (error) {
+      console.error('[route.unpost.id.afterTxCommitted]', error);
+    }
+  }
 });
 
 // Get raw document by id
@@ -634,16 +781,12 @@ router.post('/setApprovingStatus/:id/:Status', async (req: Request, res: Respons
   try {
     const sdb = SDB(req);
     await sdb.tx(async tx => {
-      const sourse = await lib.doc.byId(req.params.id, tx);
-      if (sourse) {
-        if (!sourse.timestamp) throw new Error('source document not saved');
-        sourse['Status'] = req.params.Status;
-        const serverDoc = await createDocumentServer(sourse.type as DocTypes, sourse, tx);
-        await unpostDocument(serverDoc, tx);
-        await upsertDocument(serverDoc, tx);
-        await postDocument(serverDoc, tx);
-        res.json((await buildViewModel(serverDoc, tx)));
-      }
+      const flatDoc = await lib.doc.byId(req.params.id, tx);
+      if (!flatDoc) throw new Error(DocumentServer.errorNotExistId(req.params.id));
+      flatDoc['Status'] = req.params.Status;
+      const doc = await DocumentServer.instance(flatDoc, tx);
+      await doc.post();
+      res.json(await doc.toViewModel());
     });
   } catch (err) { next(err); }
 });

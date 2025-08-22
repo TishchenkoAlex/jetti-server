@@ -68,6 +68,10 @@ export class MSSQL {
     return { email: this.email, isAdmin: this.isAdmin };
   }
 
+  get timezoneOffset(): number {
+    return this.user.timezoneOffset || 0;
+  }
+
   private setParams(params: any[], request: Request) {
     for (let i = 0; i < params.length; i++) {
       if (params[i] instanceof Date) {
@@ -79,6 +83,14 @@ export class MSSQL {
       } else
         request.addParameter(`p${i + 1}`, TYPES.NVarChar, params[i]);
     }
+  }
+
+  async adminMode(mode: boolean) {
+    await this.setSessionContextVariable('postMode', mode);
+  }
+
+  private async setSessionContextVariable(variable: string, value: any) {
+    await this.none(`EXEC sys.sp_set_session_context N'${variable}', N'${value}';`);
   }
 
   private prepareSession(sql: string) {
@@ -266,7 +278,8 @@ export class MSSQL {
       return value;
   }
 
-  isRoleAvailable(role: string): boolean {
+  isRoleAvailable(role: string, strict = false): boolean {
+    if (strict) return (this.user?.roles || []).includes(role);
     return !this.user || !this.user.roles || this.user.roles.includes(role);
   }
 

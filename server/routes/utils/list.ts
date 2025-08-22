@@ -3,8 +3,10 @@ import { MSSQL } from '../../mssql';
 import { lib } from '../../std.lib';
 import { filterBuilder, userContextFilter } from '../../fuctions/filterBuilder';
 import { DocListRequestBody, DocListResponse, FormListFilter, DocumentBase, Type } from 'jetti-middle';
+import { ARGS } from '../..';
 
-export async function List(params: DocListRequestBody & { used: string }, tx: MSSQL): Promise<DocListResponse> {
+
+export async function _List(params: DocListRequestBody & { used: string }, tx: MSSQL): Promise<DocListResponse> {
   params.filter = (params.filter || [])
     .filter(el => !(el.right === null || el.right === undefined) || el.center === 'is null' || el.center === 'is not null');
 
@@ -139,8 +141,156 @@ SELECT * FROM(${QueryList}) d WHERE id IN(
       query = `${queryFilter.tempTable}SELECT TOP ${params.count + 1} * FROM(${QueryList}) d WHERE ${(queryFilter.where)} ${usedInQuery('>')} ${orderbyAfter} `;
   }
 
-  if (process.env.NODE_ENV !== 'production') console.log(query);
+  if (process.env.NODE_ENV !== 'production' && !ARGS.DISABLED_LIST_LOG) console.log(query);
   const data = await tx.manyOrNone<any>(query);
+
+  return listPostProcess(data, params);
+}
+
+
+export async function List(params: DocListRequestBody & { used: string }, tx: MSSQL): Promise<DocListResponse> {
+  params.filter = (params.filter || [])
+    .filter(el => !(el.right === null || el.right === undefined) || el.center === 'is null' || el.center === 'is not null');
+
+  if (params.listOptions && params.listOptions!.withHierarchy) {
+    let parent: any = null;
+    if (params.id) {
+      const ob = await lib.doc.byId(params.id, tx);
+      parent = ob!.isfolder && !params.listOptions.hierarchyDirectionUp ? params.id : ob!.parent;
+    }
+    // folders
+    const queryList = configSchema().get(params.type)!.QueryList;
+    const parentWhere = parent ? 'd.[parent.id] = @p1' : 'd.[parent.id] is NULL';
+    let queryText = `SELECT * FROM (${queryList}) d WHERE ${parentWhere} and isfolder = 1`;
+    if (parent) {
+      const ancestors = await lib.doc.Ancestors(params.id, tx) as any[];
+      const ancestorsId = ancestors.filter(el => el.parent !== parent).map(e => '\'' + e.id + '\'').join();
+      queryText = `${queryText} UNION SELECT * FROM (${queryList}) d WHERE id IN (${ancestorsId})`;
+    }
+    queryText += `${userContextFilter(tx.userContext, `"company.id"`)} ORDER BY description`;
+    const folders = await tx.manyOrNone(queryText, [parent]);
+    // elements
+    const deletedFilter = params.filter.find(e => e.left === 'deleted');
+    params.filter = [];
+    params.filter.push(new FormListFilter('parent', '=', { id: parent, type: params.type }));
+    params.filter.push(new FormListFilter('isfolder', '=', 0));
+    if (deletedFilter) params.filter.push(new FormListFilter('deleted', '=', 0));
+    params.listOptions.withHierarchy = false;
+    const result = await List(params, tx);
+
+    result.data = folders.concat(result.data);
+
+    return result;
+  }
+
+  params.command = params.command || 'first';
+
+  const cs = configSchema().get(params.type);
+  const { QueryList, Props } = cs!;
+
+  let row: DocumentBase | null = null;
+  let query = '';
+
+  if (params.id) row = (await tx.oneOrNone<DocumentBase>(`SELECT * FROM (${QueryList}) d WHERE d.id = @p1`, [params.id]));
+  if (!row && params.command !== 'last') params.command = 'first';
+  const isFirstLast = params.command === 'last' || params.command === 'first';
+  if (row && isFirstLast) row = null;
+
+  params.order.forEach(el => el.field += (Props[el.field].type as string).includes('.') ? '.value' : '');
+  params.filter.forEach(el => el.left += (Props[el.left] && Props[el.left].type && (Props[el.left].type as string).includes('.')) ? '.id' : '');
+  let valueOrder: { field: string, order: 'asc' | 'desc', value: any }[] = [];
+  params.order.filter(el => el.order).forEach(el => {
+    const value = row ? el.field.includes('.value') ? row[el.field.split('.')[0]].value : row[el.field] : '';
+    valueOrder.push({ field: el.field, order: el.order || 'asc', value: row ? value : '' });
+  });
+
+  const lastORDER = valueOrder.length ? valueOrder[valueOrder.length - 1].order === 'asc' : true;
+  valueOrder.push({ field: 'id', order: lastORDER ? 'asc' : 'desc', value: params.id });
+  let orderbyBefore = ' ORDER BY '; let orderbyAfter = orderbyBefore;
+  valueOrder.forEach(o => orderbyBefore += '"' + o.field + (o.order === 'asc' ? '" DESC, ' : '" ASC, '));
+  orderbyBefore = orderbyBefore.slice(0, -2);
+  valueOrder.forEach(o => orderbyAfter += '"' + o.field + (o.order === 'asc' ? '" ASC, ' : '" DESC, '));
+  orderbyAfter = orderbyAfter.slice(0, -2);
+
+  valueOrder = valueOrder.filter(el => !(el.value === null || el.value === undefined));
+  const queryFilter = await filterBuilder(params.filter, tx, params.type);
+
+  const usedInQuery = (dir: '>' | '<') => {
+    if (!params.used) {
+      return '';
+    }
+    let q = ` AND id in (SELECT TOP ${params.count + 1}
+      id
+   FROM
+      DOCUMENTS
+   WHERE
+      CONTAINS(doc, '${params.used}') AND type = N'${params.type}'`;
+    if (params.id) q += ` AND id ${dir === '>' ? '>=' : dir} N'${params.id}'`;
+    q += ')';
+    return q;
+  };
+
+  const sqlParams = {};
+  const getSqlParam = (key: string, value: any) => {
+    if (!Object.keys(sqlParams).includes(key)) sqlParams[key] = value;
+    return `@p${Object.keys(sqlParams).indexOf(key) + 1}`;
+  }
+
+  if (!Type.isType(params.type))
+    queryFilter.where += userContextFilter(tx.userContext, params.type === 'Catalog.Company' ? 'd.id' : `"company.id"`);
+
+  const queryBuilder = (isAfter: boolean) => {
+    if (valueOrder.length === 0) return '';
+    const order = valueOrder.slice();
+    const dir = lastORDER ? isAfter ? '>' : '<' : isAfter ? '<' : '>';
+    const usedQuery = usedInQuery(dir);
+    let queryBuilderResult = `
+      SELECT TOP ${params.count + 1} id FROM(${QueryList}) d
+      WHERE ${queryFilter.where} ${usedQuery}`;
+
+    if (usedQuery) return queryBuilderResult;
+
+    queryBuilderResult += `AND (`;
+
+    valueOrder.forEach(_or => {
+      let where = '(';
+      order.forEach(_o =>
+        where += ` "${_o.field}" ${_o !== order[order.length - 1] ? '=' :
+          dir + ((_o.field === 'id') && isAfter ? '=' : '')} ${getSqlParam(_o.field, _o.value)} AND `
+      );
+      where = where.slice(0, -4);
+      order.length--;
+      queryBuilderResult += ` ${where} ) OR \n`;
+    });
+    queryBuilderResult = queryBuilderResult.slice(0, -4) + ')';
+
+    queryBuilderResult += `\n${lastORDER ?
+      (dir === '>') ? orderbyAfter : orderbyBefore :
+      (dir === '<') ? orderbyAfter : orderbyBefore
+      } \n`;
+    return queryBuilderResult;
+  };
+
+  const queryBefore = queryBuilder(false);
+  const queryAfter = queryBuilder(true);
+  if (queryBefore && queryAfter && row) {
+    query = `${queryFilter.tempTable}
+SELECT * FROM(${QueryList}) d WHERE id IN(
+  SELECT id FROM(${queryBefore}) q1
+      UNION ALL
+      SELECT id FROM(${queryAfter}) q2
+)
+    ${orderbyAfter} `;
+  } else {
+    // const filter = filterBuilder(params.filter);
+    if (params.command === 'last')
+      query = `${queryFilter.tempTable} SELECT * FROM(SELECT TOP ${params.count + 1} * FROM(${QueryList}) d WHERE ${(queryFilter.where)} ${usedInQuery('<')} ${orderbyBefore}) d ${orderbyAfter} `;
+    else
+      query = `${queryFilter.tempTable}SELECT TOP ${params.count + 1} * FROM(${QueryList}) d WHERE ${(queryFilter.where)} ${usedInQuery('>')} ${orderbyAfter} `;
+  }
+
+  if (process.env.NODE_ENV !== 'production' && !ARGS.DISABLED_LIST_LOG) console.log(query);
+  const data = await tx.manyOrNone<any>(query, Object.values(sqlParams));
 
   return listPostProcess(data, params);
 }

@@ -6,8 +6,11 @@ import { MSSQL } from '../mssql';
 import { TASKS_POOL } from '../sql.pool.tasks';
 import { IJWTPayload } from 'jetti-middle';
 import { getUser } from './auth';
+import { getUserRoles } from '../fuctions/UsersPermissions';
 
 export const router = Router();
+
+const KOLPAKOV = 'kolpakov.d@sushi-master.net';
 
 router.post('/login', async (req, res, next) => {
   // setka.service.account@sushi-master.net
@@ -17,7 +20,8 @@ router.post('/login', async (req, res, next) => {
     if (!password) { return res.status(401).json({ message: 'Auth failed: password required' }); }
     if (!(
       email === 'exchange@sushi-master.net' ||
-      email === 'setka.service.account@sushi-master.net'
+      email === 'setka.service.account@sushi-master.net' ||
+      email === KOLPAKOV
     )) {
       return res.status(401).json({ message: 'Auth failed: wrong user name' });
     }
@@ -25,11 +29,14 @@ router.post('/login', async (req, res, next) => {
 
     const user = await getUser(email);
 
+    const roles = user && email === KOLPAKOV ? await getUserRoles(user) : [];
+
     const payload: IJWTPayload = {
+      timezoneOffset: req.body.timezoneOffset || 0,
       email,
       description: user ? user.description : 'exchange',
       isAdmin: true,
-      roles: [],
+      roles,
       env: { view: { id: user ? user.id : null } },
     };
     const token = jwt.sign(payload, JTW_KEY, { expiresIn: '24h' });

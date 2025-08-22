@@ -5,7 +5,8 @@ import { DocumentBase, JDocument, Props, Ref } from 'jetti-middle';
   description: 'Unit',
   icon: 'fa fa-list',
   menu: 'Units',
-  prefix: 'UNIT-'
+  prefix: 'UNIT-',
+  module: `{ const onOpen = async () => { this.readonly = this.readonly || !this.auth.isRoleAvailable('UNIT editor') }; return { onOpen }; }`,
 })
 export class CatalogUnit extends DocumentBase {
 

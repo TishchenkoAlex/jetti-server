@@ -32,6 +32,16 @@ import { jettiDB, tasksDB } from './routes/middleware/db-sessions';
 import * as swaggerDocument from './swagger.json';
 import * as swaggerUi from 'swagger-ui-express';
 
+export const ARGS: Record<string, any> = {};
+
+(() => {
+  process.argv.map(arg => {
+    const [key, value] = arg.split('=');
+    if (key && value) return ARGS[key.toUpperCase()] = value;
+  })
+})()
+
+
 // tslint:disable: no-shadowed-variable
 const app = express();
 export const HTTP = httpServer.createServer(app);
@@ -80,16 +90,20 @@ IO.of('/').adapter.on('error', (error) => { });
 
 export const subscriber = new RedisClient(({ host: REDIS_DB_HOST, auth_pass: REDIS_DB_AUTH }));
 export const publisher = new RedisClient(({ host: REDIS_DB_HOST, auth_pass: REDIS_DB_AUTH }));
+
 subscriber.on('message', function (channel, message) {
   if (channel === 'updateDynamicMeta') updateDynamicMeta();
+  if (channel === 'updateCached') Global.cache().update(message);
+  console.info(`New redis event:`, { channel, message })
 });
 subscriber.subscribe('updateDynamicMeta');
 
-const port = (process.env.PORT) || '3000';
+const port = ARGS.PORT || (process.env.PORT) || '3000';
 HTTP.listen(port, () => console.log(`API running on port: ${port}\nDB: ${DB_NAME}\nCPUs: ${os.cpus().length}`));
 JQueue.getJobCounts().then(jobs => console.log('JOBS:', jobs));
 
 Global.init().then(e => {
+
   if (!Global.isProd) {
     let script = '';
     const ef = () => { };

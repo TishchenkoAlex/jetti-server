@@ -22,6 +22,7 @@ import { DocumentOperation } from './Document.Operation';
 import { x100 } from '../../x100.lib';
 import { getPersonContract } from '../Catalogs/Catalog.Person.Contract.server';
 import { Ref } from 'jetti-middle';
+import { CatalogLoan } from '../Catalogs/Catalog.Loan';
 
 export class DocumentCashRequestServer extends DocumentCashRequest implements IServerDocument {
 
@@ -105,6 +106,9 @@ export class DocumentCashRequestServer extends DocumentCashRequest implements IS
         this.Contract = null;
         this.CashRecipientBankAccount = null;
         this.PersonContract = null;
+        this.Loan = null;
+        this.CurrencyLoan = null;
+        this.AmountLoan = null;
         if (this.Operation === 'Оплата ДС в другую организацию') { this.CashOrBankIn = null; return this; }
         if (!value.id || value.type !== 'Catalog.Counterpartie') { this.Contract = null; return this; }
         query = `
@@ -136,6 +140,13 @@ export class DocumentCashRequestServer extends DocumentCashRequest implements IS
           this.CashRecipientBankAccount = CatalogContractObject.BankAccount;
         }
         return this;
+      case 'Loan':
+        this.CurrencyLoan = null;
+        this.AmountLoan = null;
+        const loan = await lib.doc.byIdT<CatalogLoan>(this.Loan, tx);
+        if (!loan) return this;
+        this.CurrencyLoan = loan.currency;
+        return this
       default:
         return this;
     }
@@ -596,6 +607,22 @@ export class DocumentCashRequestServer extends DocumentCashRequest implements IS
         })
         );
       });
+    } else if (this.Operation === 'Выплата дивидендов') {
+      this.PayRollsDividend.forEach(el => {
+        Registers.Accumulation.push(new RegisterAccumulationCashToPay({
+          kind: true,
+          CashRecipient: el.Person,
+          Amount: el.Amount,
+          date: this.PayDay,
+          PayDay: this.PayDay,
+          CashRequest: this.id,
+          currency: сurrency,
+          CashFlow: this.CashFlow,
+          OperationType: this.Operation,
+          exchangeRate: lib.util.round(el.AmountDiv || 0) / 1000
+        })
+        );
+      });
     } else {
       const movements = new RegisterAccumulationCashToPay({
         kind: true,
@@ -606,7 +633,10 @@ export class DocumentCashRequestServer extends DocumentCashRequest implements IS
         CashRequest: this.id,
         currency: сurrency,
         CashFlow: this.CashFlow,
-        OperationType: this.Operation
+        OperationType: this.Operation,
+        Loan: this.Operation === 'Выдача займа (МУЛЬТИВАЛЮТНАЯ)' ? this.Loan : null,
+        CashOrBank: this.Operation === 'Выдача займа (МУЛЬТИВАЛЮТНАЯ)' ? this.CashOrBank : null,
+        BankAccountPerson: this.Operation === 'Выдача займа (МУЛЬТИВАЛЮТНАЯ)' ? this.CashRecipientBankAccount : null,
       });
       if (this.Operation === 'Выплата заработной платы без ведомости' && this.CashKind === 'CASH') movements.Contract = this.PersonContract;
       Registers.Accumulation.push(movements);
@@ -762,8 +792,8 @@ export class DocumentCashRequestServer extends DocumentCashRequest implements IS
       case 'Прочий расход ДС':
         await this.FillOperationПрочийРасходДС(docOperation, tx, params);
         break;
-      case 'Выдача займа контрагенту':
-        await this.FillOperationВыдачаЗаймаКонтрагенту(docOperation, tx, params);
+      case 'Выдача займа (МУЛЬТИВАЛЮТНАЯ)':
+        await this.FillOperationВыдачаЗаймаМУЛЬТИВАЛЮТНАЯ(docOperation, tx, params);
         break;
       default:
         throw new Error(`Не реализовано создание документа для вида операции ${this.Operation} `);
@@ -939,7 +969,7 @@ export class DocumentCashRequestServer extends DocumentCashRequest implements IS
         docOperation.Operation = 'DBBCB3D0-1749-11EA-92AC-8B4BF8464BD9'; // Из кассы - Выдача/Возврат кредитов и займов (Контрагент)
       } else if (CashRecipient.type === 'Catalog.Person') {
         // tslint:disable-next-line: max-line-length
-        docOperation.Operation = '8C3B61A0-6512-11EA-A8B2-95688F3F3592'; // Из кассы - Выдача/Возврат кредитов и займов (Физ.лицо) (МУЛЬТИВАЛЮТНЫЙ)
+        docOperation.Operation = '8C3B61A0-6512-11EA-A8B2-95688F3F3592'; // Из кассы - Выдача/Возврат кредитов и займов (Физ.лицо) (МУЛЬТИВАЛЮТНАЯ)
         const CurrencyLoan = await lib.util.getObjectPropertyById(this.Loan as any, 'currency.id', tx);
         if (CurrencyLoan) {
           docOperation['CurrencyLoan'] = CurrencyLoan.id;
@@ -1123,6 +1153,30 @@ export class DocumentCashRequestServer extends DocumentCashRequest implements IS
   }
 
   async FillOperationВыдачаЗаймаКонтрагенту(docOperation: DocumentOperationServer, tx: MSSQL, params?: any) {
+
+    const CashOrBank = (await lib.doc.byId(this.CashOrBank, tx));
+    if (!CashOrBank) throw new Error(`Источник оплат не заполнен в ${this.description} `);
+
+    if (CashOrBank.type === 'Catalog.CashRegister') {
+      throw Error(`Не верно указан источник: ${CashOrBank}, может быть только банк!`);
+    } else if (CashOrBank.type === 'Catalog.BankAccount') {
+      docOperation.Group = '269BBFE8-BE7A-11E7-9326-472896644AE4'; // Списание безналичных ДС
+      docOperation.Operation = '54AA5310-102E-11EA-AA50-31ECFB22CD33'; // С р/с - Выдача/Возврат кредитов и займов (Контрагент)
+      docOperation['Counterpartie'] = this.CashRecipient;
+      docOperation['BankAccount'] = this.CashOrBank;
+      docOperation['BankAccountSupplier'] = this.CashRecipientBankAccount;
+      docOperation['BankConfirm'] = false;
+      docOperation['PaymentKind'] = this.PaymentKind || 'BODY';
+      docOperation['BankDocNumber'] = '';
+      docOperation['Loan'] = this.Loan;
+      docOperation['BankConfirmDate'] = null;
+      docOperation.f1 = docOperation['BankAccount'];
+      docOperation.f2 = docOperation['Counterpartie'];
+      docOperation.f3 = docOperation['Loan'];
+    }
+  }
+
+  async FillOperationВыдачаЗаймаМУЛЬТИВАЛЮТНАЯ(docOperation: DocumentOperationServer, tx: MSSQL, params?: any) {
 
     const CashOrBank = (await lib.doc.byId(this.CashOrBank, tx));
     if (!CashOrBank) throw new Error(`Источник оплат не заполнен в ${this.description} `);

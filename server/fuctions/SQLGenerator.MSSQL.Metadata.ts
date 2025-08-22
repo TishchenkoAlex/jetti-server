@@ -47,7 +47,7 @@ export class SQLGenegatorMetadata {
         }
         case 'enum': {
           return `
-        , TRY_CONVERT(VARCHAR(36), JSON_VALUE(data, '$."${prop}"')) [${prop}]`;
+        , TRY_CONVERT(VARCHAR(150), JSON_VALUE(data, '$."${prop}"')) [${prop}]`;
         }
         default: {
           return `
@@ -657,7 +657,7 @@ export class SQLGenegatorMetadata {
 
   static QueryListRaw(doc: DocumentBase, type: string) {
 
-    const simleProperty = (prop: string, type: string) => {
+    const simleProperty = (prop: string, type: string, maxLength: number | undefined) => {
       if (type === 'boolean') return `
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."${prop}"')), 0) [${prop}]`;
       if (type === 'number') return `
@@ -667,9 +667,9 @@ export class SQLGenegatorMetadata {
       if (type === 'datetime') return `
       , TRY_CONVERT(DATETIME, JSON_VALUE(doc,N'$."${prop}"'),127) [${prop}]`;
       if (type === 'enum') return `
-      , ISNULL(TRY_CONVERT(NVARCHAR(36), JSON_VALUE(doc,N'$."${prop}"')), '') [${prop}]`;
+      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."${prop}"')), '') [${prop}]`;
       if (type === 'string') return `
-      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."${prop}"')), '') [${prop}]`;
+      , ISNULL(TRY_CONVERT(NVARCHAR(${maxLength ?? 150}), JSON_VALUE(doc, N'$."${prop}"')), '') [${prop}]`;
       if (type.includes('.')) return `
       , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."${prop}"')) [${prop}]`;
       return `
@@ -681,7 +681,7 @@ export class SQLGenegatorMetadata {
     const docProps = doc.Props();
     for (const prop of columns.special) {
       const type = docProps[prop].type || 'string';
-      query += simleProperty(prop, type);
+      query += simleProperty(prop, type, docProps[prop].maxLength);
     }
 
     query = `

@@ -8,9 +8,9 @@ import {
   DocumentBase, Ref, IFlatDocument, INoSqlDocument, RefValue, RegisterAccumulation,
   Type, RegisterInfo, PropOptions, RegisterAccumulationOptions
 } from 'jetti-middle';
-import { createDocumentServer, DocumentBaseServer } from './models/documents.factory.server';
+import { DocumentBaseServer, createDocumentServer } from './models/documents.factory.server';
 import { createRegisterAccumulation as createAccumulationRegister, RegisterAccumulationTypes, registeredRegisterAccumulationTypes, } from './models/Registers/Accumulation/factory';
-import { adminMode, postDocument, unpostDocument, setPostedSate, IUpdateInsertDocumentOptions, upsertDocument } from './routes/utils/post';
+import { adminMode, postDocument, unpostDocument, setPostedSate, IUpdateInsertDocumentOptions as IDocumentUpsertOptions, upsertDocument } from './routes/utils/post';
 import { MSSQL } from './mssql';
 import { v1 } from 'uuid';
 import { BankStatementUnloader } from './fuctions/BankStatementUnloader';
@@ -33,6 +33,7 @@ import { JETTI_POOL_META } from './sql.pool.meta';
 import * as xml2js from 'xml2js';
 import * as crypto from 'crypto';
 import { Global } from './models/global';
+import { DocumentServer } from './models/document.server';
 
 export interface BatchRow { SKU: Ref; Storehouse: Ref; Qty: number; Cost: number; batch: Ref; rate: number; }
 export interface FillDocBasedOnParams {
@@ -87,8 +88,8 @@ export interface JTL {
     Descendants: (id: Ref, tx: MSSQL) => Promise<{ id: Ref, parent: Ref }[] | null>;
     haveDescendants: (id: Ref, tx: MSSQL) => Promise<boolean>;
     formControlRef: (id: Ref, tx: MSSQL) => Promise<RefValue | null>;
-    postById: (id: Ref, tx: MSSQL) => Promise<DocumentBaseServer>;
-    unPostById: (id: Ref, tx: MSSQL) => Promise<DocumentBaseServer>;
+    postById: (id: Ref, tx: MSSQL) => Promise<DocumentServer<any>>;
+    unPostById: (id: Ref, tx: MSSQL) => Promise<DocumentServer<any>>;
     createDoc: <T extends DocumentBase>(type: string, document?: IFlatDocument) => Promise<T>;
     createDocServer: <T extends DocumentBaseServer>(type: string, document: IFlatDocument | undefined, tx: MSSQL) => Promise<T>;
     createDocServerById: <T extends DocumentBaseServer>(id: string, tx: MSSQL) => Promise<T | null>;
@@ -96,7 +97,7 @@ export interface JTL {
       servDoc: DocumentBaseServer,
       tx: MSSQL,
       queuePostFlow?: number,
-      opts?: IUpdateInsertDocumentOptions
+      opts?: IDocumentUpsertOptions
     ) => Promise<DocumentBaseServer>
     updateDoc: (servDoc: DocumentBaseServer, tx: MSSQL) => Promise<DocumentBaseServer>
     fillDocBasedOn: (params: FillDocBasedOnParams, tx: MSSQL) => Promise<IFlatDocument | null>
@@ -186,8 +187,13 @@ export interface JTL {
     addId: (id: string, flow: number, taskPoolTX?: MSSQL) => Promise<void>
   };
   log: {
-    newEvent: (init: Partial<Event>) => Event
+    newEvent: (init: Partial<Event>) => Event,
+    logIfDev: (...args: any[]) => void
   };
+  cache: {
+    get: <T>(key: string) => T | undefined,
+    update(cacheKey: string)
+  }
 }
 
 export const lib: JTL = {
@@ -289,9 +295,24 @@ export const lib: JTL = {
     addId
   },
   log: {
-    newEvent
+    newEvent,
+    logIfDev
+  },
+  cache: {
+    get: cacheGet,
+    update: cacheUpdate
   }
 };
+
+
+function cacheUpdate(cacheKey: string) {
+  return Global.cacheUpdate(cacheKey);
+}
+
+function cacheGet<T>(cacheKey: string): T | undefined {
+  return Global.cache().get(cacheKey);
+}
+
 
 function config() {
   return configSchema();
@@ -473,24 +494,37 @@ async function executeCommand(params: ExecuteCommandParams, tx: MSSQL): Promise<
 }
 
 async function saveDoc(
-  servDoc: DocumentBaseServer
+  doc: DocumentBaseServer
   , tx: MSSQL
-  , queuePostFlow?: number
-  , opts?: IUpdateInsertDocumentOptions): Promise<DocumentBaseServer> {
-  const savedVersion = await byId(servDoc.id, tx);
-  const isPostedBefore = Type.isDocument(servDoc.type) && savedVersion && savedVersion.posted;
-  const isPostedAfter = Type.isDocument(servDoc.type) && servDoc.posted;
-  if (isPostedBefore) await unpostDocument(servDoc, tx);
-  if (!servDoc.code) servDoc.code = await lib.doc.docPrefix(servDoc.type, tx);
-  const isPostedUsingQueue = isPostedAfter && queuePostFlow !== undefined;
-  if (isPostedUsingQueue) servDoc.posted = false;
-  await upsertDocument(servDoc, tx, opts);
-  if (isPostedAfter) {
-    if (isPostedUsingQueue) await lib.queuePost.addId(servDoc.id, queuePostFlow as number, tx);
-    else await postDocument(servDoc, tx);
-  }
-  return servDoc;
+  , postQueue?: number
+  , opts?: IDocumentUpsertOptions): Promise<DocumentBaseServer> {
+  const docServer = new DocumentServer(doc, tx);
+  if (doc.isDoc && doc.posted)
+    return await docServer.post({ postQueue, ...(opts || {}) });
+  else
+    return await docServer.save();
 }
+
+// async function saveDoc(
+//   servDoc: DocumentBaseServer
+//   , tx: MSSQL
+//   , queuePostFlow?: number
+//   , opts?: IUpdateInsertDocumentOptions): Promise<DocumentBaseServer> {
+//   const savedVersion = await byId(servDoc.id, tx);
+//   const isPostedBefore = Type.isDocument(servDoc.type) && savedVersion && savedVersion.posted;
+//   const isPostedAfter = Type.isDocument(servDoc.type) && servDoc.posted;
+//   if (isPostedBefore) await unpostDocument(servDoc, tx);
+//   if (!servDoc.code) servDoc.code = await lib.doc.docPrefix(servDoc.type, tx);
+//   const isPostedUsingQueue = isPostedAfter && queuePostFlow !== undefined;
+//   if (isPostedUsingQueue) servDoc.posted = false;
+//   await upsertDocument(servDoc, tx, opts);
+//   if (isPostedAfter) {
+//     if (isPostedUsingQueue) await lib.queuePost.addId(servDoc.id, queuePostFlow as number, tx);
+//     else await postDocument(servDoc, tx);
+//   }
+//   return servDoc;
+// }
+
 
 async function updateDoc(servDoc: DocumentBaseServer, tx): Promise<DocumentBaseServer> {
   return await upsertDocument(servDoc, tx);
@@ -719,6 +753,10 @@ async function turnover<T>(
 }
 
 export async function postById(id: Ref, tx: MSSQL) {
+  return await DocumentServer.postById(id!, tx);
+}
+
+export async function _postById(id: Ref, tx: MSSQL) {
   await lib.util.adminMode(true, tx);
   try {
     const serverDoc = await setPostedSate(id, tx);
@@ -730,11 +768,34 @@ export async function postById(id: Ref, tx: MSSQL) {
 }
 
 export async function unPostById(id: Ref, tx: MSSQL) {
+
+  return await DocumentServer.unPostById(id, tx);
+
+  // let docServer: DocumentServer<any> | undefined = undefined;
+  // let postRes;
+
+
+  // docServer = await DocumentServer.byId(id!, tx);
+  // if (!docServer) throw DocumentServer.errorNotExistId(id);
+  // postRes = await docServer.unPost();
+
+
+  // if (!!docServer) {
+  //   try {
+  //     await Promise.all((docServer as DocumentServer<any>).afterTxCommitted.map(f => f()));
+  //   } catch (error) {
+  //     console.error('[lib.unPostById]', error);
+  //   }
+  // }
+
+  // return postRes;
+}
+
+export async function _unPostById(id: Ref, tx: MSSQL) {
   await lib.util.adminMode(true, tx);
   try {
     const doc = (await lib.doc.byId(id, tx))!;
     const serverDoc = await createDocumentServer(doc.type as string, doc, tx);
-    // if (!doc.posted) return serverDoc;
     serverDoc.posted = false;
     await unpostDocument(serverDoc, tx);
     await upsertDocument(serverDoc, tx);
@@ -748,9 +809,9 @@ function taskPoolTx(): MSSQL {
     { email: 'service@service.com', isAdmin: true, description: 'service account', env: {}, roles: [] });
 }
 
-async function executeGETRequest(opts: { baseURL: string, query: string }): Promise<any> {
+async function executeGETRequest(opts: { baseURL: string, query: string, config?: any }): Promise<any> {
   const instance = axios.create({ baseURL: opts.baseURL });
-  return await instance.get(opts.query);
+  return await instance.get(opts.query, opts.config);
 }
 
 async function executePOSTRequest(opts: { url: string, data: any, config?: any }): Promise<any> {
@@ -1233,5 +1294,9 @@ function exchangeDB() {
 
 function newEvent(init: Partial<Event>) {
   return new Event(init);
+}
+
+function logIfDev(...args: any[]): void {
+  if (!Global.isProd) console.log(args);
 }
 

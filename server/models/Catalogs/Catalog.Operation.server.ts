@@ -18,7 +18,7 @@ export class CatalogOperationServer extends CatalogOperation implements IServerD
     }
 
     async updateSQLViews() {
-        await lib.meta.updateSQLViewsByOperationId(this.id as any);
+        await lib.meta.updateSQLViewsByOperationId(this.id as any, undefined, false);
     }
 
     async createSequence(tx: MSSQL) {

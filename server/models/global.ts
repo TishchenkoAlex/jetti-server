@@ -2,11 +2,14 @@ import { IDynamicMetadata, getDynamicMeta } from './Dynamic/dynamic.common';
 import { AllDocTypes, DocTypes } from './documents.types';
 import { x100 } from '../x100.lib';
 import { lib } from '../std.lib';
-import * as moment from 'moment';
 import { getConfigSchema, getRegisteredDocuments, IConfigSchema, storedInTablesTypes } from './config';
 import { getIndexedOperationsMap } from './indexedOperation';
 import { DocumentBase } from 'jetti-middle';
 import { RegisteredDocumentType } from './documents.factory';
+import { JCache } from './cache';
+import { publisher, subscriber } from '..';
+import { RegisterRlsPeriod } from './register.info.rls.period';
+
 
 export class Global {
 
@@ -23,18 +26,28 @@ export class Global {
     static RegisteredDocuments = () => global['RegisteredDocuments'] as Map<DocTypes, RegisteredDocumentType> || new Map;
     static RegisteredDocumentDynamic = () =>
         (global['dynamicMeta'] ? global['dynamicMeta']['RegisteredDocument'] : []) as RegisteredDocumentType[]
-    static moment = () => global['moment'];
     static storedInTablesTypes = () => (global['storedInTablesTypes'] || {}) as { [x: string]: boolean };
+    static cache = () => global['cache'] as JCache;
 
     static async init() {
         global['x100'] = x100;
         global['lib'] = lib;
         global['DOC'] = lib.doc;
         global['byCode'] = lib.doc.byCode;
-        global['moment'] = moment;
         global['isProd'] = process.env.NODE_ENV === 'production';
         await this.updateDynamicMeta();
-        // console.log(global['RegisteredDocuments']);
+        await this.initCache();
+    }
+
+    static cacheUpdate(event: string) {
+        publisher.publish('updateCached', event);
+    }
+
+    private static async initCache() {
+        const updaters = RegisterRlsPeriod.getCacheUpdaters();
+        const cache = new JCache(new Map, updaters);
+        global['cache'] = await cache.init();
+        subscriber.subscribe(['updateCached']);
     }
 
     static async updateDynamicMeta() {
@@ -45,5 +58,13 @@ export class Global {
         global['RegisteredDocuments'] = await getRegisteredDocuments(); // static + dynamic
         global['storedInTablesTypes'] = await storedInTablesTypes();
         global['configSchema'] = getConfigSchema();
+    }
+
+    static cacheSet(key: string, value: any) {
+        return this.cache().set(key, value);
+    }
+
+    static cacheGet(key: string) {
+        return this.cache().get(key);
     }
 }
