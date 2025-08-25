@@ -79,6 +79,7 @@ GO
         , ISNULL([OwnerTerminal.v].description, '') [OwnerTerminal.value], d.[OwnerTerminal] [OwnerTerminal.id], [OwnerTerminal.v].type [OwnerTerminal.type]
         , d.[isDisabled] [isDisabled]
         , d.[integrationApi] [integrationApi]
+        , d.[deviceId] [deviceId]
       
         , ISNULL(l5.id, d.id) [AcquiringTerminal.Level5.id]
         , ISNULL(l4.id, ISNULL(l5.id, d.id)) [AcquiringTerminal.Level4.id]
@@ -1400,6 +1401,8 @@ GO
         , d.[ProductDescription] [ProductDescription]
         , d.[isNotActiveDish] [isNotActiveDish]
         , d.[isMarkable] [isMarkable]
+        , d.[PromotionDetails] [PromotionDetails]
+        , ISNULL([TaxRate.v].description, '') [TaxRate.value], d.[TaxRate] [TaxRate.id], [TaxRate.v].type [TaxRate.type]
       
         , ISNULL(l5.id, d.id) [Product.Level5.id]
         , ISNULL(l4.id, ISNULL(l5.id, d.id)) [Product.Level4.id]
@@ -1432,6 +1435,7 @@ GO
         LEFT JOIN dbo.[Catalog.Expense.Analytics.v] [Analytics.v] WITH (NOEXPAND) ON [Analytics.v].id = d.[Analytics]
         LEFT JOIN dbo.[Catalog.Product.Report.v] [ProductReport.v] WITH (NOEXPAND) ON [ProductReport.v].id = d.[ProductReport]
         LEFT JOIN dbo.[Document.Operation.v] [Settings.v] WITH (NOEXPAND) ON [Settings.v].id = d.[Settings]
+        LEFT JOIN dbo.[Catalog.TaxRate.v] [TaxRate.v] WITH (NOEXPAND) ON [TaxRate.v].id = d.[TaxRate]
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.Product] TO jetti;
@@ -1510,6 +1514,7 @@ GO
         , d.[Slug] [Slug]
         , ISNULL([GroupProductCategory.v].description, '') [GroupProductCategory.value], d.[GroupProductCategory] [GroupProductCategory.id], [GroupProductCategory.v].type [GroupProductCategory.type]
         , d.[SlugIndex] [SlugIndex]
+        , d.[isMarketing] [isMarketing]
       
         , ISNULL(l5.id, d.id) [ProductCategory.Level5.id]
         , ISNULL(l4.id, ISNULL(l5.id, d.id)) [ProductCategory.Level4.id]
@@ -1731,6 +1736,7 @@ GO
         , d.[Slug] [Slug]
         , d.[isCashRequestRecipientApprovingUsed] [isCashRequestRecipientApprovingUsed]
         , d.[isCashRequestCFRecipientApprovingUsed] [isCashRequestCFRecipientApprovingUsed]
+        , ISNULL([ServiceFee.v].description, '') [ServiceFee.value], d.[ServiceFee] [ServiceFee.id], [ServiceFee.v].type [ServiceFee.type]
       
         , ISNULL(l5.id, d.id) [RetailNetwork.Level5.id]
         , ISNULL(l4.id, ISNULL(l5.id, d.id)) [RetailNetwork.Level4.id]
@@ -1758,6 +1764,7 @@ GO
         LEFT JOIN dbo.[Catalog.Country.v] [Country.v] WITH (NOEXPAND) ON [Country.v].id = d.[Country]
         LEFT JOIN dbo.[Catalog.Currency.v] [Currency.v] WITH (NOEXPAND) ON [Currency.v].id = d.[Currency]
         LEFT JOIN dbo.[Catalog.Product.v] [ServiceProduct.v] WITH (NOEXPAND) ON [ServiceProduct.v].id = d.[ServiceProduct]
+        LEFT JOIN dbo.[Catalog.Product.v] [ServiceFee.v] WITH (NOEXPAND) ON [ServiceFee.v].id = d.[ServiceFee]
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.RetailNetwork] TO jetti;

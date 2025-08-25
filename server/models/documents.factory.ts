@@ -98,6 +98,7 @@ import { CatalogRetailNetwork } from './Catalogs/Catalog.RetailNetwork';
 import { CatalogBusinessCalendar } from './Catalogs/Catalog.BusinessCalendar';
 import { IFlatDocument } from 'jetti-middle';
 import { CatalogMoneyDocument } from './Catalogs/Catalog.MoneyDocument';
+import { COMMON_COMPANY } from '../env/environment';
 
 export function createDocument<T extends DocumentBase>(type: string, document?: IFlatDocument): T {
 
@@ -125,7 +126,7 @@ export function createDocument<T extends DocumentBase>(type: string, document?: 
     ArrayProps.forEach(prop => result[prop].length = 0);
   }
   if (document) result.map(document);
-  if (!result.company) result.company = '00000000-0000-0000-0000-000000000000';
+  if (!result.company) result.company = COMMON_COMPANY;
   return result as T;
 }
 

@@ -59,6 +59,7 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."OwnerTerminal"')) [OwnerTerminal]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isDisabled"')), 0) [isDisabled]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."integrationApi"')), '') [integrationApi]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."deviceId"')), '') [deviceId]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.AcquiringTerminal';
 GO
@@ -1063,6 +1064,8 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , ISNULL(TRY_CONVERT(NVARCHAR(700), JSON_VALUE(doc, N'$."ProductDescription"')), '') [ProductDescription]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isNotActiveDish"')), 0) [isNotActiveDish]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isMarkable"')), 0) [isMarkable]
+, ISNULL(TRY_CONVERT(NVARCHAR(500), JSON_VALUE(doc, N'$."PromotionDetails"')), '') [PromotionDetails]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."TaxRate"')) [TaxRate]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.Product';
 GO
@@ -1139,6 +1142,7 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Slug"')), '') [Slug]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."GroupProductCategory"')) [GroupProductCategory]
 , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."SlugIndex"')), 0) [SlugIndex]
+, ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isMarketing"')), 0) [isMarketing]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.ProductCategory';
 GO
@@ -1309,6 +1313,7 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Slug"')), '') [Slug]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isCashRequestRecipientApprovingUsed"')), 0) [isCashRequestRecipientApprovingUsed]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isCashRequestCFRecipientApprovingUsed"')), 0) [isCashRequestCFRecipientApprovingUsed]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."ServiceFee"')) [ServiceFee]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.RetailNetwork';
 GO

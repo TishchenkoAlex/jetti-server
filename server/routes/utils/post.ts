@@ -4,6 +4,7 @@ import { MSSQL } from '../../mssql';
 import { DocumentBaseServer, createDocumentServer } from '../../models/documents.factory.server';
 import { INoSqlDocument, Ref, Type } from 'jetti-middle';
 import { READONLY } from './post-rules/readonly';
+import { ARCH_USER } from '../../env/environment';
 
 export interface IUpdateInsertDocumentOptions { withExchangeInfo: boolean; }
 
@@ -42,11 +43,17 @@ export async function unpostDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
   // `, [serverDoc.id, serverDoc.date]);
 }
 
+async function updateAcrivedUser(doc: INoSqlDocument | null, tx: MSSQL) {
+  if (!doc || doc?.user !== ARCH_USER) return;
+  doc.user = await tx.userId();
+}
+
 export async function insertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
 
   await beforeSaveDocument(serverDoc, tx);
 
   const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
+  await updateAcrivedUser(noSqlDocument, tx);
   const jsonDoc = JSON.stringify(noSqlDocument);
   const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
 
@@ -89,6 +96,7 @@ export async function updateDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
   await beforeSaveDocument(serverDoc, tx);
 
   const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
+  await updateAcrivedUser(noSqlDocument, tx);
   const jsonDoc = JSON.stringify(noSqlDocument);
   const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
 
@@ -140,6 +148,7 @@ export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
   await beforeSaveDocument(serverDoc, tx);
 
   const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
+  await updateAcrivedUser(noSqlDocument, tx);
   const jsonDoc = JSON.stringify(noSqlDocument);
   const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
   const operationFilter = serverDoc.type === 'Document.Operation' ? `Documents.operation = @Operation` : 'Documents.operation IS NULL';
@@ -251,6 +260,7 @@ export async function _upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, 
   await beforeSaveDocument(serverDoc, tx);
 
   const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
+  await updateAcrivedUser(noSqlDocument, tx);
   const jsonDoc = JSON.stringify(noSqlDocument);
   const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
   const operationFilter = serverDoc.type === 'Document.Operation' ? `Documents.operation = @Operation` : 'Documents.operation IS NULL';
