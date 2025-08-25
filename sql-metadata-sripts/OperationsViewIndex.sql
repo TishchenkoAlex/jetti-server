@@ -16,7 +16,6 @@
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."TimeOpen"')), '') [TimeOpen]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."TimeClose"')), '') [TimeClose]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."MaxTotalOrder"')), 0) [MaxTotalOrder]
-      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."DeliveryTimeClose"')), '') [DeliveryTimeClose]
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isDeliveringService"')), 0) [isDeliveringService]
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isPickupService"')), 0) [isPickupService]
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isComentRequired"')), 0) [isComentRequired]
@@ -54,12 +53,13 @@
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."outletId"')), '') [outletId]
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."hiddenClientPhone"')), 0) [hiddenClientPhone]
       , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isAllowedToChangeOrderStatusToReady"')), 0) [isAllowedToChangeOrderStatusToReady]
-      , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isPlanningSemifinished"')), 0) [isPlanningSemifinished]
       , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."floor"')), 0) [floor]
+      , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isPlanningSemifinished"')), 0) [isPlanningSemifinished]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."PickupTimeOpen"')), '') [PickupTimeOpen]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."PickupTimeClose"')), '') [PickupTimeClose]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."DeliveryTimeOpen"')), '') [DeliveryTimeOpen]
       , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."DeliveryTimeCloseKaDS"')), '') [DeliveryTimeCloseKaDS]
+      , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."DeliveryTimeClose"')), '') [DeliveryTimeClose]
       FROM dbo.[Documents]
       WHERE [operation] = 'CE62E430-3004-11E8-A0FF-732D589B1ACA'
 ; 

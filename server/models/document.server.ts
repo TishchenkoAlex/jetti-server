@@ -8,6 +8,7 @@ import { buildViewModel } from "../routes/documents";
 import { PostResult } from "./post.interfaces";
 import { RegistersMovements } from "./registers.movements";
 import { checkReadonlyPeriod, checkReadonlyPeriodRegisters } from "../routes/utils/post-rules/readonly";
+import { ARCH_USER } from "../env/environment";
 
 enum DocLiveCycleEvent {
     onUnPost = 'onUnPost',
@@ -18,7 +19,8 @@ enum DocLiveCycleEvent {
 }
 
 const SQL_QUERY = {
-    DELETE_DOCUMENT: `UPDATE "Documents" SET deleted = @p3, posted = @p4, timestamp = GETDATE() WHERE id = @p1;`
+    DELETE_DOCUMENT: `UPDATE "Documents" SET deleted = @p3, posted = @p4, timestamp = GETDATE() WHERE id = @p1;`,
+    DELETE_DOCUMENT_ARCHIVED: `UPDATE "Documents" SET deleted = @p3, posted = @p4, "user" = @p5, timestamp = GETDATE() WHERE id = @p1;`
 }
 
 type asyncF = () => Promise<any>;
@@ -137,9 +139,13 @@ export class DocumentServer<T extends DocumentBaseServer> {
         checkReadonlyPeriod(this.doc.type, this.doc.date, (this.tx.user?.roles || []))
     }
 
+    isArchived() {
+        return this.doc.user === ARCH_USER;
+    }
+
     async setDeleted(deleted: boolean) {
         if (deleted === this.deleted) return this.doc;
-        
+
         this.checkReadonlyPeriod();
 
         if (deleted) await this.handleLifeCycleEvent(DocLiveCycleEvent.beforeDelete);
@@ -151,7 +157,13 @@ export class DocumentServer<T extends DocumentBaseServer> {
         this.doc.deleted = deleted;
         this.doc.posted = false;
 
-        await this.tx.none(SQL_QUERY.DELETE_DOCUMENT, [this.doc.id, this.doc.date, this.doc.deleted, this.doc.posted]);
+        if (this.isArchived()) {
+            this.doc.user = await this.tx.userId();
+            await this.tx.none(SQL_QUERY.DELETE_DOCUMENT_ARCHIVED, [this.doc.id, this.doc.date, this.doc.deleted, this.doc.posted, this.doc.user]);
+        } else {
+            await this.tx.none(SQL_QUERY.DELETE_DOCUMENT, [this.doc.id, this.doc.date, this.doc.deleted, this.doc.posted]);
+        }
+
 
         if (deleted) await this.handleLifeCycleEvent(DocLiveCycleEvent.afterDelete);
 

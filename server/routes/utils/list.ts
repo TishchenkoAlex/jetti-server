@@ -4,6 +4,7 @@ import { lib } from '../../std.lib';
 import { filterBuilder, userContextFilter } from '../../fuctions/filterBuilder';
 import { DocListRequestBody, DocListResponse, FormListFilter, DocumentBase, Type } from 'jetti-middle';
 import { ARGS } from '../..';
+import { ARCH_USER } from '../../env/environment';
 
 
 export async function _List(params: DocListRequestBody & { used: string }, tx: MSSQL): Promise<DocListResponse> {
@@ -287,6 +288,14 @@ SELECT * FROM(${QueryList}) d WHERE id IN(
       query = `${queryFilter.tempTable} SELECT * FROM(SELECT TOP ${params.count + 1} * FROM(${QueryList}) d WHERE ${(queryFilter.where)} ${usedInQuery('<')} ${orderbyBefore}) d ${orderbyAfter} `;
     else
       query = `${queryFilter.tempTable}SELECT TOP ${params.count + 1} * FROM(${QueryList}) d WHERE ${(queryFilter.where)} ${usedInQuery('>')} ${orderbyAfter} `;
+  }
+
+  if (Type.isCatalog(params.type)) {
+    if (query.includes('SELECT *')) {
+      query = query.replace('SELECT *', `SELECT *, IIF([user.id] = '${ARCH_USER}', CAST(1 AS bit), CAST(0 AS bit)) archived`);
+    } else
+      query = query.replace(`SELECT TOP ${params.count + 1} *`, `SELECT TOP ${params.count + 1} *, IIF([user.id] = '${ARCH_USER}', CAST(1 AS bit), CAST(0 AS bit)) archived`);
+
   }
 
   if (process.env.NODE_ENV !== 'production' && !ARGS.DISABLED_LIST_LOG) console.log(query);

@@ -7,6 +7,7 @@ import { createTypes, allTypes } from '../models/Types/Types.factory';
 import { createDocument } from '../models/documents.factory';
 import { FormListFilter, ISuggest, Type, DocumentOptions } from 'jetti-middle';
 import { SQLGenegatorMetadata } from '../fuctions/SQLGenerator.MSSQL.Metadata';
+import { ARCH_USER } from '../env/environment';
 
 export const router = express.Router();
 
@@ -27,7 +28,7 @@ router.post('/suggest/:type', async (req: Request, res: Response, next: NextFunc
       :
       `(description LIKE N'%${filterLike}%' OR code LIKE N'%${filterLike}%')`;
 
-    const queryOrder = () => isDoc ?
+    const queryOrder = () => isDoc ? 
       `date desc`
       :
       `LEN([description]), type, description, deleted, code`;
@@ -45,7 +46,14 @@ router.post('/suggest/:type', async (req: Request, res: Response, next: NextFunc
     else {
       filterQuery.where += userContextFilter(sdb.userContext, type === 'Catalog.Company' ? 'id' : 'company');
       query = `${filterQuery.tempTable}
-    SELECT top 10 id as id, description as value, code as code, description + ' (' + code + ')' as description, type as type, isfolder, deleted
+    SELECT top 10 id as id,
+      description as value,
+      code,
+      description + ' (' + code + ')' as description,
+      type,
+      isfolder,
+      deleted,
+      IIF([user] = '${ARCH_USER}', CAST(1 AS bit), CAST(0 AS bit)) archived
     FROM [${type}.v] ${SQLGenegatorMetadata.noExpander(type)}
     WHERE ${filterQuery.where}`;
     }
