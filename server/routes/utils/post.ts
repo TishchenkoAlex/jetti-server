@@ -28,8 +28,9 @@ export async function postDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
 }
 
 export async function unpostDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
-  if (!serverDoc.isDoc) return;
-  throw `Deprecated method "unpostDocument"`
+    throw `Deprecated method "unpostDocument"`
+  // if (!serverDoc.isDoc) return;
+
   // const onUnPost: (tx: MSSQL) => Promise<DocumentBaseServer> = serverDoc['serverModule']['onUnPost'];
   // if (typeof onUnPost === 'function') await onUnPost(tx);
   // if (serverDoc.onUnPost) await serverDoc.onUnPost(tx);
@@ -43,112 +44,112 @@ export async function unpostDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
   // `, [serverDoc.id, serverDoc.date]);
 }
 
-async function updateAcrivedUser(doc: INoSqlDocument | null, tx: MSSQL) {
-  if (!doc || doc?.user !== ARCH_USER) return;
-  doc.user = await tx.userId();
-}
 
 export async function insertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
 
-  await beforeSaveDocument(serverDoc, tx);
+    throw `Deprecated method "insertDocument" use "upsertDocument" instead`
 
-  const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
-  await updateAcrivedUser(noSqlDocument, tx);
-  const jsonDoc = JSON.stringify(noSqlDocument);
-  const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
+  // await beforeSaveDocument(serverDoc, tx);
 
-  const response = <INoSqlDocument>await tx.oneOrNone<INoSqlDocument>(`
-    INSERT INTO Documents(
-      [id], [type], [date], [code], [description], [posted], [deleted],
-      [parent], [isfolder], [company], [user], [info], [doc] ${withExchangeInfo ? ', [ExchangeCode], [ExchangeBase]' : ''})
-    SELECT
-      [id], [type], [date], [code], [description], [posted], [deleted],
-      [parent], [isfolder], [company], [user], [info], [doc]
-      ${withExchangeInfo ? ', [ExchangeCode], [ExchangeBase]' : ''}
-    FROM OPENJSON(@p1) WITH (
-      [id] UNIQUEIDENTIFIER,
-      [date] DATETIME,
-      [type] NVARCHAR(100),
-      [code] NVARCHAR(36),
-      [description] NVARCHAR(150),
-      [posted] BIT,
-      [deleted] BIT,
-      [parent] UNIQUEIDENTIFIER,
-      [isfolder] BIT,
-      [company] UNIQUEIDENTIFIER,
-      [user] UNIQUEIDENTIFIER,
-      [info] NVARCHAR(max),
-      [doc] NVARCHAR(max) N'$.doc' AS JSON
-      ${withExchangeInfo ? `
-      ,[ExchangeCode] NVARCHAR(50),
-      [ExchangeBase] NVARCHAR(50)` : ''}
-    );
-    SELECT * FROM Documents WHERE id = @p2`, [jsonDoc, serverDoc.id]);
+  // const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
+  // await updateAcrhivedUser(noSqlDocument, tx);
+  // const jsonDoc = JSON.stringify(noSqlDocument);
+  // const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
 
-  await afterSaveDocument(serverDoc, tx);
-  serverDoc.map(response);
-  return serverDoc;
+  // const response = <INoSqlDocument>await tx.oneOrNone<INoSqlDocument>(`
+  //   INSERT INTO Documents(
+  //     [id], [type], [date], [code], [description], [posted], [deleted],
+  //     [parent], [isfolder], [company], [user], [info], [doc] ${withExchangeInfo ? ', [ExchangeCode], [ExchangeBase]' : ''})
+  //   SELECT
+  //     [id], [type], [date], [code], [description], [posted], [deleted],
+  //     [parent], [isfolder], [company], [user], [info], [doc]
+  //     ${withExchangeInfo ? ', [ExchangeCode], [ExchangeBase]' : ''}
+  //   FROM OPENJSON(@p1) WITH (
+  //     [id] UNIQUEIDENTIFIER,
+  //     [date] DATETIME,
+  //     [type] NVARCHAR(100),
+  //     [code] NVARCHAR(36),
+  //     [description] NVARCHAR(150),
+  //     [posted] BIT,
+  //     [deleted] BIT,
+  //     [parent] UNIQUEIDENTIFIER,
+  //     [isfolder] BIT,
+  //     [company] UNIQUEIDENTIFIER,
+  //     [user] UNIQUEIDENTIFIER,
+  //     [info] NVARCHAR(max),
+  //     [doc] NVARCHAR(max) N'$.doc' AS JSON
+  //     ${withExchangeInfo ? `
+  //     ,[ExchangeCode] NVARCHAR(50),
+  //     [ExchangeBase] NVARCHAR(50)` : ''}
+  //   );
+  //   SELECT * FROM Documents WHERE id = @p2`, [jsonDoc, serverDoc.id]);
+
+  // await afterSaveDocument(serverDoc, tx);
+  // serverDoc.map(response);
+  // return serverDoc;
 
 }
 
 export async function updateDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
 
-  await beforeSaveDocument(serverDoc, tx);
+  throw `Deprecated method "updateDocument" use "upsertDocument" instead`
 
-  const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
-  await updateAcrivedUser(noSqlDocument, tx);
-  const jsonDoc = JSON.stringify(noSqlDocument);
-  const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
+  // await beforeSaveDocument(serverDoc, tx);
 
-  const response = <INoSqlDocument>await tx.oneOrNone<INoSqlDocument>(`
-    UPDATE Documents
-      SET
-        type = i.type, parent = i.parent,
-        date = i.date, code = i.code, description = i.description,
-        posted = i.posted, deleted = i.deleted, isfolder = i.isfolder,
-        "user" = i."user", company = i.company, info = i.info, timestamp = GETDATE(),
-        ${withExchangeInfo ? 'ExchangeCode = i.ExchangeCode,  ExchangeBase = i.ExchangeBase,' : ''} doc = i.doc
-      FROM (
-        SELECT *
-        FROM OPENJSON(@p1) WITH (
-          [id] UNIQUEIDENTIFIER,
-          [date] DATETIME,
-          [type] NVARCHAR(100),
-          [code] NVARCHAR(36),
-          [description] NVARCHAR(150),
-          [posted] BIT,
-          [deleted] BIT,
-          [isfolder] BIT,
-          [company] UNIQUEIDENTIFIER,
-          [user] UNIQUEIDENTIFIER,
-          [info] NVARCHAR(max),
-          [parent] UNIQUEIDENTIFIER,
-          ${withExchangeInfo ? `
-          [ExchangeCode] NVARCHAR(50),
-          [ExchangeBase] NVARCHAR(50),` : ''}
-          [doc] NVARCHAR(max) N'$.doc' AS JSON
-        )
-      ) i
-    WHERE Documents.id = i.id;
-    SELECT * FROM Documents WHERE id = @p2`, [jsonDoc, serverDoc.id]);
+  // const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
+  // await updateAcrhivedUser(noSqlDocument, tx);
+  // const jsonDoc = JSON.stringify(noSqlDocument);
+  // const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
 
-  await afterSaveDocument(serverDoc, tx);
+  // const response = <INoSqlDocument>await tx.oneOrNone<INoSqlDocument>(`
+  //   UPDATE Documents
+  //     SET
+  //       type = i.type, parent = i.parent,
+  //       date = i.date, code = i.code, description = i.description,
+  //       posted = i.posted, deleted = i.deleted, isfolder = i.isfolder,
+  //       "user" = i."user", company = i.company, info = i.info, timestamp = GETDATE(),
+  //       ${withExchangeInfo ? 'ExchangeCode = i.ExchangeCode,  ExchangeBase = i.ExchangeBase,' : ''} doc = i.doc
+  //     FROM (
+  //       SELECT *
+  //       FROM OPENJSON(@p1) WITH (
+  //         [id] UNIQUEIDENTIFIER,
+  //         [date] DATETIME,
+  //         [type] NVARCHAR(100),
+  //         [code] NVARCHAR(36),
+  //         [description] NVARCHAR(150),
+  //         [posted] BIT,
+  //         [deleted] BIT,
+  //         [isfolder] BIT,
+  //         [company] UNIQUEIDENTIFIER,
+  //         [user] UNIQUEIDENTIFIER,
+  //         [info] NVARCHAR(max),
+  //         [parent] UNIQUEIDENTIFIER,
+  //         ${withExchangeInfo ? `
+  //         [ExchangeCode] NVARCHAR(50),
+  //         [ExchangeBase] NVARCHAR(50),` : ''}
+  //         [doc] NVARCHAR(max) N'$.doc' AS JSON
+  //       )
+  //     ) i
+  //   WHERE Documents.id = i.id;
+  //   SELECT * FROM Documents WHERE id = @p2`, [jsonDoc, serverDoc.id]);
 
-  serverDoc.map(response);
-  return serverDoc;
+  // await afterSaveDocument(serverDoc, tx);
+
+  // serverDoc.map(response);
+  // return serverDoc;
+}
+
+async function updateAcrhivedUser(doc: INoSqlDocument | null, tx: MSSQL) {
+  if (!doc || doc?.user !== ARCH_USER) return;
+  doc.user = await tx.userId();
 }
 
 export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
 
-  const checkReadonlyPeriod = Type.isDocument(serverDoc.type) && !tx.isRoleAvailable(READONLY.ROLE);
-  if (checkReadonlyPeriod && serverDoc.date < READONLY.DATE) {
-    throw READONLY.ERROR;
-  }
-
   await beforeSaveDocument(serverDoc, tx);
 
   const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
-  await updateAcrivedUser(noSqlDocument, tx);
+  await updateAcrhivedUser(noSqlDocument, tx);
   const jsonDoc = JSON.stringify(noSqlDocument);
   const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
   const operationFilter = serverDoc.type === 'Document.Operation' ? `Documents.operation = @Operation` : 'Documents.operation IS NULL';
@@ -242,6 +243,8 @@ export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
 
   SELECT * FROM Documents WHERE id = @p2`;
 
+  const checkReadonlyPeriod = Type.isDocument(serverDoc.type) && !tx.isRoleAvailable(READONLY.ROLE);
+
   const response = await tx.oneOrNone<INoSqlDocument>(query, [
     jsonDoc,
     serverDoc.id,
@@ -255,95 +258,94 @@ export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
   return serverDoc;
 }
 
-export async function _upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
+// export async function _upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
 
-  await beforeSaveDocument(serverDoc, tx);
+//   await beforeSaveDocument(serverDoc, tx);
 
-  const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
-  await updateAcrivedUser(noSqlDocument, tx);
-  const jsonDoc = JSON.stringify(noSqlDocument);
-  const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
-  const operationFilter = serverDoc.type === 'Document.Operation' ? `Documents.operation = @Operation` : 'Documents.operation IS NULL';
+//   const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
+//   const jsonDoc = JSON.stringify(noSqlDocument);
+//   const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
+//   const operationFilter = serverDoc.type === 'Document.Operation' ? `Documents.operation = @Operation` : 'Documents.operation IS NULL';
 
-  const query = `
-  DECLARE @DocId UNIQUEIDENTIFIER;
-  DECLARE @Operation UNIQUEIDENTIFIER;
+//   const query = `
+//   DECLARE @DocId UNIQUEIDENTIFIER;
+//   DECLARE @Operation UNIQUEIDENTIFIER;
 
-  SELECT @DocId = id, @Operation = operation FROM Documents WHERE id = @p2;
+//   SELECT @DocId = id, @Operation = operation FROM Documents WHERE id = @p2;
 
-  IF @DocId IS NULL
-  BEGIN
-  INSERT INTO Documents(
-        [id], [type], [date], [code], [description], [posted], [deleted],
-        [parent], [isfolder], [company], [user], [info], [doc] ${withExchangeInfo ? ', [ExchangeCode], [ExchangeBase]' : ''})
-      SELECT
-        [id], [type], [date], [code], [description], [posted], [deleted],
-        [parent], [isfolder], [company], [user], [info], [doc]
-        ${withExchangeInfo ? ', [ExchangeCode], [ExchangeBase]' : ''}
-      FROM OPENJSON(@p1) WITH (
-        [id] UNIQUEIDENTIFIER,
-        [date] DATETIME,
-        [type] NVARCHAR(100),
-        [code] NVARCHAR(36),
-        [description] NVARCHAR(150),
-        [posted] BIT,
-        [deleted] BIT,
-        [parent] UNIQUEIDENTIFIER,
-        [isfolder] BIT,
-        [company] UNIQUEIDENTIFIER,
-        [user] UNIQUEIDENTIFIER,
-        [info] NVARCHAR(max),
-        [doc] NVARCHAR(max) N'$.doc' AS JSON
-        ${withExchangeInfo ? `
-        ,[ExchangeCode] NVARCHAR(50)
-        ,[ExchangeBase] NVARCHAR(50)` : ''}
-      )
-      WHERE [type] = N'${noSqlDocument!.type}';
-  END
+//   IF @DocId IS NULL
+//   BEGIN
+//   INSERT INTO Documents(
+//         [id], [type], [date], [code], [description], [posted], [deleted],
+//         [parent], [isfolder], [company], [user], [info], [doc] ${withExchangeInfo ? ', [ExchangeCode], [ExchangeBase]' : ''})
+//       SELECT
+//         [id], [type], [date], [code], [description], [posted], [deleted],
+//         [parent], [isfolder], [company], [user], [info], [doc]
+//         ${withExchangeInfo ? ', [ExchangeCode], [ExchangeBase]' : ''}
+//       FROM OPENJSON(@p1) WITH (
+//         [id] UNIQUEIDENTIFIER,
+//         [date] DATETIME,
+//         [type] NVARCHAR(100),
+//         [code] NVARCHAR(36),
+//         [description] NVARCHAR(150),
+//         [posted] BIT,
+//         [deleted] BIT,
+//         [parent] UNIQUEIDENTIFIER,
+//         [isfolder] BIT,
+//         [company] UNIQUEIDENTIFIER,
+//         [user] UNIQUEIDENTIFIER,
+//         [info] NVARCHAR(max),
+//         [doc] NVARCHAR(max) N'$.doc' AS JSON
+//         ${withExchangeInfo ? `
+//         ,[ExchangeCode] NVARCHAR(50)
+//         ,[ExchangeBase] NVARCHAR(50)` : ''}
+//       )
+//       WHERE [type] = N'${noSqlDocument!.type}';
+//   END
 
-  IF NOT @DocId IS NULL
-  BEGIN
-    UPDATE Documents
-        SET
-          parent = i.parent,
-          date = i.date, code = i.code, description = i.description,
-          posted = i.posted, deleted = i.deleted, isfolder = i.isfolder,
-          "user" = i."user", company = i.company, info = i.info, timestamp = GETDATE(), doc = i.doc
-          ${withExchangeInfo ? ',ExchangeCode = i.ExchangeCode,  ExchangeBase = i.ExchangeBase' : ''}
-        FROM (
-          SELECT *
-          FROM OPENJSON(@p1) WITH (
-            [date] DATETIME,
-            [code] NVARCHAR(36),
-            [description] NVARCHAR(150),
-            [posted] BIT,
-            [deleted] BIT,
-            [isfolder] BIT,
-            [company] UNIQUEIDENTIFIER,
-            [user] UNIQUEIDENTIFIER,
-            [info] NVARCHAR(max),
-            [parent] UNIQUEIDENTIFIER,
-            [doc] NVARCHAR(max) N'$.doc' AS JSON
-            ${withExchangeInfo ? `
-            ,[ExchangeCode] NVARCHAR(50)
-            ,[ExchangeBase] NVARCHAR(50)` : ''}
-          )
-        ) i
-      WHERE
-     ${operationFilter} AND
-      Documents.type = N'${serverDoc.type}' AND
-      Documents.id = @DocId;
-  END
+//   IF NOT @DocId IS NULL
+//   BEGIN
+//     UPDATE Documents
+//         SET
+//           parent = i.parent,
+//           date = i.date, code = i.code, description = i.description,
+//           posted = i.posted, deleted = i.deleted, isfolder = i.isfolder,
+//           "user" = i."user", company = i.company, info = i.info, timestamp = GETDATE(), doc = i.doc
+//           ${withExchangeInfo ? ',ExchangeCode = i.ExchangeCode,  ExchangeBase = i.ExchangeBase' : ''}
+//         FROM (
+//           SELECT *
+//           FROM OPENJSON(@p1) WITH (
+//             [date] DATETIME,
+//             [code] NVARCHAR(36),
+//             [description] NVARCHAR(150),
+//             [posted] BIT,
+//             [deleted] BIT,
+//             [isfolder] BIT,
+//             [company] UNIQUEIDENTIFIER,
+//             [user] UNIQUEIDENTIFIER,
+//             [info] NVARCHAR(max),
+//             [parent] UNIQUEIDENTIFIER,
+//             [doc] NVARCHAR(max) N'$.doc' AS JSON
+//             ${withExchangeInfo ? `
+//             ,[ExchangeCode] NVARCHAR(50)
+//             ,[ExchangeBase] NVARCHAR(50)` : ''}
+//           )
+//         ) i
+//       WHERE
+//      ${operationFilter} AND
+//       Documents.type = N'${serverDoc.type}' AND
+//       Documents.id = @DocId;
+//   END
 
-  SELECT * FROM Documents WHERE id = @p2`;
+//   SELECT * FROM Documents WHERE id = @p2`;
 
-  const response = <INoSqlDocument>await tx.oneOrNone<INoSqlDocument>(query, [jsonDoc, serverDoc.id]);
+//   const response = <INoSqlDocument>await tx.oneOrNone<INoSqlDocument>(query, [jsonDoc, serverDoc.id]);
 
-  await afterSaveDocument(serverDoc, tx);
+//   await afterSaveDocument(serverDoc, tx);
 
-  serverDoc.map(response);
-  return serverDoc;
-}
+//   serverDoc.map(response);
+//   return serverDoc;
+// }
 
 export async function setPostedSate(id: Ref, tx: MSSQL) {
   const doc = await tx.oneOrNone<INoSqlDocument>(`
@@ -359,6 +361,11 @@ export async function adminMode(mode: boolean, tx: MSSQL) {
 }
 
 async function beforeSaveDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
+
+  const checkReadonlyPeriod = Type.isDocument(serverDoc.type) && !tx.isRoleAvailable(READONLY.ROLE);
+  if (checkReadonlyPeriod && serverDoc.date < READONLY.DATE) {
+    throw READONLY.ERROR;
+  }
 
   if (!tx.user.disableChecks) {
     await checkCommonDataValidity(serverDoc);

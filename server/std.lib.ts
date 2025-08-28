@@ -756,16 +756,16 @@ export async function postById(id: Ref, tx: MSSQL) {
   return await DocumentServer.postById(id!, tx);
 }
 
-export async function _postById(id: Ref, tx: MSSQL) {
-  await lib.util.adminMode(true, tx);
-  try {
-    const serverDoc = await setPostedSate(id, tx);
-    await unpostDocument(serverDoc, tx);
-    if (serverDoc.deleted === false) await postDocument(serverDoc, tx);
-    return serverDoc;
-  } catch (ex) { throw new Error(ex); }
-  finally { await lib.util.adminMode(false, tx); }
-}
+// export async function _postById(id: Ref, tx: MSSQL) {
+//   await lib.util.adminMode(true, tx);
+//   try {
+//     const serverDoc = await setPostedSate(id, tx);
+//     await unpostDocument(serverDoc, tx);
+//     if (serverDoc.deleted === false) await postDocument(serverDoc, tx);
+//     return serverDoc;
+//   } catch (ex) { throw new Error(ex); }
+//   finally { await lib.util.adminMode(false, tx); }
+// }
 
 export async function unPostById(id: Ref, tx: MSSQL) {
 
@@ -791,18 +791,18 @@ export async function unPostById(id: Ref, tx: MSSQL) {
   // return postRes;
 }
 
-export async function _unPostById(id: Ref, tx: MSSQL) {
-  await lib.util.adminMode(true, tx);
-  try {
-    const doc = (await lib.doc.byId(id, tx))!;
-    const serverDoc = await createDocumentServer(doc.type as string, doc, tx);
-    serverDoc.posted = false;
-    await unpostDocument(serverDoc, tx);
-    await upsertDocument(serverDoc, tx);
-    return serverDoc;
-  } catch (ex) { throw new Error(ex); }
-  finally { await lib.util.adminMode(false, tx); }
-}
+// export async function _unPostById(id: Ref, tx: MSSQL) {
+//   await lib.util.adminMode(true, tx);
+//   try {
+//     const doc = (await lib.doc.byId(id, tx))!;
+//     const serverDoc = await createDocumentServer(doc.type as string, doc, tx);
+//     serverDoc.posted = false;
+//     await unpostDocument(serverDoc, tx);
+//     await upsertDocument(serverDoc, tx);
+//     return serverDoc;
+//   } catch (ex) { throw new Error(ex); }
+//   finally { await lib.util.adminMode(false, tx); }
+// }
 
 function taskPoolTx(): MSSQL {
   return new MSSQL(TASKS_POOL,
