@@ -7,7 +7,7 @@ import { setPostedSate, upsertDocument } from "../routes/utils/post";
 import { buildViewModel } from "../routes/documents";
 import { PostResult } from "./post.interfaces";
 import { RegistersMovements } from "./registers.movements";
-import { checkReadonlyPeriod, checkReadonlyPeriodRegisters } from "../routes/utils/post-rules/readonly";
+import { checkReadonlyPeriod } from "../routes/utils/post-rules/readonly";
 import { ARCH_USER } from "../env/environment";
 
 enum DocLiveCycleEvent {
@@ -210,8 +210,8 @@ export class DocumentServer<T extends DocumentBaseServer> {
             await this.tx.adminMode(true);
             this.doc.code = this.doc.code || await this.newCode();
             await this.upsert();
+            await this.deleteMovements();
             if (this.doc.posted && this.doc.isDoc) {
-                await this.deleteMovements();
                 await this.insertMovements();
             }
             return this.doc;

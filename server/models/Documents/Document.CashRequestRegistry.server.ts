@@ -7,7 +7,7 @@ import { RegisterAccumulationCashToPay } from '../Registers/Accumulation/CashToP
 import { lib } from '../../std.lib';
 import { DocumentCashRequest } from './Document.CashRequest';
 import { createDocument } from '../documents.factory';
-import { insertDocument, upsertDocument } from '../../routes/utils/post';
+import {  upsertDocument } from '../../routes/utils/post';
 import { BankStatementUnloader } from '../../fuctions/BankStatementUnloader';
 import { DocumentOperation } from './Document.Operation';
 import { Ref } from 'jetti-middle';
@@ -177,7 +177,7 @@ export class DocumentCashRequestRegistryServer extends DocumentCashRequestRegist
 
         if (cashOper) { OperationServer['CashRegister'] = row.CashRegister; OperationServer['f1'] = OperationServer['CashRegister']; }
         if (OperationType === 'Выплата заработной платы без ведомости' && row.Amount < OperationServer['Amount'] && cashOper) OperationServer['Amount'] = row.Amount;
-        if (OperationServer.timestamp) await upsertDocument(OperationServer, tx); else await insertDocument(OperationServer, tx);
+        await upsertDocument(OperationServer, tx);
         await lib.doc.postById(OperationServer.id, tx);
         rowsByCashReqest.filter(el => (el.CashRequest === currentCR && (!cashOper || el.CashRegister === row.CashRegister))).forEach(el => { el.LinkedDocument = OperationServer.id; });
       }
