@@ -304,11 +304,11 @@ export class DocumentCashRequestServer extends DocumentCashRequest implements IS
 
       const Fill: () => Promise<void> = OperationServer['serverModule']['Fill'];
       await Fill();
-      await insertDocument(OperationServer, tx);
+      await lib.doc.saveDoc(OperationServer, tx);
       await lib.doc.postById(OperationServer.id, tx);
     }
     this.Status = 'CLOSED';
-    await upsertDocument(this, tx);
+    await lib.doc.saveDoc(this, tx);
   }
 
   async FillSalaryBalance(tx: MSSQL, byPersons: boolean, withCurrentMonth: boolean, byPeriod: boolean): Promise<void> {
