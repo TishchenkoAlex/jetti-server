@@ -95,6 +95,11 @@
         "slotSetting": false
     },
     {
+        "name": "CONTOUR",
+        "value": "1",
+        "slotSetting": false
+    },
+    {
         "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
         "value": "false",
         "slotSetting": false

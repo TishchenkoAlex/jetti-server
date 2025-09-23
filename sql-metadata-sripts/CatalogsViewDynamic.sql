@@ -1514,7 +1514,6 @@ GO
         , d.[Slug] [Slug]
         , ISNULL([GroupProductCategory.v].description, '') [GroupProductCategory.value], d.[GroupProductCategory] [GroupProductCategory.id], [GroupProductCategory.v].type [GroupProductCategory.type]
         , d.[SlugIndex] [SlugIndex]
-        , d.[isMarketing] [isMarketing]
       
         , ISNULL(l5.id, d.id) [ProductCategory.Level5.id]
         , ISNULL(l4.id, ISNULL(l5.id, d.id)) [ProductCategory.Level4.id]

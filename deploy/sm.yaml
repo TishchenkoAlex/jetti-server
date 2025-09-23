@@ -60,6 +60,8 @@ spec:
           value: "2"
         - name: NODE_ENV
           value: production
+        - name:  CONTOUR
+          value: "1"
         image: eu.gcr.io/jetti-x100/jetti-api:latest
         imagePullPolicy: Always
         name: jetti

@@ -1142,7 +1142,6 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Slug"')), '') [Slug]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."GroupProductCategory"')) [GroupProductCategory]
 , ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."SlugIndex"')), 0) [SlugIndex]
-, ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isMarketing"')), 0) [isMarketing]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.ProductCategory';
 GO
