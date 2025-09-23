@@ -15,6 +15,7 @@ export const REGISTER_ACCUMULATION_SOURCE = process.env.REGISTER_ACCUMULATION_SO
 export const TRANSFORMED_REGISTER_MOVEMENTS_TABLE = '[dbo].[Register.Accumulation.Balance.RC]';
 export const ARCH_USER= process.env.ARCH_USER || 'AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA';
 export const COMMON_COMPANY=process.env.COMMON_COMPANY || '00000000-0000-0000-0000-000000000000';
+export const CONTOUR = parseInt(process.env.CONTOUR || "1");
 
 const DB_PORT = parseInt(process.env.DB_PORT as string, undefined);
 
