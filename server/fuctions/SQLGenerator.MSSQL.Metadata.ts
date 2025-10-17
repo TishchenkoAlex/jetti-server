@@ -83,6 +83,8 @@ export class SQLGenegatorMetadata {
     GO
     GRANT SELECT, DELETE ON [${type}] TO JETTI;
     GO
+    GRANT SELECT ON [${type}] TO PUBLIC;
+    GO
     RAISERROR('${type} finish', 0 ,1) WITH NOWAIT;
     GO
     `;
@@ -160,7 +162,10 @@ export class SQLGenegatorMetadata {
       id, date, document, company${select}
       FROM dbo.[Register.Info] WHERE type = N'${type}';
     GO
-    GRANT SELECT,DELETE ON [${type}] TO JETTI;
+    GRANT SELECT, DELETE ON [${type}] TO JETTI;
+    GO
+    GRANT SELECT ON [${type}] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [${type}] ON [dbo].[${type}]([company], [date], [id])
     ${Object.keys(Props)
         .filter(key => Props[key].isIndexed)
@@ -210,6 +215,7 @@ export class SQLGenegatorMetadata {
       ${select}; `);
 
     subQueries.push(`GRANT SELECT ON dbo.[${type}] TO jetti;`);
+    subQueries.push(`GRANT SELECT ON dbo.[${type}] TO PUBLIC;`);
     subQueries.push('');
 
     return asArrayOfQueries ? subQueries : subQueries.join('\nGO\n');
@@ -267,6 +273,7 @@ export class SQLGenegatorMetadata {
         .join('\n')}`);
 
     subQueries.push(`GRANT SELECT ON dbo.[${type}.v]TO jetti; `);
+    subQueries.push(`GRANT SELECT ON dbo.[${type}.v]TO PUBLIC; `);
 
     if (withSecurityPolicy)
       subQueries.push(`ALTER SECURITY POLICY[rls].[companyAccessPolicy]
@@ -334,6 +341,7 @@ export class SQLGenegatorMetadata {
       CREATE OR ALTER VIEW dbo.[${type}] AS
         ${select};`);
       subQueries.push(`GRANT SELECT ON dbo.[${type}] TO jetti;`);
+      subQueries.push(`GRANT SELECT ON dbo.[${type}] TO PUBLIC;`);
       subQueries.push('');
     }
 
@@ -449,6 +457,7 @@ export class SQLGenegatorMetadata {
     // INDEX SECTION END
 
     queryAdd(`GRANT SELECT ON dbo.[${type}.v] TO jetti;`, undefined, '');
+    queryAdd(`GRANT SELECT ON dbo.[${type}.v] TO PUBLIC;`, undefined, '');
 
     if (withSecurityPolicy)
       queryAdd(`ALTER SECURITY POLICY[rls].[companyAccessPolicy] ADD FILTER PREDICATE [rls].[fn_companyAccessPredicate]([company]) ON[dbo].[${type}.v];`);
@@ -648,6 +657,8 @@ export class SQLGenegatorMetadata {
       GO
       GRANT SELECT ON [dbo].[${register.type}.TO] TO jetti;
       GO
+      GRANT SELECT ON [dbo].[${register.type}.TO] TO PUBLIC;
+      GO
       RAISERROR('${register.type} end', 0 ,1) WITH NOWAIT;
       GO`;
     }
@@ -757,6 +768,9 @@ export class SQLGenegatorMetadata {
 
     queries.push(`
     GRANT SELECT,INSERT,DELETE ON [${type}.v] TO JETTI;`);
+
+    queries.push(`
+    GRANT SELECT ON [${type}.v] TO PUBLIC;`);
 
     queries.push(`
     ALTER TABLE [${type}.v] ADD CONSTRAINT [PK_${type}.v] PRIMARY KEY NONCLUSTERED ([id]);
@@ -871,6 +885,8 @@ export class SQLGenegatorMetadata {
     GO
     GRANT SELECT,INSERT,DELETE ON [${type}] TO JETTI;
     GO
+    GRANT SELECT ON [${type}] TO PUBLIC;
+    GO
     ALTER TABLE [${type}] ADD CONSTRAINT [PK_${type}] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [${type}] ON [${type}];
     RAISERROR('${type} finish', 0 ,1) WITH NOWAIT;
@@ -958,6 +974,8 @@ export class SQLGenegatorMetadata {
         WHERE r.type = N'${type}';
     GO
     GRANT SELECT,DELETE ON [${type}] TO JETTI;
+    GO
+    GRANT SELECT ON [${type}] TO PUBLIC;
     GO
     `;
     return query;
