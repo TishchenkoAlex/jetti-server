@@ -83,6 +83,8 @@ export class SQLGenegatorMetadata {
     GO
     GRANT SELECT, DELETE ON [${type}] TO JETTI;
     GO
+    GRANT SELECT ON [${type}] TO PUBLIC;
+    GO
     RAISERROR('${type} finish', 0 ,1) WITH NOWAIT;
     GO
     `;
@@ -160,7 +162,10 @@ export class SQLGenegatorMetadata {
       id, date, document, company${select}
       FROM dbo.[Register.Info] WHERE type = N'${type}';
     GO
-    GRANT SELECT,DELETE ON [${type}] TO JETTI;
+    GRANT SELECT, DELETE ON [${type}] TO JETTI;
+    GO
+    GRANT SELECT ON [${type}] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [${type}] ON [dbo].[${type}]([company], [date], [id])
     ${Object.keys(Props)
         .filter(key => Props[key].isIndexed)
