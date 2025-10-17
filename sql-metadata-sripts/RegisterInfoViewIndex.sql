@@ -8,7 +8,10 @@
       id, date, document, company
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.Dynamic';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.Dynamic] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.Dynamic] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.Dynamic] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.Dynamic] ON [dbo].[Register.Info.Dynamic]([company], [date], [id])
     
     GO
@@ -25,7 +28,10 @@
         , TRY_CONVERT(NVARCHAR(128), JSON_VALUE(data, N'$."Info"')) [Info]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.Holiday';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.Holiday] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.Holiday] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.Holiday] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.Holiday] ON [dbo].[Register.Info.Holiday]([company], [date], [id])
     
     GO
@@ -44,7 +50,10 @@
         , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."Year"')) [Year]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.BusinessCalendar';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.BusinessCalendar] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.BusinessCalendar] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.BusinessCalendar] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.BusinessCalendar] ON [dbo].[Register.Info.BusinessCalendar]([company], [date], [id])
     
     GO
@@ -65,7 +74,10 @@
         , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."WorkHours24"')) [WorkHours24]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.BusinessCalendar.Months';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.BusinessCalendar.Months] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.BusinessCalendar.Months] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.BusinessCalendar.Months] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.BusinessCalendar.Months] ON [dbo].[Register.Info.BusinessCalendar.Months]([company], [date], [id])
     
     GO
@@ -91,7 +103,10 @@
         , TRY_CONVERT(BIT, JSON_VALUE(data, N'$."isActive"')) [isActive]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.PriceList';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.PriceList] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.PriceList] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.PriceList] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.PriceList] ON [dbo].[Register.Info.PriceList]([company], [date], [id])
     
     GO
@@ -110,7 +125,10 @@
         , TRY_CONVERT(BIT, JSON_VALUE(data, N'$."isActive"')) [isActive]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.SelfEmployed';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.SelfEmployed] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.SelfEmployed] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.SelfEmployed] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.SelfEmployed] ON [dbo].[Register.Info.SelfEmployed]([company], [date], [id])
     
     GO
@@ -129,7 +147,10 @@
         , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."Qty"')) [Qty]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.ProductModifier';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.ProductModifier] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.ProductModifier] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.ProductModifier] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.ProductModifier] ON [dbo].[Register.Info.ProductModifier]([company], [date], [id])
     
     GO
@@ -157,7 +178,10 @@
         , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."AmountBalance"')) [AmountBalance]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.SettlementsReconciliation';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.SettlementsReconciliation] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.SettlementsReconciliation] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.SettlementsReconciliation] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.SettlementsReconciliation] ON [dbo].[Register.Info.SettlementsReconciliation]([company], [date], [id])
     
     GO
@@ -175,7 +199,10 @@
         , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."Mutiplicity"')) [Mutiplicity]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.ExchangeRates';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.ExchangeRates] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.ExchangeRates] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.ExchangeRates] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.ExchangeRates] ON [dbo].[Register.Info.ExchangeRates]([company], [date], [id])
     CREATE NONCLUSTERED INDEX[Register.Info.ExchangeRates.currency] ON [Register.Info.ExchangeRates]([currency]);
     GO
@@ -195,7 +222,10 @@
         , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."Mutiplicity"')) [Mutiplicity]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.ExchangeRates.National';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.ExchangeRates.National] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.ExchangeRates.National] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.ExchangeRates.National] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.ExchangeRates.National] ON [dbo].[Register.Info.ExchangeRates.National]([company], [date], [id])
     
     GO
@@ -215,7 +245,10 @@
         , TRY_CONVERT(BIT, JSON_VALUE(data, N'$."isActive"')) [isActive]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.ProductSpecificationByDepartment';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.ProductSpecificationByDepartment] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.ProductSpecificationByDepartment] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.ProductSpecificationByDepartment] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.ProductSpecificationByDepartment] ON [dbo].[Register.Info.ProductSpecificationByDepartment]([company], [date], [id])
     
     GO
@@ -239,7 +272,10 @@
         , TRY_CONVERT(BIT, JSON_VALUE(data, N'$."ValueBoolean"')) [ValueBoolean]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.AdditionalProps';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.AdditionalProps] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.AdditionalProps] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.AdditionalProps] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.AdditionalProps] ON [dbo].[Register.Info.AdditionalProps]([company], [date], [id])
     CREATE NONCLUSTERED INDEX[Register.Info.AdditionalProps.AddProp] ON [Register.Info.AdditionalProps]([AddProp]);
     CREATE NONCLUSTERED INDEX[Register.Info.AdditionalProps.Object] ON [Register.Info.AdditionalProps]([Object]);
@@ -263,7 +299,10 @@
         , TRY_CONVERT(NVARCHAR(128), JSON_VALUE(data, N'$."Method"')) [Method]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.Depreciation';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.Depreciation] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.Depreciation] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.Depreciation] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.Depreciation] ON [dbo].[Register.Info.Depreciation]([company], [date], [id])
     
     GO
@@ -280,7 +319,10 @@
         , TRY_CONVERT(NVARCHAR(128), JSON_VALUE(data, N'$."partition"')) [partition]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.RLS.Period';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.RLS.Period] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.RLS.Period] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.RLS.Period] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.RLS.Period] ON [dbo].[Register.Info.RLS.Period]([company], [date], [id])
     
     GO
@@ -296,7 +338,10 @@
         , TRY_CONVERT(NVARCHAR(128), JSON_VALUE(data, N'$."user"')) [user]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.RLS';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.RLS] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.RLS] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.RLS] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.RLS] ON [dbo].[Register.Info.RLS]([company], [date], [id])
     
     GO
@@ -314,7 +359,10 @@
         , JSON_VALUE(data, N'$."Rule"') [Rule]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.BudgetItemRule';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.BudgetItemRule] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.BudgetItemRule] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.BudgetItemRule] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.BudgetItemRule] ON [dbo].[Register.Info.BudgetItemRule]([company], [date], [id])
     
     GO
@@ -330,7 +378,10 @@
         , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(data, N'$."Intercompany"')) [Intercompany]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.IntercompanyHistory';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.IntercompanyHistory] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.IntercompanyHistory] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.IntercompanyHistory] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.IntercompanyHistory] ON [dbo].[Register.Info.IntercompanyHistory]([company], [date], [id])
     
     GO
@@ -350,7 +401,10 @@
         , TRY_CONVERT(NVARCHAR(128), JSON_VALUE(data, N'$."TypeFranchise"')) [TypeFranchise]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.DepartmentCompanyHistory';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.DepartmentCompanyHistory] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.DepartmentCompanyHistory] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.DepartmentCompanyHistory] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.DepartmentCompanyHistory] ON [dbo].[Register.Info.DepartmentCompanyHistory]([company], [date], [id])
     
     GO
@@ -374,7 +428,10 @@
         , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."MaxOrderTotalAmount"')) [MaxOrderTotalAmount]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.Department.LimitIndicators';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.Department.LimitIndicators] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.Department.LimitIndicators] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.Department.LimitIndicators] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.Department.LimitIndicators] ON [dbo].[Register.Info.Department.LimitIndicators]([company], [date], [id])
     CREATE NONCLUSTERED INDEX[Register.Info.Department.LimitIndicators.RetailNetwork] ON [Register.Info.Department.LimitIndicators]([RetailNetwork]);
     CREATE NONCLUSTERED INDEX[Register.Info.Department.LimitIndicators.Department] ON [Register.Info.Department.LimitIndicators]([Department]);
@@ -396,7 +453,10 @@
         , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(data, N'$."StatusReason"')) [StatusReason]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.DepartmentStatus';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.DepartmentStatus] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.DepartmentStatus] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.DepartmentStatus] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.DepartmentStatus] ON [dbo].[Register.Info.DepartmentStatus]([company], [date], [id])
     
     GO
@@ -423,7 +483,10 @@
         , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(data, N'$."currency"')) [currency]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.CounterpartiePriceList';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.CounterpartiePriceList] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.CounterpartiePriceList] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.CounterpartiePriceList] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.CounterpartiePriceList] ON [dbo].[Register.Info.CounterpartiePriceList]([company], [date], [id])
     
     GO
@@ -450,7 +513,10 @@
         , TRY_CONVERT(BIT, JSON_VALUE(data, N'$."GrantPL"')) [GrantPL]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.CompanyResponsiblePersons';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.CompanyResponsiblePersons] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.CompanyResponsiblePersons] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.CompanyResponsiblePersons] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.CompanyResponsiblePersons] ON [dbo].[Register.Info.CompanyResponsiblePersons]([company], [date], [id])
     
     GO
@@ -475,7 +541,10 @@
         , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(data, N'$."ReasonType"')) [ReasonType]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.IncomeDocumentRegistry';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.IncomeDocumentRegistry] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.IncomeDocumentRegistry] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.IncomeDocumentRegistry] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.IncomeDocumentRegistry] ON [dbo].[Register.Info.IncomeDocumentRegistry]([company], [date], [id])
     CREATE NONCLUSTERED INDEX[Register.Info.IncomeDocumentRegistry.DocJETTI] ON [Register.Info.IncomeDocumentRegistry]([DocJETTI]);
     GO
@@ -492,7 +561,10 @@
         , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."CompanyPrice"')) [CompanyPrice]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.CompanyPrice';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.CompanyPrice] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.CompanyPrice] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.CompanyPrice] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.CompanyPrice] ON [dbo].[Register.Info.CompanyPrice]([company], [date], [id])
     
     GO
@@ -519,7 +591,10 @@
         , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."ShareAmount"')) [ShareAmount]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.ShareEmission';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.ShareEmission] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.ShareEmission] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.ShareEmission] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.ShareEmission] ON [dbo].[Register.Info.ShareEmission]([company], [date], [id])
     
     GO
@@ -537,7 +612,10 @@
         , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(data, N'$."LoanOwner"')) [LoanOwner]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.LoanOwner';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.LoanOwner] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.LoanOwner] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.LoanOwner] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.LoanOwner] ON [dbo].[Register.Info.LoanOwner]([company], [date], [id])
     
     GO
@@ -559,7 +637,10 @@
         , TRY_CONVERT(NVARCHAR(128), JSON_VALUE(data, N'$."PrepositionalCase"')) [PrepositionalCase]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.Intl';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.Intl] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.Intl] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.Intl] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.Intl] ON [dbo].[Register.Info.Intl]([company], [date], [id])
     CREATE NONCLUSTERED INDEX[Register.Info.Intl.Catalog] ON [Register.Info.Intl]([Catalog]);
     CREATE NONCLUSTERED INDEX[Register.Info.Intl.Property] ON [Register.Info.Intl]([Property]);
@@ -579,7 +660,10 @@
         , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."Royalty"')) [Royalty]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.RoyaltySales';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.RoyaltySales] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.RoyaltySales] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.RoyaltySales] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.RoyaltySales] ON [dbo].[Register.Info.RoyaltySales]([company], [date], [id])
     
     GO
@@ -602,7 +686,10 @@
         , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."SalaryRate"')) [SalaryRate]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.EmployeeHistory';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.EmployeeHistory] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.EmployeeHistory] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.EmployeeHistory] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.EmployeeHistory] ON [dbo].[Register.Info.EmployeeHistory]([company], [date], [id])
     
     GO
@@ -625,7 +712,10 @@
         , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."SalaryRate"')) [SalaryRate]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.EmploymentType';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.EmploymentType] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.EmploymentType] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.EmploymentType] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.EmploymentType] ON [dbo].[Register.Info.EmploymentType]([company], [date], [id])
     
     GO
@@ -650,7 +740,10 @@
         , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."Cost"')) [Cost]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.StaffingTableHistory';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.StaffingTableHistory] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.StaffingTableHistory] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.StaffingTableHistory] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.StaffingTableHistory] ON [dbo].[Register.Info.StaffingTableHistory]([company], [date], [id])
     
     GO
@@ -671,7 +764,10 @@
         , TRY_CONVERT(DATETIME, JSON_VALUE(data, N'$."modifyDate"'),127) [modifyDate]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.TaxCheck';
     GO
-    GRANT SELECT,DELETE ON [Register.Info.TaxCheck] TO JETTI;
+    GRANT SELECT, DELETE ON [Register.Info.TaxCheck] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Info.TaxCheck] TO PUBLIC;
+    GO
     CREATE UNIQUE CLUSTERED INDEX [Register.Info.TaxCheck] ON [dbo].[Register.Info.TaxCheck]([company], [date], [id])
     CREATE NONCLUSTERED INDEX[Register.Info.TaxCheck.clientInn] ON [Register.Info.TaxCheck]([clientInn]);
     CREATE NONCLUSTERED INDEX[Register.Info.TaxCheck.inn] ON [Register.Info.TaxCheck]([inn]);

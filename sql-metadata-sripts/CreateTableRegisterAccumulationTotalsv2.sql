@@ -44,6 +44,8 @@
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.AccountablePersons.TO] TO jetti;
       GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.AccountablePersons.TO] TO PUBLIC;
+      GO
       RAISERROR('Register.Accumulation.AccountablePersons end', 0 ,1) WITH NOWAIT;
       GO
 
@@ -96,6 +98,8 @@
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.PaymentBatch.TO] AS SELECT * FROM [dbo].[Register.Accumulation.PaymentBatch.TO.v] WITH (NOEXPAND);
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.PaymentBatch.TO] TO jetti;
+      GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.PaymentBatch.TO] TO PUBLIC;
       GO
       RAISERROR('Register.Accumulation.PaymentBatch end', 0 ,1) WITH NOWAIT;
       GO
@@ -174,6 +178,8 @@
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.Investment.Analytics.TO] TO jetti;
       GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.Investment.Analytics.TO] TO PUBLIC;
+      GO
       RAISERROR('Register.Accumulation.Investment.Analytics end', 0 ,1) WITH NOWAIT;
       GO
 
@@ -226,6 +232,8 @@
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.OrderPayment.TO] AS SELECT * FROM [dbo].[Register.Accumulation.OrderPayment.TO.v] WITH (NOEXPAND);
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.OrderPayment.TO] TO jetti;
+      GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.OrderPayment.TO] TO PUBLIC;
       GO
       RAISERROR('Register.Accumulation.OrderPayment end', 0 ,1) WITH NOWAIT;
       GO
@@ -301,6 +309,8 @@
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.OrderProduct.TO] TO jetti;
       GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.OrderProduct.TO] TO PUBLIC;
+      GO
       RAISERROR('Register.Accumulation.OrderProduct end', 0 ,1) WITH NOWAIT;
       GO
 
@@ -347,6 +357,8 @@
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.AP.TO] AS SELECT * FROM [dbo].[Register.Accumulation.AP.TO.v] WITH (NOEXPAND);
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.AP.TO] TO jetti;
+      GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.AP.TO] TO PUBLIC;
       GO
       RAISERROR('Register.Accumulation.AP end', 0 ,1) WITH NOWAIT;
       GO
@@ -395,6 +407,8 @@
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.AR.TO] TO jetti;
       GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.AR.TO] TO PUBLIC;
+      GO
       RAISERROR('Register.Accumulation.AR end', 0 ,1) WITH NOWAIT;
       GO
 
@@ -439,6 +453,8 @@
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.Bank.TO] TO jetti;
       GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.Bank.TO] TO PUBLIC;
+      GO
       RAISERROR('Register.Accumulation.Bank end', 0 ,1) WITH NOWAIT;
       GO
 
@@ -470,6 +486,8 @@
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.Balance.TO] AS SELECT * FROM [dbo].[Register.Accumulation.Balance.TO.v] WITH (NOEXPAND);
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.Balance.TO] TO jetti;
+      GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.Balance.TO] TO PUBLIC;
       GO
       RAISERROR('Register.Accumulation.Balance end', 0 ,1) WITH NOWAIT;
       GO
@@ -517,6 +535,8 @@
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.Balance.RC.TO] AS SELECT * FROM [dbo].[Register.Accumulation.Balance.RC.TO.v] WITH (NOEXPAND);
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.Balance.RC.TO] TO jetti;
+      GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.Balance.RC.TO] TO PUBLIC;
       GO
       RAISERROR('Register.Accumulation.Balance.RC end', 0 ,1) WITH NOWAIT;
       GO
@@ -571,6 +591,8 @@
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.Balance.Report.TO] TO jetti;
       GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.Balance.Report.TO] TO PUBLIC;
+      GO
       RAISERROR('Register.Accumulation.Balance.Report end', 0 ,1) WITH NOWAIT;
       GO
 
@@ -614,6 +636,8 @@
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.Cash.TO] AS SELECT * FROM [dbo].[Register.Accumulation.Cash.TO.v] WITH (NOEXPAND);
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.Cash.TO] TO jetti;
+      GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.Cash.TO] TO PUBLIC;
       GO
       RAISERROR('Register.Accumulation.Cash end', 0 ,1) WITH NOWAIT;
       GO
@@ -662,6 +686,8 @@
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.Cash.Transit.TO] TO jetti;
       GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.Cash.Transit.TO] TO PUBLIC;
+      GO
       RAISERROR('Register.Accumulation.Cash.Transit end', 0 ,1) WITH NOWAIT;
       GO
 
@@ -709,6 +735,8 @@
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.EmployeeTimekeeping.TO] TO jetti;
       GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.EmployeeTimekeeping.TO] TO PUBLIC;
+      GO
       RAISERROR('Register.Accumulation.EmployeeTimekeeping end', 0 ,1) WITH NOWAIT;
       GO
 
@@ -743,6 +771,8 @@
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.Inventory.TO] AS SELECT * FROM [dbo].[Register.Accumulation.Inventory.TO.v] WITH (NOEXPAND);
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.Inventory.TO] TO jetti;
+      GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.Inventory.TO] TO PUBLIC;
       GO
       RAISERROR('Register.Accumulation.Inventory end', 0 ,1) WITH NOWAIT;
       GO
@@ -794,6 +824,8 @@
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.Loan.TO] TO jetti;
       GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.Loan.TO] TO PUBLIC;
+      GO
       RAISERROR('Register.Accumulation.Loan end', 0 ,1) WITH NOWAIT;
       GO
 
@@ -834,6 +866,8 @@
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.PL.TO] AS SELECT * FROM [dbo].[Register.Accumulation.PL.TO.v] WITH (NOEXPAND);
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.PL.TO] TO jetti;
+      GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.PL.TO] TO PUBLIC;
       GO
       RAISERROR('Register.Accumulation.PL end', 0 ,1) WITH NOWAIT;
       GO
@@ -881,6 +915,8 @@
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.PL.RC.TO] AS SELECT * FROM [dbo].[Register.Accumulation.PL.RC.TO.v] WITH (NOEXPAND);
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.PL.RC.TO] TO jetti;
+      GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.PL.RC.TO] TO PUBLIC;
       GO
       RAISERROR('Register.Accumulation.PL.RC end', 0 ,1) WITH NOWAIT;
       GO
@@ -968,6 +1004,8 @@
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.Sales.TO] TO jetti;
       GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.Sales.TO] TO PUBLIC;
+      GO
       RAISERROR('Register.Accumulation.Sales end', 0 ,1) WITH NOWAIT;
       GO
 
@@ -1018,6 +1056,8 @@
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.Salary.TO] TO jetti;
       GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.Salary.TO] TO PUBLIC;
+      GO
       RAISERROR('Register.Accumulation.Salary end', 0 ,1) WITH NOWAIT;
       GO
 
@@ -1065,6 +1105,8 @@
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.Depreciation.TO] TO jetti;
       GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.Depreciation.TO] TO PUBLIC;
+      GO
       RAISERROR('Register.Accumulation.Depreciation end', 0 ,1) WITH NOWAIT;
       GO
 
@@ -1108,6 +1150,8 @@
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.CashToPay.TO] AS SELECT * FROM [dbo].[Register.Accumulation.CashToPay.TO.v] WITH (NOEXPAND);
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.CashToPay.TO] TO jetti;
+      GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.CashToPay.TO] TO PUBLIC;
       GO
       RAISERROR('Register.Accumulation.CashToPay end', 0 ,1) WITH NOWAIT;
       GO
@@ -1158,6 +1202,8 @@
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.CharityAnalytic.TO] AS SELECT * FROM [dbo].[Register.Accumulation.CharityAnalytic.TO.v] WITH (NOEXPAND);
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.CharityAnalytic.TO] TO jetti;
+      GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.CharityAnalytic.TO] TO PUBLIC;
       GO
       RAISERROR('Register.Accumulation.CharityAnalytic end', 0 ,1) WITH NOWAIT;
       GO
@@ -1224,6 +1270,8 @@
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.BudgetItemTurnover.TO] TO jetti;
       GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.BudgetItemTurnover.TO] TO PUBLIC;
+      GO
       RAISERROR('Register.Accumulation.BudgetItemTurnover end', 0 ,1) WITH NOWAIT;
       GO
 
@@ -1267,6 +1315,8 @@
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.Intercompany.TO] AS SELECT * FROM [dbo].[Register.Accumulation.Intercompany.TO.v] WITH (NOEXPAND);
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.Intercompany.TO] TO jetti;
+      GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.Intercompany.TO] TO PUBLIC;
       GO
       RAISERROR('Register.Accumulation.Intercompany end', 0 ,1) WITH NOWAIT;
       GO
@@ -1314,6 +1364,8 @@
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.Acquiring.TO] AS SELECT * FROM [dbo].[Register.Accumulation.Acquiring.TO.v] WITH (NOEXPAND);
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.Acquiring.TO] TO jetti;
+      GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.Acquiring.TO] TO PUBLIC;
       GO
       RAISERROR('Register.Accumulation.Acquiring end', 0 ,1) WITH NOWAIT;
       GO
@@ -1367,6 +1419,8 @@
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.PromotionPoints.TO] AS SELECT * FROM [dbo].[Register.Accumulation.PromotionPoints.TO.v] WITH (NOEXPAND);
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.PromotionPoints.TO] TO jetti;
+      GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.PromotionPoints.TO] TO PUBLIC;
       GO
       RAISERROR('Register.Accumulation.PromotionPoints end', 0 ,1) WITH NOWAIT;
       GO
@@ -1424,6 +1478,8 @@
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.StaffingTable.TO] TO jetti;
       GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.StaffingTable.TO] TO PUBLIC;
+      GO
       RAISERROR('Register.Accumulation.StaffingTable end', 0 ,1) WITH NOWAIT;
       GO
 
@@ -1461,6 +1517,8 @@
       CREATE OR ALTER VIEW [dbo].[Register.Accumulation.MoneyDocuments.TO] AS SELECT * FROM [dbo].[Register.Accumulation.MoneyDocuments.TO.v] WITH (NOEXPAND);
       GO
       GRANT SELECT ON [dbo].[Register.Accumulation.MoneyDocuments.TO] TO jetti;
+      GO
+      GRANT SELECT ON [dbo].[Register.Accumulation.MoneyDocuments.TO] TO PUBLIC;
       GO
       RAISERROR('Register.Accumulation.MoneyDocuments end', 0 ,1) WITH NOWAIT;
       GO

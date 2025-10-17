@@ -31,6 +31,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.AccountablePersons] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.AccountablePersons] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.AccountablePersons finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -65,6 +67,8 @@
     CREATE OR ALTER VIEW [Register.Accumulation.PaymentBatch] AS SELECT * FROM [Register.Accumulation.PaymentBatch.v] WITH (NOEXPAND);
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.PaymentBatch] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.PaymentBatch] TO PUBLIC;
     GO
     RAISERROR('Register.Accumulation.PaymentBatch finish', 0 ,1) WITH NOWAIT;
     GO
@@ -109,6 +113,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.Investment.Analytics] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Investment.Analytics] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.Investment.Analytics finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -143,6 +149,8 @@
     CREATE OR ALTER VIEW [Register.Accumulation.OrderPayment] AS SELECT * FROM [Register.Accumulation.OrderPayment.v] WITH (NOEXPAND);
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.OrderPayment] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.OrderPayment] TO PUBLIC;
     GO
     RAISERROR('Register.Accumulation.OrderPayment finish', 0 ,1) WITH NOWAIT;
     GO
@@ -185,6 +193,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.OrderProduct] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.OrderProduct] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.OrderProduct finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -222,6 +232,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.AP] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.AP] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.AP finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -258,6 +270,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.AR] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.AR] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.AR finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -287,6 +301,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.Bank] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Bank] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.Bank finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -309,6 +325,8 @@
     CREATE OR ALTER VIEW [Register.Accumulation.Balance] AS SELECT * FROM [Register.Accumulation.Balance.v] WITH (NOEXPAND);
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.Balance] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.Balance] TO PUBLIC;
     GO
     RAISERROR('Register.Accumulation.Balance finish', 0 ,1) WITH NOWAIT;
     GO
@@ -338,6 +356,8 @@
     CREATE OR ALTER VIEW [Register.Accumulation.Balance.RC] AS SELECT * FROM [Register.Accumulation.Balance.RC.v] WITH (NOEXPAND);
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.Balance.RC] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.Balance.RC] TO PUBLIC;
     GO
     RAISERROR('Register.Accumulation.Balance.RC finish', 0 ,1) WITH NOWAIT;
     GO
@@ -373,6 +393,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.Balance.Report] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Balance.Report] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.Balance.Report finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -401,6 +423,8 @@
     CREATE OR ALTER VIEW [Register.Accumulation.Cash] AS SELECT * FROM [Register.Accumulation.Cash.v] WITH (NOEXPAND);
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.Cash] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.Cash] TO PUBLIC;
     GO
     RAISERROR('Register.Accumulation.Cash finish', 0 ,1) WITH NOWAIT;
     GO
@@ -432,6 +456,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.Cash.Transit] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Cash.Transit] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.Cash.Transit finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -459,6 +485,8 @@
     CREATE OR ALTER VIEW [Register.Accumulation.EmployeeTimekeeping] AS SELECT * FROM [Register.Accumulation.EmployeeTimekeeping.v] WITH (NOEXPAND);
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.EmployeeTimekeeping] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.EmployeeTimekeeping] TO PUBLIC;
     GO
     RAISERROR('Register.Accumulation.EmployeeTimekeeping finish', 0 ,1) WITH NOWAIT;
     GO
@@ -497,6 +525,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.Inventory] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Inventory] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.Inventory finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -533,6 +563,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.Loan] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Loan] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.Loan finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -557,6 +589,8 @@
     CREATE OR ALTER VIEW [Register.Accumulation.PL] AS SELECT * FROM [Register.Accumulation.PL.v] WITH (NOEXPAND);
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.PL] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.PL] TO PUBLIC;
     GO
     RAISERROR('Register.Accumulation.PL finish', 0 ,1) WITH NOWAIT;
     GO
@@ -586,6 +620,8 @@
     CREATE OR ALTER VIEW [Register.Accumulation.PL.RC] AS SELECT * FROM [Register.Accumulation.PL.RC.v] WITH (NOEXPAND);
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.PL.RC] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.PL.RC] TO PUBLIC;
     GO
     RAISERROR('Register.Accumulation.PL.RC finish', 0 ,1) WITH NOWAIT;
     GO
@@ -650,6 +686,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.Sales] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Sales] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.Sales finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -686,6 +724,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.Salary] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Salary] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.Salary finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -715,6 +755,8 @@
     CREATE OR ALTER VIEW [Register.Accumulation.Depreciation] AS SELECT * FROM [Register.Accumulation.Depreciation.v] WITH (NOEXPAND);
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.Depreciation] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.Depreciation] TO PUBLIC;
     GO
     RAISERROR('Register.Accumulation.Depreciation finish', 0 ,1) WITH NOWAIT;
     GO
@@ -750,6 +792,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.CashToPay] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.CashToPay] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.CashToPay finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -784,6 +828,8 @@
     CREATE OR ALTER VIEW [Register.Accumulation.CharityAnalytic] AS SELECT * FROM [Register.Accumulation.CharityAnalytic.v] WITH (NOEXPAND);
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.CharityAnalytic] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.CharityAnalytic] TO PUBLIC;
     GO
     RAISERROR('Register.Accumulation.CharityAnalytic finish', 0 ,1) WITH NOWAIT;
     GO
@@ -825,6 +871,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.BudgetItemTurnover] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.BudgetItemTurnover] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.BudgetItemTurnover finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -856,6 +904,8 @@
     CREATE OR ALTER VIEW [Register.Accumulation.Intercompany] AS SELECT * FROM [Register.Accumulation.Intercompany.v] WITH (NOEXPAND);
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.Intercompany] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.Intercompany] TO PUBLIC;
     GO
     RAISERROR('Register.Accumulation.Intercompany finish', 0 ,1) WITH NOWAIT;
     GO
@@ -896,6 +946,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.Acquiring] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Acquiring] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.Acquiring finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -933,6 +985,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.PromotionPoints] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.PromotionPoints] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.PromotionPoints finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -966,6 +1020,8 @@
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.StaffingTable] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.StaffingTable] TO PUBLIC;
+    GO
     RAISERROR('Register.Accumulation.StaffingTable finish', 0 ,1) WITH NOWAIT;
     GO
     
@@ -996,6 +1052,8 @@
     CREATE OR ALTER VIEW [Register.Accumulation.MoneyDocuments] AS SELECT * FROM [Register.Accumulation.MoneyDocuments.v] WITH (NOEXPAND);
     GO
     GRANT SELECT, DELETE ON [Register.Accumulation.MoneyDocuments] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.MoneyDocuments] TO PUBLIC;
     GO
     RAISERROR('Register.Accumulation.MoneyDocuments finish', 0 ,1) WITH NOWAIT;
     GO

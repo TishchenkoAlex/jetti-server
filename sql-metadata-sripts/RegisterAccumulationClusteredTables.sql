@@ -69,6 +69,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.AccountablePersons] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.AccountablePersons] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.AccountablePersons] ADD CONSTRAINT [PK_Register.Accumulation.AccountablePersons] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.AccountablePersons] ON [Register.Accumulation.AccountablePersons];
     RAISERROR('Register.Accumulation.AccountablePersons finish', 0 ,1) WITH NOWAIT;
@@ -146,6 +148,8 @@
     WHERE r.type = N'Register.Accumulation.PaymentBatch';
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.PaymentBatch] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.PaymentBatch] TO PUBLIC;
     GO
     ALTER TABLE [Register.Accumulation.PaymentBatch] ADD CONSTRAINT [PK_Register.Accumulation.PaymentBatch] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.PaymentBatch] ON [Register.Accumulation.PaymentBatch];
@@ -241,6 +245,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.Investment.Analytics] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Investment.Analytics] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.Investment.Analytics] ADD CONSTRAINT [PK_Register.Accumulation.Investment.Analytics] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.Investment.Analytics] ON [Register.Accumulation.Investment.Analytics];
     RAISERROR('Register.Accumulation.Investment.Analytics finish', 0 ,1) WITH NOWAIT;
@@ -318,6 +324,8 @@
     WHERE r.type = N'Register.Accumulation.OrderPayment';
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.OrderPayment] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.OrderPayment] TO PUBLIC;
     GO
     ALTER TABLE [Register.Accumulation.OrderPayment] ADD CONSTRAINT [PK_Register.Accumulation.OrderPayment] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.OrderPayment] ON [Register.Accumulation.OrderPayment];
@@ -409,6 +417,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.OrderProduct] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.OrderProduct] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.OrderProduct] ADD CONSTRAINT [PK_Register.Accumulation.OrderProduct] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.OrderProduct] ON [Register.Accumulation.OrderProduct];
     RAISERROR('Register.Accumulation.OrderProduct finish', 0 ,1) WITH NOWAIT;
@@ -489,6 +499,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.AP] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.AP] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.AP] ADD CONSTRAINT [PK_Register.Accumulation.AP] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.AP] ON [Register.Accumulation.AP];
     RAISERROR('Register.Accumulation.AP finish', 0 ,1) WITH NOWAIT;
@@ -567,6 +579,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.AR] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.AR] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.AR] ADD CONSTRAINT [PK_Register.Accumulation.AR] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.AR] ON [Register.Accumulation.AR];
     RAISERROR('Register.Accumulation.AR finish', 0 ,1) WITH NOWAIT;
@@ -635,6 +649,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.Bank] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Bank] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.Bank] ADD CONSTRAINT [PK_Register.Accumulation.Bank] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.Bank] ON [Register.Accumulation.Bank];
     RAISERROR('Register.Accumulation.Bank finish', 0 ,1) WITH NOWAIT;
@@ -694,6 +710,8 @@
     WHERE r.type = N'Register.Accumulation.Balance';
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.Balance] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.Balance] TO PUBLIC;
     GO
     ALTER TABLE [Register.Accumulation.Balance] ADD CONSTRAINT [PK_Register.Accumulation.Balance] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.Balance] ON [Register.Accumulation.Balance];
@@ -764,6 +782,8 @@
     WHERE r.type = N'Register.Accumulation.Balance.RC';
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.Balance.RC] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.Balance.RC] TO PUBLIC;
     GO
     ALTER TABLE [Register.Accumulation.Balance.RC] ADD CONSTRAINT [PK_Register.Accumulation.Balance.RC] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.Balance.RC] ON [Register.Accumulation.Balance.RC];
@@ -843,6 +863,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.Balance.Report] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Balance.Report] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.Balance.Report] ADD CONSTRAINT [PK_Register.Accumulation.Balance.Report] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.Balance.Report] ON [Register.Accumulation.Balance.Report];
     RAISERROR('Register.Accumulation.Balance.Report finish', 0 ,1) WITH NOWAIT;
@@ -910,6 +932,8 @@
     WHERE r.type = N'Register.Accumulation.Cash';
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.Cash] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.Cash] TO PUBLIC;
     GO
     ALTER TABLE [Register.Accumulation.Cash] ADD CONSTRAINT [PK_Register.Accumulation.Cash] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.Cash] ON [Register.Accumulation.Cash];
@@ -981,6 +1005,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.Cash.Transit] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Cash.Transit] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.Cash.Transit] ADD CONSTRAINT [PK_Register.Accumulation.Cash.Transit] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.Cash.Transit] ON [Register.Accumulation.Cash.Transit];
     RAISERROR('Register.Accumulation.Cash.Transit finish', 0 ,1) WITH NOWAIT;
@@ -1048,6 +1074,8 @@
     WHERE r.type = N'Register.Accumulation.EmployeeTimekeeping';
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.EmployeeTimekeeping] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.EmployeeTimekeeping] TO PUBLIC;
     GO
     ALTER TABLE [Register.Accumulation.EmployeeTimekeeping] ADD CONSTRAINT [PK_Register.Accumulation.EmployeeTimekeeping] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.EmployeeTimekeeping] ON [Register.Accumulation.EmployeeTimekeeping];
@@ -1135,6 +1163,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.Inventory] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Inventory] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.Inventory] ADD CONSTRAINT [PK_Register.Accumulation.Inventory] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.Inventory] ON [Register.Accumulation.Inventory];
     RAISERROR('Register.Accumulation.Inventory finish', 0 ,1) WITH NOWAIT;
@@ -1213,6 +1243,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.Loan] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Loan] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.Loan] ADD CONSTRAINT [PK_Register.Accumulation.Loan] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.Loan] ON [Register.Accumulation.Loan];
     RAISERROR('Register.Accumulation.Loan finish', 0 ,1) WITH NOWAIT;
@@ -1276,6 +1308,8 @@
     WHERE r.type = N'Register.Accumulation.PL';
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.PL] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.PL] TO PUBLIC;
     GO
     ALTER TABLE [Register.Accumulation.PL] ADD CONSTRAINT [PK_Register.Accumulation.PL] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.PL] ON [Register.Accumulation.PL];
@@ -1346,6 +1380,8 @@
     WHERE r.type = N'Register.Accumulation.PL.RC';
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.PL.RC] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.PL.RC] TO PUBLIC;
     GO
     ALTER TABLE [Register.Accumulation.PL.RC] ADD CONSTRAINT [PK_Register.Accumulation.PL.RC] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.PL.RC] ON [Register.Accumulation.PL.RC];
@@ -1471,6 +1507,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.Sales] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Sales] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.Sales] ADD CONSTRAINT [PK_Register.Accumulation.Sales] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.Sales] ON [Register.Accumulation.Sales];
     RAISERROR('Register.Accumulation.Sales finish', 0 ,1) WITH NOWAIT;
@@ -1553,6 +1591,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.Salary] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Salary] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.Salary] ADD CONSTRAINT [PK_Register.Accumulation.Salary] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.Salary] ON [Register.Accumulation.Salary];
     RAISERROR('Register.Accumulation.Salary finish', 0 ,1) WITH NOWAIT;
@@ -1622,6 +1662,8 @@
     WHERE r.type = N'Register.Accumulation.Depreciation';
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.Depreciation] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.Depreciation] TO PUBLIC;
     GO
     ALTER TABLE [Register.Accumulation.Depreciation] ADD CONSTRAINT [PK_Register.Accumulation.Depreciation] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.Depreciation] ON [Register.Accumulation.Depreciation];
@@ -1705,6 +1747,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.CashToPay] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.CashToPay] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.CashToPay] ADD CONSTRAINT [PK_Register.Accumulation.CashToPay] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.CashToPay] ON [Register.Accumulation.CashToPay];
     RAISERROR('Register.Accumulation.CashToPay finish', 0 ,1) WITH NOWAIT;
@@ -1784,6 +1828,8 @@
     WHERE r.type = N'Register.Accumulation.CharityAnalytic';
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.CharityAnalytic] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.CharityAnalytic] TO PUBLIC;
     GO
     ALTER TABLE [Register.Accumulation.CharityAnalytic] ADD CONSTRAINT [PK_Register.Accumulation.CharityAnalytic] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.CharityAnalytic] ON [Register.Accumulation.CharityAnalytic];
@@ -1871,6 +1917,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.BudgetItemTurnover] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.BudgetItemTurnover] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.BudgetItemTurnover] ADD CONSTRAINT [PK_Register.Accumulation.BudgetItemTurnover] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.BudgetItemTurnover] ON [Register.Accumulation.BudgetItemTurnover];
     RAISERROR('Register.Accumulation.BudgetItemTurnover finish', 0 ,1) WITH NOWAIT;
@@ -1944,6 +1992,8 @@
     WHERE r.type = N'Register.Accumulation.Intercompany';
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.Intercompany] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.Intercompany] TO PUBLIC;
     GO
     ALTER TABLE [Register.Accumulation.Intercompany] ADD CONSTRAINT [PK_Register.Accumulation.Intercompany] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.Intercompany] ON [Register.Accumulation.Intercompany];
@@ -2031,6 +2081,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.Acquiring] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.Acquiring] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.Acquiring] ADD CONSTRAINT [PK_Register.Accumulation.Acquiring] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.Acquiring] ON [Register.Accumulation.Acquiring];
     RAISERROR('Register.Accumulation.Acquiring finish', 0 ,1) WITH NOWAIT;
@@ -2113,6 +2165,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.PromotionPoints] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.PromotionPoints] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.PromotionPoints] ADD CONSTRAINT [PK_Register.Accumulation.PromotionPoints] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.PromotionPoints] ON [Register.Accumulation.PromotionPoints];
     RAISERROR('Register.Accumulation.PromotionPoints finish', 0 ,1) WITH NOWAIT;
@@ -2189,6 +2243,8 @@
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.StaffingTable] TO JETTI;
     GO
+    GRANT SELECT ON [Register.Accumulation.StaffingTable] TO PUBLIC;
+    GO
     ALTER TABLE [Register.Accumulation.StaffingTable] ADD CONSTRAINT [PK_Register.Accumulation.StaffingTable] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.StaffingTable] ON [Register.Accumulation.StaffingTable];
     RAISERROR('Register.Accumulation.StaffingTable finish', 0 ,1) WITH NOWAIT;
@@ -2260,6 +2316,8 @@
     WHERE r.type = N'Register.Accumulation.MoneyDocuments';
     GO
     GRANT SELECT,INSERT,DELETE ON [Register.Accumulation.MoneyDocuments] TO JETTI;
+    GO
+    GRANT SELECT ON [Register.Accumulation.MoneyDocuments] TO PUBLIC;
     GO
     ALTER TABLE [Register.Accumulation.MoneyDocuments] ADD CONSTRAINT [PK_Register.Accumulation.MoneyDocuments] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE CLUSTERED COLUMNSTORE INDEX [Register.Accumulation.MoneyDocuments] ON [Register.Accumulation.MoneyDocuments];

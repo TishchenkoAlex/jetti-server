@@ -79,6 +79,8 @@
 GO
 GRANT SELECT ON dbo.[Operation.AdditionalParametersDepartment] TO jetti;
 GO
+GRANT SELECT ON dbo.[Operation.AdditionalParametersDepartment] TO PUBLIC;
+GO
 
       
 ------------------------------ END Operation.AdditionalParametersDepartment ------------------------------
@@ -118,6 +120,8 @@ GO
     ; 
 GO
 GRANT SELECT ON dbo.[Operation.AutoAdditionSettings] TO jetti;
+GO
+GRANT SELECT ON dbo.[Operation.AutoAdditionSettings] TO PUBLIC;
 GO
 
       
@@ -163,6 +167,8 @@ GO
     ; 
 GO
 GRANT SELECT ON dbo.[Operation.CashShifts] TO jetti;
+GO
+GRANT SELECT ON dbo.[Operation.CashShifts] TO PUBLIC;
 GO
 
       
@@ -224,6 +230,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Operation.CHECK_JETTI_FRONT] TO jetti;
 GO
+GRANT SELECT ON dbo.[Operation.CHECK_JETTI_FRONT] TO PUBLIC;
+GO
 
       
 ------------------------------ END Operation.CHECK_JETTI_FRONT ------------------------------
@@ -257,6 +265,8 @@ GO
     ; 
 GO
 GRANT SELECT ON dbo.[Operation.DeliveryAreas] TO jetti;
+GO
+GRANT SELECT ON dbo.[Operation.DeliveryAreas] TO PUBLIC;
 GO
 
       
@@ -302,6 +312,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Operation.Group_Create_CashRequests] TO jetti;
 GO
+GRANT SELECT ON dbo.[Operation.Group_Create_CashRequests] TO PUBLIC;
+GO
 
       
 ------------------------------ END Operation.Group_Create_CashRequests ------------------------------
@@ -341,6 +353,8 @@ GO
     ; 
 GO
 GRANT SELECT ON dbo.[Operation.OnlineSalesManagementSettings] TO jetti;
+GO
+GRANT SELECT ON dbo.[Operation.OnlineSalesManagementSettings] TO PUBLIC;
 GO
 
       
@@ -394,6 +408,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Operation.RegistrationAndAnalyticsBrand] TO jetti;
 GO
+GRANT SELECT ON dbo.[Operation.RegistrationAndAnalyticsBrand] TO PUBLIC;
+GO
 
       
 ------------------------------ END Operation.RegistrationAndAnalyticsBrand ------------------------------
@@ -432,6 +448,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Operation.Registry_Share_Sert] TO jetti;
 GO
+GRANT SELECT ON dbo.[Operation.Registry_Share_Sert] TO PUBLIC;
+GO
 
       
 ------------------------------ END Operation.Registry_Share_Sert ------------------------------
@@ -469,6 +487,8 @@ GO
     ; 
 GO
 GRANT SELECT ON dbo.[Operation.SyncManual] TO jetti;
+GO
+GRANT SELECT ON dbo.[Operation.SyncManual] TO PUBLIC;
 GO
 
       

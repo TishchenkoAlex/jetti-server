@@ -31,6 +31,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Account.v.company] ON [Catalog.Account
 GO
 
 GRANT SELECT ON dbo.[Catalog.Account.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Account.v] TO PUBLIC;
 RAISERROR('Catalog.Account end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Account ------------------------------
@@ -75,6 +76,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.AcquiringTerminal.v.company] ON [Catal
 GO
 
 GRANT SELECT ON dbo.[Catalog.AcquiringTerminal.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.AcquiringTerminal.v] TO PUBLIC;
 RAISERROR('Catalog.AcquiringTerminal end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.AcquiringTerminal ------------------------------
@@ -121,6 +123,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Advertising.v.company] ON [Catalog.Adv
 GO
 
 GRANT SELECT ON dbo.[Catalog.Advertising.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Advertising.v] TO PUBLIC;
 RAISERROR('Catalog.Advertising end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Advertising ------------------------------
@@ -161,6 +164,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Attachment.v.company] ON [Catalog.Atta
 GO
 
 GRANT SELECT ON dbo.[Catalog.Attachment.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Attachment.v] TO PUBLIC;
 RAISERROR('Catalog.Attachment end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Attachment ------------------------------
@@ -195,6 +199,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.BRMRules.v.company] ON [Catalog.BRMRul
 GO
 
 GRANT SELECT ON dbo.[Catalog.BRMRules.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.BRMRules.v] TO PUBLIC;
 RAISERROR('Catalog.BRMRules end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.BRMRules ------------------------------
@@ -242,6 +247,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.BusinessRegion.v.company] ON [Catalog.
 GO
 
 GRANT SELECT ON dbo.[Catalog.BusinessRegion.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.BusinessRegion.v] TO PUBLIC;
 RAISERROR('Catalog.BusinessRegion end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.BusinessRegion ------------------------------
@@ -276,6 +282,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.CashFlow.v.company] ON [Catalog.CashFl
 GO
 
 GRANT SELECT ON dbo.[Catalog.CashFlow.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.CashFlow.v] TO PUBLIC;
 RAISERROR('Catalog.CashFlow end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.CashFlow ------------------------------
@@ -308,6 +315,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Configuration.v.company] ON [Catalog.C
 GO
 
 GRANT SELECT ON dbo.[Catalog.Configuration.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Configuration.v] TO PUBLIC;
 RAISERROR('Catalog.Configuration end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Configuration ------------------------------
@@ -364,6 +372,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Contract.v.company] ON [Catalog.Contra
 GO
 
 GRANT SELECT ON dbo.[Catalog.Contract.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Contract.v] TO PUBLIC;
 RAISERROR('Catalog.Contract end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Contract ------------------------------
@@ -414,6 +423,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Counterpartie.v.company] ON [Catalog.C
 GO
 
 GRANT SELECT ON dbo.[Catalog.Counterpartie.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Counterpartie.v] TO PUBLIC;
 RAISERROR('Catalog.Counterpartie end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Counterpartie ------------------------------
@@ -452,6 +462,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Department.Company.v.company] ON [Cata
 GO
 
 GRANT SELECT ON dbo.[Catalog.Department.Company.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Department.Company.v] TO PUBLIC;
 RAISERROR('Catalog.Department.Company end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Department.Company ------------------------------
@@ -486,6 +497,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Employee.v.company] ON [Catalog.Employ
 GO
 
 GRANT SELECT ON dbo.[Catalog.Employee.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Employee.v] TO PUBLIC;
 RAISERROR('Catalog.Employee end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Employee ------------------------------
@@ -522,6 +534,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.InvestorGroup.v.company] ON [Catalog.I
 GO
 
 GRANT SELECT ON dbo.[Catalog.InvestorGroup.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.InvestorGroup.v] TO PUBLIC;
 RAISERROR('Catalog.InvestorGroup end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.InvestorGroup ------------------------------
@@ -559,6 +572,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.JobTitle.v.company] ON [Catalog.JobTit
 GO
 
 GRANT SELECT ON dbo.[Catalog.JobTitle.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.JobTitle.v] TO PUBLIC;
 RAISERROR('Catalog.JobTitle end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.JobTitle ------------------------------
@@ -592,6 +606,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.JobTitle.Functional.v.company] ON [Cat
 GO
 
 GRANT SELECT ON dbo.[Catalog.JobTitle.Functional.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.JobTitle.Functional.v] TO PUBLIC;
 RAISERROR('Catalog.JobTitle.Functional end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.JobTitle.Functional ------------------------------
@@ -643,6 +658,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Loan.v.company] ON [Catalog.Loan.v](co
 GO
 
 GRANT SELECT ON dbo.[Catalog.Loan.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Loan.v] TO PUBLIC;
 RAISERROR('Catalog.Loan end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Loan ------------------------------
@@ -675,6 +691,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.LoanRepaymentProcedure.v.company] ON [
 GO
 
 GRANT SELECT ON dbo.[Catalog.LoanRepaymentProcedure.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.LoanRepaymentProcedure.v] TO PUBLIC;
 RAISERROR('Catalog.LoanRepaymentProcedure end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.LoanRepaymentProcedure ------------------------------
@@ -710,6 +727,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ModifiersGroup.v.company] ON [Catalog.
 GO
 
 GRANT SELECT ON dbo.[Catalog.ModifiersGroup.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.ModifiersGroup.v] TO PUBLIC;
 RAISERROR('Catalog.ModifiersGroup end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.ModifiersGroup ------------------------------
@@ -751,6 +769,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.MoneyDocument.v.company] ON [Catalog.M
 GO
 
 GRANT SELECT ON dbo.[Catalog.MoneyDocument.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.MoneyDocument.v] TO PUBLIC;
 RAISERROR('Catalog.MoneyDocument end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.MoneyDocument ------------------------------
@@ -785,6 +804,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ObjectsExploitation.v.company] ON [Cat
 GO
 
 GRANT SELECT ON dbo.[Catalog.ObjectsExploitation.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.ObjectsExploitation.v] TO PUBLIC;
 RAISERROR('Catalog.ObjectsExploitation end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.ObjectsExploitation ------------------------------
@@ -824,6 +844,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.OrderSource.v.company] ON [Catalog.Ord
 GO
 
 GRANT SELECT ON dbo.[Catalog.OrderSource.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.OrderSource.v] TO PUBLIC;
 RAISERROR('Catalog.OrderSource end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.OrderSource ------------------------------
@@ -893,6 +914,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Person.v.company] ON [Catalog.Person.v
 GO
 
 GRANT SELECT ON dbo.[Catalog.Person.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Person.v] TO PUBLIC;
 RAISERROR('Catalog.Person end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Person ------------------------------
@@ -937,6 +959,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Person.BankAccount.v.company] ON [Cata
 GO
 
 GRANT SELECT ON dbo.[Catalog.Person.BankAccount.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Person.BankAccount.v] TO PUBLIC;
 RAISERROR('Catalog.Person.BankAccount end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Person.BankAccount ------------------------------
@@ -976,6 +999,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Person.Contract.v.company] ON [Catalog
 GO
 
 GRANT SELECT ON dbo.[Catalog.Person.Contract.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Person.Contract.v] TO PUBLIC;
 RAISERROR('Catalog.Person.Contract end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Person.Contract ------------------------------
@@ -1008,6 +1032,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.PersonIdentity.v.company] ON [Catalog.
 GO
 
 GRANT SELECT ON dbo.[Catalog.PersonIdentity.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.PersonIdentity.v] TO PUBLIC;
 RAISERROR('Catalog.PersonIdentity end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.PersonIdentity ------------------------------
@@ -1081,6 +1106,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Product.v.company] ON [Catalog.Product
 GO
 
 GRANT SELECT ON dbo.[Catalog.Product.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Product.v] TO PUBLIC;
 RAISERROR('Catalog.Product end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Product ------------------------------
@@ -1115,6 +1141,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Product.Report.v.company] ON [Catalog.
 GO
 
 GRANT SELECT ON dbo.[Catalog.Product.Report.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Product.Report.v] TO PUBLIC;
 RAISERROR('Catalog.Product.Report end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Product.Report ------------------------------
@@ -1157,6 +1184,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ProductCategory.v.company] ON [Catalog
 GO
 
 GRANT SELECT ON dbo.[Catalog.ProductCategory.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.ProductCategory.v] TO PUBLIC;
 RAISERROR('Catalog.ProductCategory end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.ProductCategory ------------------------------
@@ -1191,6 +1219,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ProductKind.v.company] ON [Catalog.Pro
 GO
 
 GRANT SELECT ON dbo.[Catalog.ProductKind.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.ProductKind.v] TO PUBLIC;
 RAISERROR('Catalog.ProductKind end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.ProductKind ------------------------------
@@ -1228,6 +1257,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.ReasonTypes.v.company] ON [Catalog.Rea
 GO
 
 GRANT SELECT ON dbo.[Catalog.ReasonTypes.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.ReasonTypes.v] TO PUBLIC;
 RAISERROR('Catalog.ReasonTypes end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.ReasonTypes ------------------------------
@@ -1274,6 +1304,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.RetailClient.v.company] ON [Catalog.Re
 GO
 
 GRANT SELECT ON dbo.[Catalog.RetailClient.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.RetailClient.v] TO PUBLIC;
 RAISERROR('Catalog.RetailClient end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.RetailClient ------------------------------
@@ -1328,6 +1359,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.RetailNetwork.v.company] ON [Catalog.R
 GO
 
 GRANT SELECT ON dbo.[Catalog.RetailNetwork.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.RetailNetwork.v] TO PUBLIC;
 RAISERROR('Catalog.RetailNetwork end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.RetailNetwork ------------------------------
@@ -1369,6 +1401,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Specification.v.company] ON [Catalog.S
 GO
 
 GRANT SELECT ON dbo.[Catalog.Specification.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Specification.v] TO PUBLIC;
 RAISERROR('Catalog.Specification end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Specification ------------------------------
@@ -1403,6 +1436,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.UsersGroup.v.company] ON [Catalog.User
 GO
 
 GRANT SELECT ON dbo.[Catalog.UsersGroup.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.UsersGroup.v] TO PUBLIC;
 RAISERROR('Catalog.UsersGroup end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.UsersGroup ------------------------------
@@ -1443,6 +1477,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Vehicle.v.company] ON [Catalog.Vehicle
 GO
 
 GRANT SELECT ON dbo.[Catalog.Vehicle.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Vehicle.v] TO PUBLIC;
 RAISERROR('Catalog.Vehicle end', 0 ,1) WITH NOWAIT;
 
 ------------------------------ END Catalog.Vehicle ------------------------------
