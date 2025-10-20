@@ -16,7 +16,7 @@ export const TRANSFORMED_REGISTER_MOVEMENTS_TABLE = '[dbo].[Register.Accumulatio
 export const ARCH_USER = process.env.ARCH_USER || 'AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA';
 export const COMMON_COMPANY = process.env.COMMON_COMPANY || '00000000-0000-0000-0000-000000000000';
 export const CONTOUR = parseInt(process.env.CONTOUR || "1");
-export const SERVICE_ACCOUNTS = (process.env.SERVICE_ACCOUNTS || 'exchange@sushi-m.net,kolpakov.d@sushi-master.net,setka.service.account@sushi-master.net,exchange@sushi-m.net').split(',');
+export const SERVICE_ACCOUNTS = (process.env.SERVICE_ACCOUNTS || 'exchange@sushi-master.net,kolpakov.d@sushi-master.net,setka.service.account@sushi-master.net,exchange@sushi-m.net').split(',');
 
 const DB_PORT = parseInt(process.env.DB_PORT as string, undefined);
 

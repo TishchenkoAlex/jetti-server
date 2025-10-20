@@ -101,7 +101,7 @@
     },
     {
         "name": "SERVICE_ACCOUNTS",
-        "value": "exchange@sushi-m.net,kolpakov.d@sushi-master.net,setka.service.account@sushi-master.net,exchange@sushi-m.net",
+        "value": "exchange@sushi-master.net,kolpakov.d@sushi-master.net,setka.service.account@sushi-master.net,exchange@sushi-m.net",
         "slotSetting": false
     },
     {
