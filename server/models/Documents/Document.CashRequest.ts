@@ -397,7 +397,7 @@ export class DocumentCashRequest extends DocumentBase {
   @Props({ type: 'number', label: 'Сумма в валюте договора', style: { width: '100px', textAlign: 'right' } })
   AmountLoan = null;
 
-  @Props({ type: 'Catalog.Currency', label: 'Валюта договора', onChangeServer: true})
+  @Props({ type: 'Catalog.Currency', label: 'Валюта договора', onChangeServer: true })
   CurrencyLoan: Ref = null;
 
   @Props({
@@ -453,17 +453,30 @@ export class PayRoll {
 export class PayRollDividend {
   @Props({ type: 'Catalog.Person', label: 'Инвестор (Физ.лицо)', style: { width: '350px' } })
   Person: Ref = null;
-  
+
   @Props({ type: 'number', label: 'Дивиденды (начислено)', totals: 1 })
-  AmountDiv = 0; 
+  AmountDiv = 0;
 
   @Props({ type: 'number', label: 'НДФЛ (начислено)', totals: 1 })
-  Tax = 0; 
+  Tax = 0;
 
   @Props({ type: 'number', label: 'К выплате', totals: 1 })
-  Amount = 0; 
-  
-  @Props({ type: 'json', label: 'Лицевой счет (JSON)', style: { width: '500px' }})
+  Amount = 0;
+
+  @Props({
+    type: 'Catalog.Person.BankAccount',
+    label: 'Лицевой счет',
+    style: { width: '350px' },
+    owner:
+      [
+        {
+          dependsOn: "Person", filterBy: "owner", isOwnerFixed: true
+        }
+      ]
+  })
+  PersonBankAccount = '';
+
+  @Props({ type: 'json', label: 'Лицевой счет (JSON)', style: { width: '500px' } })
   PersonBankAccountJson = '';
 }
 
