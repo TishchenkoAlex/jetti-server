@@ -619,7 +619,8 @@ export class DocumentCashRequestServer extends DocumentCashRequest implements IS
           currency: сurrency,
           CashFlow: this.CashFlow,
           OperationType: this.Operation,
-          exchangeRate: lib.util.round(el.AmountDiv || 0) / 1000
+          exchangeRate: lib.util.round(el.AmountDiv || 0) / 1000,
+          BankAccountPerson: el.PersonBankAccount || null,
         })
         );
       });

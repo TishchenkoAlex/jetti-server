@@ -43,6 +43,9 @@ GO
     GRANT SELECT,INSERT,DELETE ON [Catalog.BRMRules.v] TO JETTI;	
 GO
 
+    GRANT SELECT ON [Catalog.BRMRules.v] TO PUBLIC;	
+GO
+
     ALTER TABLE [Catalog.BRMRules.v] ADD CONSTRAINT [PK_Catalog.BRMRules.v] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE UNIQUE CLUSTERED INDEX [Catalog.BRMRules.v] ON [Catalog.BRMRules.v](id);
       
@@ -97,6 +100,9 @@ GO
     GRANT SELECT,INSERT,DELETE ON [Catalog.Configuration.v] TO JETTI;	
 GO
 
+    GRANT SELECT ON [Catalog.Configuration.v] TO PUBLIC;	
+GO
+
     ALTER TABLE [Catalog.Configuration.v] ADD CONSTRAINT [PK_Catalog.Configuration.v] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE UNIQUE CLUSTERED INDEX [Catalog.Configuration.v] ON [Catalog.Configuration.v](id);
       
@@ -149,6 +155,9 @@ GO
 GO
 
     GRANT SELECT,INSERT,DELETE ON [Catalog.LoanRepaymentProcedure.v] TO JETTI;	
+GO
+
+    GRANT SELECT ON [Catalog.LoanRepaymentProcedure.v] TO PUBLIC;	
 GO
 
     ALTER TABLE [Catalog.LoanRepaymentProcedure.v] ADD CONSTRAINT [PK_Catalog.LoanRepaymentProcedure.v] PRIMARY KEY NONCLUSTERED ([id]);
@@ -209,6 +218,9 @@ GO
 GO
 
     GRANT SELECT,INSERT,DELETE ON [Catalog.ModifiersGroup.v] TO JETTI;	
+GO
+
+    GRANT SELECT ON [Catalog.ModifiersGroup.v] TO PUBLIC;	
 GO
 
     ALTER TABLE [Catalog.ModifiersGroup.v] ADD CONSTRAINT [PK_Catalog.ModifiersGroup.v] PRIMARY KEY NONCLUSTERED ([id]);
@@ -283,6 +295,9 @@ GO
     GRANT SELECT,INSERT,DELETE ON [Catalog.MoneyDocument.v] TO JETTI;	
 GO
 
+    GRANT SELECT ON [Catalog.MoneyDocument.v] TO PUBLIC;	
+GO
+
     ALTER TABLE [Catalog.MoneyDocument.v] ADD CONSTRAINT [PK_Catalog.MoneyDocument.v] PRIMARY KEY NONCLUSTERED ([id]);
     CREATE UNIQUE CLUSTERED INDEX [Catalog.MoneyDocument.v] ON [Catalog.MoneyDocument.v](id);
       
@@ -335,6 +350,9 @@ GO
 GO
 
     GRANT SELECT,INSERT,DELETE ON [Catalog.PersonIdentity.v] TO JETTI;	
+GO
+
+    GRANT SELECT ON [Catalog.PersonIdentity.v] TO PUBLIC;	
 GO
 
     ALTER TABLE [Catalog.PersonIdentity.v] ADD CONSTRAINT [PK_Catalog.PersonIdentity.v] PRIMARY KEY NONCLUSTERED ([id]);
@@ -405,6 +423,9 @@ GO
 GO
 
     GRANT SELECT,INSERT,DELETE ON [Catalog.Vehicle.v] TO JETTI;	
+GO
+
+    GRANT SELECT ON [Catalog.Vehicle.v] TO PUBLIC;	
 GO
 
     ALTER TABLE [Catalog.Vehicle.v] ADD CONSTRAINT [PK_Catalog.Vehicle.v] PRIMARY KEY NONCLUSTERED ([id]);

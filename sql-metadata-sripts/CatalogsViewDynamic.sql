@@ -51,6 +51,8 @@ CREATE OR ALTER VIEW[dbo].[Catalog.Documents] AS
 GO
 GRANT SELECT ON dbo.[Catalog.Account] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.Account] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.Account ------------------------------
@@ -110,6 +112,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.AcquiringTerminal] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.AcquiringTerminal] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.AcquiringTerminal ------------------------------
@@ -168,6 +172,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.Advertising] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.Advertising] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.Advertising ------------------------------
@@ -221,6 +227,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.Attachment] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.Attachment] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.Attachment ------------------------------
@@ -265,6 +273,8 @@ GO
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.BRMRules] TO jetti;
+GO
+GRANT SELECT ON dbo.[Catalog.BRMRules] TO PUBLIC;
 GO
 
       
@@ -326,6 +336,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.BusinessRegion] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.BusinessRegion] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.BusinessRegion ------------------------------
@@ -372,6 +384,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.CashFlow] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.CashFlow] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.CashFlow ------------------------------
@@ -414,6 +428,8 @@ GO
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.Configuration] TO jetti;
+GO
+GRANT SELECT ON dbo.[Catalog.Configuration] TO PUBLIC;
 GO
 
       
@@ -490,6 +506,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.Contract] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.Contract] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.Contract ------------------------------
@@ -555,6 +573,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.Counterpartie] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.Counterpartie] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.Counterpartie ------------------------------
@@ -607,6 +627,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.Department.Company] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.Department.Company] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.Department.Company ------------------------------
@@ -652,6 +674,8 @@ GO
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.Employee] TO jetti;
+GO
+GRANT SELECT ON dbo.[Catalog.Employee] TO PUBLIC;
 GO
 
       
@@ -703,6 +727,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.InvestorGroup] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.InvestorGroup] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.InvestorGroup ------------------------------
@@ -753,6 +779,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.JobTitle] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.JobTitle] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.JobTitle ------------------------------
@@ -797,6 +825,8 @@ GO
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.JobTitle.Functional] TO jetti;
+GO
+GRANT SELECT ON dbo.[Catalog.JobTitle.Functional] TO PUBLIC;
 GO
 
       
@@ -869,6 +899,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.Loan] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.Loan] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.Loan ------------------------------
@@ -911,6 +943,8 @@ GO
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.LoanRepaymentProcedure] TO jetti;
+GO
+GRANT SELECT ON dbo.[Catalog.LoanRepaymentProcedure] TO PUBLIC;
 GO
 
       
@@ -957,6 +991,8 @@ GO
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.ModifiersGroup] TO jetti;
+GO
+GRANT SELECT ON dbo.[Catalog.ModifiersGroup] TO PUBLIC;
 GO
 
       
@@ -1014,6 +1050,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.MoneyDocument] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.MoneyDocument] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.MoneyDocument ------------------------------
@@ -1059,6 +1097,8 @@ GO
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.ObjectsExploitation] TO jetti;
+GO
+GRANT SELECT ON dbo.[Catalog.ObjectsExploitation] TO PUBLIC;
 GO
 
       
@@ -1111,6 +1151,8 @@ GO
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.OrderSource] TO jetti;
+GO
+GRANT SELECT ON dbo.[Catalog.OrderSource] TO PUBLIC;
 GO
 
       
@@ -1191,6 +1233,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.Person] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.Person] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.Person ------------------------------
@@ -1249,6 +1293,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.Person.BankAccount] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.Person.BankAccount] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.Person.BankAccount ------------------------------
@@ -1302,6 +1348,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.Person.Contract] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.Person.Contract] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.Person.Contract ------------------------------
@@ -1344,6 +1392,8 @@ GO
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.PersonIdentity] TO jetti;
+GO
+GRANT SELECT ON dbo.[Catalog.PersonIdentity] TO PUBLIC;
 GO
 
       
@@ -1440,6 +1490,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.Product] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.Product] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.Product ------------------------------
@@ -1486,6 +1538,8 @@ GO
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.Product.Report] TO jetti;
+GO
+GRANT SELECT ON dbo.[Catalog.Product.Report] TO PUBLIC;
 GO
 
       
@@ -1542,6 +1596,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.ProductCategory] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.ProductCategory] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.ProductCategory ------------------------------
@@ -1587,6 +1643,8 @@ GO
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.ProductKind] TO jetti;
+GO
+GRANT SELECT ON dbo.[Catalog.ProductKind] TO PUBLIC;
 GO
 
       
@@ -1637,6 +1695,8 @@ GO
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.ReasonTypes] TO jetti;
+GO
+GRANT SELECT ON dbo.[Catalog.ReasonTypes] TO PUBLIC;
 GO
 
       
@@ -1696,6 +1756,8 @@ GO
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.RetailClient] TO jetti;
+GO
+GRANT SELECT ON dbo.[Catalog.RetailClient] TO PUBLIC;
 GO
 
       
@@ -1768,6 +1830,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.RetailNetwork] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.RetailNetwork] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.RetailNetwork ------------------------------
@@ -1824,6 +1888,8 @@ GO
 GO
 GRANT SELECT ON dbo.[Catalog.Specification] TO jetti;
 GO
+GRANT SELECT ON dbo.[Catalog.Specification] TO PUBLIC;
+GO
 
       
 ------------------------------ END Catalog.Specification ------------------------------
@@ -1869,6 +1935,8 @@ GO
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.UsersGroup] TO jetti;
+GO
+GRANT SELECT ON dbo.[Catalog.UsersGroup] TO PUBLIC;
 GO
 
       
@@ -1921,6 +1989,8 @@ GO
     ;
 GO
 GRANT SELECT ON dbo.[Catalog.Vehicle] TO jetti;
+GO
+GRANT SELECT ON dbo.[Catalog.Vehicle] TO PUBLIC;
 GO
 
       

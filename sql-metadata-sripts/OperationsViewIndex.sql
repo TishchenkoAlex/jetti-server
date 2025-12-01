@@ -74,6 +74,8 @@ CREATE UNIQUE CLUSTERED INDEX [Operation.AdditionalParametersDepartment.v] ON [O
       
 GO
 GRANT SELECT ON dbo.[Operation.AdditionalParametersDepartment.v]TO jetti; 
+GO
+GRANT SELECT ON dbo.[Operation.AdditionalParametersDepartment.v]TO PUBLIC; 
       RAISERROR('Operation.AdditionalParametersDepartment finish', 0 ,1) WITH NOWAIT;
       
 ------------------------------ BEGIN Operation.AdditionalParametersDepartment ------------------------------
@@ -111,6 +113,8 @@ CREATE UNIQUE CLUSTERED INDEX [Operation.AutoAdditionSettings.v] ON [Operation.A
       
 GO
 GRANT SELECT ON dbo.[Operation.AutoAdditionSettings.v]TO jetti; 
+GO
+GRANT SELECT ON dbo.[Operation.AutoAdditionSettings.v]TO PUBLIC; 
       RAISERROR('Operation.AutoAdditionSettings finish', 0 ,1) WITH NOWAIT;
       
 ------------------------------ BEGIN Operation.AutoAdditionSettings ------------------------------
@@ -153,6 +157,8 @@ CREATE UNIQUE CLUSTERED INDEX [Operation.CashShifts.v] ON [Operation.CashShifts.
       
 GO
 GRANT SELECT ON dbo.[Operation.CashShifts.v]TO jetti; 
+GO
+GRANT SELECT ON dbo.[Operation.CashShifts.v]TO PUBLIC; 
       RAISERROR('Operation.CashShifts finish', 0 ,1) WITH NOWAIT;
       
 ------------------------------ BEGIN Operation.CashShifts ------------------------------
@@ -204,6 +210,8 @@ CREATE UNIQUE NONCLUSTERED INDEX[Operation.CHECK_JETTI_FRONT.v.Customer] ON[Oper
 CREATE UNIQUE NONCLUSTERED INDEX[Operation.CHECK_JETTI_FRONT.v.Storehouse] ON[Operation.CHECK_JETTI_FRONT.v](Storehouse, id) INCLUDE([company]);
 GO
 GRANT SELECT ON dbo.[Operation.CHECK_JETTI_FRONT.v]TO jetti; 
+GO
+GRANT SELECT ON dbo.[Operation.CHECK_JETTI_FRONT.v]TO PUBLIC; 
       RAISERROR('Operation.CHECK_JETTI_FRONT finish', 0 ,1) WITH NOWAIT;
       
 ------------------------------ BEGIN Operation.CHECK_JETTI_FRONT ------------------------------
@@ -236,6 +244,8 @@ CREATE UNIQUE CLUSTERED INDEX [Operation.DeliveryAreas.v] ON [Operation.Delivery
       
 GO
 GRANT SELECT ON dbo.[Operation.DeliveryAreas.v]TO jetti; 
+GO
+GRANT SELECT ON dbo.[Operation.DeliveryAreas.v]TO PUBLIC; 
       RAISERROR('Operation.DeliveryAreas finish', 0 ,1) WITH NOWAIT;
       
 ------------------------------ BEGIN Operation.DeliveryAreas ------------------------------
@@ -274,6 +284,8 @@ CREATE UNIQUE CLUSTERED INDEX [Operation.Group_Create_CashRequests.v] ON [Operat
       
 GO
 GRANT SELECT ON dbo.[Operation.Group_Create_CashRequests.v]TO jetti; 
+GO
+GRANT SELECT ON dbo.[Operation.Group_Create_CashRequests.v]TO PUBLIC; 
       RAISERROR('Operation.Group_Create_CashRequests finish', 0 ,1) WITH NOWAIT;
       
 ------------------------------ BEGIN Operation.Group_Create_CashRequests ------------------------------
@@ -310,6 +322,8 @@ CREATE UNIQUE CLUSTERED INDEX [Operation.OnlineSalesManagementSettings.v] ON [Op
       
 GO
 GRANT SELECT ON dbo.[Operation.OnlineSalesManagementSettings.v]TO jetti; 
+GO
+GRANT SELECT ON dbo.[Operation.OnlineSalesManagementSettings.v]TO PUBLIC; 
       RAISERROR('Operation.OnlineSalesManagementSettings finish', 0 ,1) WITH NOWAIT;
       
 ------------------------------ BEGIN Operation.OnlineSalesManagementSettings ------------------------------
@@ -354,6 +368,8 @@ CREATE UNIQUE CLUSTERED INDEX [Operation.RegistrationAndAnalyticsBrand.v] ON [Op
       
 GO
 GRANT SELECT ON dbo.[Operation.RegistrationAndAnalyticsBrand.v]TO jetti; 
+GO
+GRANT SELECT ON dbo.[Operation.RegistrationAndAnalyticsBrand.v]TO PUBLIC; 
       RAISERROR('Operation.RegistrationAndAnalyticsBrand finish', 0 ,1) WITH NOWAIT;
       
 ------------------------------ BEGIN Operation.RegistrationAndAnalyticsBrand ------------------------------
@@ -388,6 +404,8 @@ CREATE UNIQUE CLUSTERED INDEX [Operation.Registry_Share_Sert.v] ON [Operation.Re
       
 GO
 GRANT SELECT ON dbo.[Operation.Registry_Share_Sert.v]TO jetti; 
+GO
+GRANT SELECT ON dbo.[Operation.Registry_Share_Sert.v]TO PUBLIC; 
       RAISERROR('Operation.Registry_Share_Sert finish', 0 ,1) WITH NOWAIT;
       
 ------------------------------ BEGIN Operation.Registry_Share_Sert ------------------------------
@@ -425,6 +443,8 @@ CREATE UNIQUE CLUSTERED INDEX [Operation.SyncManual.v] ON [Operation.SyncManual.
       
 GO
 GRANT SELECT ON dbo.[Operation.SyncManual.v]TO jetti; 
+GO
+GRANT SELECT ON dbo.[Operation.SyncManual.v]TO PUBLIC; 
       RAISERROR('Operation.SyncManual finish', 0 ,1) WITH NOWAIT;
       
 ------------------------------ BEGIN Operation.SyncManual ------------------------------

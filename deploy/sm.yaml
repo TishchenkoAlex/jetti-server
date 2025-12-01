@@ -62,6 +62,8 @@ spec:
           value: production
         - name:  CONTOUR
           value: "1"
+        - name: SERVICE_ACCOUNTS
+          value: "exchange@sushi-master.net,kolpakov.d@sushi-master.net,setka.service.account@sushi-master.net,exchange@sushi-m.net"
         image: eu.gcr.io/jetti-x100/jetti-api:latest
         imagePullPolicy: Always
         name: jetti

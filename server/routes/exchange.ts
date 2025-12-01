@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import * as jwt from 'jsonwebtoken';
-import { JTW_KEY } from '../env/environment';
+import { JTW_KEY, SERVICE_ACCOUNTS } from '../env/environment';
 import { authHTTP } from './middleware/check-auth';
 import { MSSQL } from '../mssql';
 import { TASKS_POOL } from '../sql.pool.tasks';
@@ -10,26 +10,20 @@ import { getUserRoles } from '../fuctions/UsersPermissions';
 
 export const router = Router();
 
-const KOLPAKOV = 'kolpakov.d@sushi-master.net';
-
 router.post('/login', async (req, res, next) => {
   // setka.service.account@sushi-master.net
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body as { email: string; password: string };
     if (!email) { return res.status(401).json({ message: 'Auth failed: user name required' }); }
     if (!password) { return res.status(401).json({ message: 'Auth failed: password required' }); }
-    if (!(
-      email === 'exchange@sushi-master.net' ||
-      email === 'setka.service.account@sushi-master.net' ||
-      email === KOLPAKOV
-    )) {
+    if (!SERVICE_ACCOUNTS.includes(email.toLowerCase())) {
       return res.status(401).json({ message: 'Auth failed: wrong user name' });
     }
     if (password !== process.env.EXCHANGE_ACCESS_KEY) { return res.status(401).json({ message: 'Auth failed: wrong password' }); }
 
-    const user = await getUser(email);
+    const user = await getUser(email.toLowerCase());
 
-    const roles = user && email === KOLPAKOV ? await getUserRoles(user) : [];
+    const roles = user && email.toLowerCase().startsWith('kolpakov.d@') ? await getUserRoles(user) : [];
 
     const payload: IJWTPayload = {
       timezoneOffset: req.body.timezoneOffset || 0,
