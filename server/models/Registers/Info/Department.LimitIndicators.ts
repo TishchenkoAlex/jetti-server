@@ -34,6 +34,9 @@ export class RegisterInfoDepartmentLimitIndicators extends RegisterInfo {
   @Props({ type: 'number' })
   MaxOrderTotalAmount = 0;
 
+  @Props({ type: 'number' })
+  KitchenVolume = null;
+
   constructor(init: Partial<RegisterInfoDepartmentLimitIndicators>) {
     super(init);
     Object.assign(this, init);
