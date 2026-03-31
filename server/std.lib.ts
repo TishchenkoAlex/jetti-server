@@ -34,7 +34,7 @@ import * as xml2js from 'xml2js';
 import * as crypto from 'crypto';
 import { Global } from './models/global';
 import { DocumentServer } from './models/document.server';
-import { CONTOUR } from './env/environment';
+import { CONTOUR, LINK } from './env/environment';
 
 export interface BatchRow { SKU: Ref; Storehouse: Ref; Qty: number; Cost: number; batch: Ref; rate: number; }
 export interface FillDocBasedOnParams {
@@ -195,7 +195,8 @@ export interface JTL {
     get: <T>(key: string) => T | undefined,
     update(cacheKey: string)
   }; env: {
-    contour: () => number
+    contour: () => number,
+    link: () => string,
   };
 }
 
@@ -306,7 +307,8 @@ export const lib: JTL = {
     update: cacheUpdate
   },
   env: {
-    contour: () => CONTOUR
+    contour: () => CONTOUR,
+    link: () => LINK
   },
 };
 
