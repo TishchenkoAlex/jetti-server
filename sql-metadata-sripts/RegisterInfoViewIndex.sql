@@ -426,6 +426,7 @@
         , TRY_CONVERT(DATETIME, JSON_VALUE(data, N'$."TimeFinish"'),127) [TimeFinish]
         , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."MaxOrderCount"')) [MaxOrderCount]
         , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."MaxOrderTotalAmount"')) [MaxOrderTotalAmount]
+        , TRY_CONVERT(MONEY, JSON_VALUE(data, N'$."KitchenVolume"')) [KitchenVolume]
       FROM dbo.[Register.Info] WHERE type = N'Register.Info.Department.LimitIndicators';
     GO
     GRANT SELECT, DELETE ON [Register.Info.Department.LimitIndicators] TO JETTI;
