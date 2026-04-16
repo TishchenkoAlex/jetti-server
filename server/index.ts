@@ -81,16 +81,18 @@ function errorHandler(err: Error, req: Request, res: Response, next: NextFunctio
 
 app.use(errorHandler);
 
+export const IO = new SocketIO(HTTP, { cors: { origin: '*.*', methods: ['GET', 'POST'] } });
+IO.use(authIO);
+
 let redisOpts: any = { host: REDIS_DB_HOST, password: REDIS_DB_AUTH };
 if (CONTOUR === 2) {
   redisOpts = { ...redisOpts, port: REDIS_DB_PORT, tls: { servername: REDIS_DB_HOST } };
 }
 
+console.debug(`RedisClient options:`, redisOpts);
 const pubClient = new RedisClient(redisOpts);
-
-export const IO = new SocketIO(HTTP, { cors: { origin: '*.*', methods: ['GET', 'POST'] } });
-IO.use(authIO);
 const subClient = pubClient.duplicate();
+
 IO.adapter(createAdapter({ pubClient, subClient }));
 IO.of('/').adapter.on('error', (error) => { });
 

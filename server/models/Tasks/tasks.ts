@@ -95,6 +95,8 @@ const options: Queue.QueueOptions = {
   redis, prefix: DB_NAME, defaultJobOptions, settings, limiter
 };
 
+console.debug(`Queue options`, options);
+
 export const JQueue = new Queue(DB_NAME, options);
 
 export const processId = () => `${os.hostname()}:${process.pid}`;
