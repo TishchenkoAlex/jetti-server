@@ -1,5 +1,5 @@
 import * as Queue from 'bull';
-import { DB_NAME, REDIS_DB_HOST, REDIS_DB_AUTH, JETTI_IS_HOST, REDIS_DB_PORT } from '../../env/environment';
+import { DB_NAME, REDIS_DB_HOST, REDIS_DB_AUTH, JETTI_IS_HOST, REDIS_DB_PORT, CONTOUR } from '../../env/environment';
 import { userSocketsEmit } from '../../sockets';
 import sync from './sync';
 import { RedisOptions } from 'ioredis';
@@ -56,25 +56,16 @@ export const Jobs: { [key: string]: (job: Queue.Job) => Promise<void> } = {
   customTask: customTask
 };
 
-// const redis: RedisOptions = {
-//   host: REDIS_DB_HOST,
-//   password: REDIS_DB_AUTH,
-//   maxRetriesPerRequest: null,
-//   connectTimeout: 180000,
-//   port: REDIS_DB_PORT,
-//   tls: {
-//     servername: REDIS_DB_HOST
-//   }
-// };
-
-const redis: RedisOptions = {
+let redis: RedisOptions = {
   host: REDIS_DB_HOST,
   password: REDIS_DB_AUTH,
   maxRetriesPerRequest: null,
   connectTimeout: 180000
 };
 
-
+if (CONTOUR==2) {
+  redis = { ...redis, port: REDIS_DB_PORT, tls: { servername: REDIS_DB_HOST } };
+}
 
 const defaultJobOptions: Queue.JobOptions = {
   removeOnComplete: false,

@@ -11,7 +11,7 @@ import { Server as SocketIO } from 'socket.io';
 import { createAdapter } from 'socket.io-redis';
 import { RedisClient } from 'redis';
 
-import { REDIS_DB_HOST, REDIS_DB_AUTH, DB_NAME, REDIS_DB_PORT } from './env/environment';
+import { REDIS_DB_HOST, REDIS_DB_AUTH, DB_NAME, REDIS_DB_PORT, CONTOUR } from './env/environment';
 import { updateDynamicMeta } from './models/Dynamic/dynamic.common';
 import { Global } from './models/global';
 import { SQLGenegatorMetadata } from './fuctions/SQLGenerator.MSSQL.Metadata';
@@ -81,7 +81,11 @@ function errorHandler(err: Error, req: Request, res: Response, next: NextFunctio
 
 app.use(errorHandler);
 
-const redisOpts = { host: REDIS_DB_HOST, password: REDIS_DB_AUTH, port: REDIS_DB_PORT, tls: { servername: REDIS_DB_HOST } };
+let redisOpts: any = { host: REDIS_DB_HOST, password: REDIS_DB_AUTH };
+if (CONTOUR === 2) {
+  redisOpts = { ...redisOpts, port: REDIS_DB_PORT, tls: { servername: REDIS_DB_HOST } };
+}
+
 const pubClient = new RedisClient(redisOpts);
 
 export const IO = new SocketIO(HTTP, { cors: { origin: '*.*', methods: ['GET', 'POST'] } });
