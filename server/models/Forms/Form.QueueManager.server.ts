@@ -67,6 +67,22 @@ export default class FormQueueManagerServer extends FormQueueManager implements 
     await this.getJobsStat();
   }
 
+  async removeJobsCompleted() {
+    const jobsCodes = this.JobsStat.filter(e => e.status === 'completed').map(e => e.code);
+
+    if (this.QueueId === 'JETTI') {
+      await this.removeJobs(jobsCodes);
+    } else {
+      await lib.queue.deleteTasks(this.QueueId,
+        {
+          All: false
+          , Repeatable: []
+          , Jobs: jobsCodes
+        });
+    }
+    await this.getJobsStat();
+  }
+
   async removeJobsSelected() {
     const repeatableKeys = this.Repeatable.filter(e => e.flag).map(e => e.key);
     const jobsCodes = this.JobsStat.filter(e => e['selected']).map(e => e.code);

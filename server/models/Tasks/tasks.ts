@@ -1,5 +1,5 @@
 import * as Queue from 'bull';
-import { DB_NAME, REDIS_DB_HOST, REDIS_DB_AUTH, JETTI_IS_HOST } from '../../env/environment';
+import { DB_NAME, REDIS_DB_HOST, REDIS_DB_AUTH, JETTI_IS_HOST, REDIS_DB_PORT } from '../../env/environment';
 import { userSocketsEmit } from '../../sockets';
 import sync from './sync';
 import { RedisOptions } from 'ioredis';
@@ -60,7 +60,11 @@ const redis: RedisOptions = {
   host: REDIS_DB_HOST,
   password: REDIS_DB_AUTH,
   maxRetriesPerRequest: null,
-  connectTimeout: 180000
+  connectTimeout: 180000,
+  port: REDIS_DB_PORT,
+  tls: {
+    servername: REDIS_DB_HOST
+  }
 };
 
 const defaultJobOptions: Queue.JobOptions = {

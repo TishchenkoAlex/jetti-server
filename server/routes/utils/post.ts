@@ -4,7 +4,7 @@ import { MSSQL } from '../../mssql';
 import { DocumentBaseServer, createDocumentServer } from '../../models/documents.factory.server';
 import { INoSqlDocument, Ref, Type } from 'jetti-middle';
 import { READONLY } from './post-rules/readonly';
-import { ARCH_USER } from '../../env/environment';
+import { ARCH_USER, COMMON_COMPANY } from '../../env/environment';
 
 export interface IUpdateInsertDocumentOptions { withExchangeInfo: boolean; }
 
@@ -368,6 +368,7 @@ async function beforeSaveDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
   }
 
   if (!tx.user.disableChecks) {
+    await checkCommonDataEditor(serverDoc, tx);
     await checkCommonDataValidity(serverDoc);
     await checkDocumentUnique(serverDoc, tx);
     await checkProtectedPropsModify(serverDoc, tx);
@@ -387,6 +388,14 @@ async function afterSaveDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
 async function checkCommonDataValidity(serverDoc: DocumentBaseServer) {
   if (Type.isCatalog(serverDoc.type) && serverDoc.parent && serverDoc.parent === serverDoc.id)
     throw new Error(`beforeSave: "${serverDoc.description || serverDoc.id}" cannot be a parent of itself`);
+}
+
+export async function checkCommonDataEditor(serverDoc: DocumentBaseServer, tx: MSSQL) {
+  const isCommonDataCatalog = Type.isCatalog(serverDoc.type) && serverDoc.company === COMMON_COMPANY;
+  const isReadOnly = isCommonDataCatalog && !tx.isRoleAvailable('Common data editor');
+
+  if (isReadOnly)
+    throw new Error(`beforeSave: "${serverDoc.description || serverDoc.id}" is common data and cannot be changed by current user`);
 }
 
 async function checkDocumentUnique(serverDoc: DocumentBaseServer, tx: MSSQL) {

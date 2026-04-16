@@ -55,6 +55,31 @@
         "slotSetting": false
     },
     {
+        "name": "DB_HOST_MIRROR_CONTOUR",
+        "value": "sql-jetti-db.sushi-m.net",
+        "slotSetting": false
+    },
+    {
+        "name": "DB_PORT_MIRROR_CONTOUR",
+        "value": "1433",
+        "slotSetting": false
+    },
+    {
+        "name": "DB_NAME_MIRROR_CONTOUR",
+        "value": "sm",
+        "slotSetting": false
+    },
+    {
+        "name": "DB_USER_MIRROR_CONTOUR",
+        "value": "jetti",
+        "slotSetting": false
+    },
+    {
+        "name": "DB_PASSWORD_MIRROR_CONTOUR",
+        "value": "DY8Gfp18gKrPLoLXpSw0vamN",
+        "slotSetting": false
+    },
+    {
         "name": "DOCKER_ENABLE_CI",
         "value": "true",
         "slotSetting": false
@@ -127,6 +152,11 @@
     {
         "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
         "value": "DOnKQsMPOJOmALGSP8djfU4pWbEuTLr=",
+        "slotSetting": false
+    },
+    {
+        "name": "VERSION",
+        "value": "1.0.0",
         "slotSetting": false
     }
 ]

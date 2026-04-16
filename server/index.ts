@@ -7,13 +7,11 @@ import * as httpServer from 'http';
 import * as os from 'os';
 import 'reflect-metadata';
 
-
-
 import { Server as SocketIO } from 'socket.io';
 import { createAdapter } from 'socket.io-redis';
 import { RedisClient } from 'redis';
 
-import { REDIS_DB_HOST, REDIS_DB_AUTH, DB_NAME } from './env/environment';
+import { REDIS_DB_HOST, REDIS_DB_AUTH, DB_NAME, REDIS_DB_PORT } from './env/environment';
 import { updateDynamicMeta } from './models/Dynamic/dynamic.common';
 import { Global } from './models/global';
 import { SQLGenegatorMetadata } from './fuctions/SQLGenerator.MSSQL.Metadata';
@@ -83,15 +81,17 @@ function errorHandler(err: Error, req: Request, res: Response, next: NextFunctio
 
 app.use(errorHandler);
 
+const redisOpts = { host: REDIS_DB_HOST, password: REDIS_DB_AUTH, port: REDIS_DB_PORT, tls: { servername: REDIS_DB_HOST } };
+const pubClient = new RedisClient(redisOpts);
+
 export const IO = new SocketIO(HTTP, { cors: { origin: '*.*', methods: ['GET', 'POST'] } });
 IO.use(authIO);
-const pubClient = new RedisClient({ host: REDIS_DB_HOST, password: REDIS_DB_AUTH });
 const subClient = pubClient.duplicate();
 IO.adapter(createAdapter({ pubClient, subClient }));
 IO.of('/').adapter.on('error', (error) => { });
 
-export const subscriber = new RedisClient(({ host: REDIS_DB_HOST, auth_pass: REDIS_DB_AUTH }));
-export const publisher = new RedisClient(({ host: REDIS_DB_HOST, auth_pass: REDIS_DB_AUTH }));
+export const subscriber = new RedisClient(redisOpts);
+export const publisher = new RedisClient(redisOpts);
 
 subscriber.on('message', function (channel, message) {
   if (channel === 'updateDynamicMeta') updateDynamicMeta();
