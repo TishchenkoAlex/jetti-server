@@ -74,6 +74,8 @@ const redis: RedisOptions = {
   connectTimeout: 180000
 };
 
+
+
 const defaultJobOptions: Queue.JobOptions = {
   removeOnComplete: false,
   removeOnFail: false,
