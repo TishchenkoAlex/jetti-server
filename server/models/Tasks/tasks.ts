@@ -56,15 +56,22 @@ export const Jobs: { [key: string]: (job: Queue.Job) => Promise<void> } = {
   customTask: customTask
 };
 
+// const redis: RedisOptions = {
+//   host: REDIS_DB_HOST,
+//   password: REDIS_DB_AUTH,
+//   maxRetriesPerRequest: null,
+//   connectTimeout: 180000,
+//   port: REDIS_DB_PORT,
+//   tls: {
+//     servername: REDIS_DB_HOST
+//   }
+// };
+
 const redis: RedisOptions = {
   host: REDIS_DB_HOST,
   password: REDIS_DB_AUTH,
   maxRetriesPerRequest: null,
-  connectTimeout: 180000,
-  port: REDIS_DB_PORT,
-  tls: {
-    servername: REDIS_DB_HOST
-  }
+  connectTimeout: 180000
 };
 
 const defaultJobOptions: Queue.JobOptions = {
