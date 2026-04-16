@@ -60,7 +60,11 @@ let redis: RedisOptions = {
   host: REDIS_DB_HOST,
   password: REDIS_DB_AUTH,
   maxRetriesPerRequest: null,
-  connectTimeout: 180000
+  connectTimeout: 180000,
+  port: REDIS_DB_PORT,
+  tls: {
+    servername: REDIS_DB_HOST
+  }
 };
 
 if (CONTOUR==2) {
