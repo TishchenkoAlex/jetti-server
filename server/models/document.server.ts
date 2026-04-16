@@ -3,7 +3,7 @@ import { MSSQL } from "../mssql";
 import { DocumentBaseServer, createDocumentServer } from "./documents.factory.server";
 import { DocTypes } from "./documents.types";
 import { lib } from "../std.lib";
-import { setPostedSate, upsertDocument } from "../routes/utils/post";
+import { checkCommonDataEditor, setPostedSate, upsertDocument } from "../routes/utils/post";
 import { buildViewModel } from "../routes/documents";
 import { PostResult } from "./post.interfaces";
 import { RegistersMovements } from "./registers.movements";
@@ -147,6 +147,7 @@ export class DocumentServer<T extends DocumentBaseServer> {
         if (deleted === this.deleted) return this.doc;
 
         this.checkReadonlyPeriod();
+        await checkCommonDataEditor(this.doc, this.tx);
 
         if (deleted) await this.handleLifeCycleEvent(DocLiveCycleEvent.beforeDelete);
 

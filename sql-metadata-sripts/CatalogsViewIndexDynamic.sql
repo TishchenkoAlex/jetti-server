@@ -205,6 +205,45 @@ RAISERROR('Catalog.BRMRules end', 0 ,1) WITH NOWAIT;
 ------------------------------ END Catalog.BRMRules ------------------------------
 
 
+------------------------------ BEGIN Catalog.Bank ------------------------------
+
+RAISERROR('Catalog.Bank start', 0 ,1) WITH NOWAIT;
+DROP TABLE IF EXISTS dbo.[Catalog.Bank.v]
+GO
+
+DROP TRIGGER IF EXISTS dbo.[Catalog.Bank.t]
+GO
+
+CREATE OR ALTER VIEW dbo.[Catalog.Bank.v] WITH SCHEMABINDING AS
+SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Code1"')), '') [Code1]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Code2"')), '') [Code2]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Address"')), '') [Address]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."KorrAccount"')), '') [KorrAccount]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."ExportRule"')) [ExportRule]
+, ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isActive"')), 0) [isActive]
+FROM dbo.[Documents]
+WHERE [type] = N'Catalog.Bank';
+GO
+
+CREATE UNIQUE CLUSTERED INDEX [Catalog.Bank.v] ON [Catalog.Bank.v](id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Bank.v.deleted] ON [Catalog.Bank.v](deleted,description,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Bank.v.code.f] ON [Catalog.Bank.v](parent,isfolder,code,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Bank.v.description.f] ON [Catalog.Bank.v](parent,isfolder,description,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Bank.v.description] ON [Catalog.Bank.v](description,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Bank.v.code] ON [Catalog.Bank.v](code,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Bank.v.user] ON [Catalog.Bank.v]([user],id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.Bank.v.company] ON [Catalog.Bank.v](company,id);
+GO
+
+GRANT SELECT ON dbo.[Catalog.Bank.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.Bank.v] TO PUBLIC;
+RAISERROR('Catalog.Bank end', 0 ,1) WITH NOWAIT;
+
+------------------------------ END Catalog.Bank ------------------------------
+
+
 ------------------------------ BEGIN Catalog.BusinessRegion ------------------------------
 
 RAISERROR('Catalog.BusinessRegion start', 0 ,1) WITH NOWAIT;
@@ -1344,6 +1383,8 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isCashRequestRecipientApprovingUsed"')), 0) [isCashRequestRecipientApprovingUsed]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."isCashRequestCFRecipientApprovingUsed"')), 0) [isCashRequestCFRecipientApprovingUsed]
 , TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."ServiceFee"')) [ServiceFee]
+, ISNULL(TRY_CONVERT(NVARCHAR(250), JSON_VALUE(doc,N'$."keyVaultURL2"')), '') [keyVaultURL2]
+, ISNULL(TRY_CONVERT(NVARCHAR(250), JSON_VALUE(doc,N'$."sailplayCredentials2"')), '') [sailplayCredentials2]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.RetailNetwork';
 GO

@@ -7,6 +7,7 @@ export type ConnectionConfigAndPool = ConnectionConfig & { pool: { min: number, 
 export const DB_NAME = process.env.DB_NAME!;
 export const REDIS_DB_HOST = process.env.REDIS_DB_HOST!;
 export const REDIS_DB_AUTH = process.env.REDIS_DB_AUTH;
+export const REDIS_DB_PORT = parseInt(process.env.REDIS_DB_PORT as string, undefined) || 6379;
 export const JETTI_IS_HOST = process.env.JETTI_IS_HOST || 'http://localhost:3500';
 export const JTW_KEY = process.env.JTW_KEY!;
 export const bpApiHost = 'https://bp.x100-group.com/JettiProcesses/hs';
@@ -20,6 +21,8 @@ export const LINK = process.env.LINK || "https://x100-jetti.web.app";
 export const SERVICE_ACCOUNTS = (process.env.SERVICE_ACCOUNTS || 'exchange@sushi-master.net,kolpakov.d@sushi-master.net,setka.service.account@sushi-master.net,exchange@sushi-m.net').split(',');
 
 const DB_PORT = parseInt(process.env.DB_PORT as string, undefined);
+
+const DB_PORT_MIRROR_CONTOUR = parseInt(process.env.DB_PORT_MIRROR_CONTOUR as string, undefined);
 
 export const portal1CApiConfig = {
   baseURL: process.env.PORTAL1C_API_HOST,
@@ -136,6 +139,29 @@ export const sqlConfigExchange: ConnectionConfigAndPool = {
     database: 'Exchange',
     port: DB_PORT,
     requestTimeout: 20 * 60 * 1000,
+    rowCollectionOnRequestCompletion: true,
+  },
+  pool: {
+    min: 0,
+    max: 1000,
+    idleTimeoutMillis: 20 * 60 * 1000
+  }
+};
+
+export const sqlConfigMirrorContour: ConnectionConfigAndPool = {
+  server: process.env.DB_HOST_MIRROR_CONTOUR!,
+  authentication: {
+    type: 'default',
+    options: {
+      userName: process.env.DB_USER_MIRROR_CONTOUR!,
+      password: process.env.DB_PASSWORD_MIRROR_CONTOUR!
+    }
+  },
+  options: {
+    encrypt: false,
+    database: process.env.DB_NAME_MIRROR_CONTOUR!,
+    port: DB_PORT_MIRROR_CONTOUR,
+    requestTimeout: 3 * 60 * 60 * 1000,
     rowCollectionOnRequestCompletion: true,
   },
   pool: {

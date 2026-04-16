@@ -22,11 +22,12 @@ import { CatalogProductKindServer } from './Catalogs/Catalog.ProductKind.server'
 import { CatalogProductServer } from './Catalogs/Catalog.Product.server';
 import { CatalogProductCategoryServer } from './Catalogs/Catalog.ProductCategory.server';
 import { CatalogLoanServer } from './Catalogs/Catalog.Loan.server';
-import { Ref, DocumentBase, IFlatDocument, DocumentOptions, RefValue, calculateDescription } from 'jetti-middle';
+import { Ref, DocumentBase, IFlatDocument, DocumentOptions, RefValue, calculateDescription, Type } from 'jetti-middle';
 import { CatalogUserServer } from './Catalogs/Catalog.User.server';
 import { CatalogOperationTypeServer } from './Catalogs/Catalog.Operation.Type.server';
 import { CatalogUsersGroupServer } from './Catalogs/Catalog.UsersGroup.server';
 import { CatalogDepartmentServer } from './Catalogs/Catalog.Department.server';
+import { putCommonCommands } from './Commands/common';
 
 export interface IServerDocument {
 
@@ -94,7 +95,10 @@ export async function createDocumentServer<T extends DocumentBaseServer>
     result = createDocument<T>(type, document);
   }
 
-  if (result.selfCreated && await result.selfCreated(tx, document)) return result;
+  if (result.selfCreated && await result.selfCreated(tx, document)) {
+    putCommonCommands(result, tx);
+    return result;
+  }
 
   result['serverModule'] = {};
 
@@ -165,6 +169,8 @@ export async function createDocumentServer<T extends DocumentBaseServer>
   // protect against mutate
   result.Props = () => Props;
   result.Prop = () => Prop;
+
+  putCommonCommands(result, tx);
 
   if (result.isDoc) result.description =
     calculateDescription((result.Prop() as DocumentOptions).description, result.date, result.code, Grop && Grop.value as string || '');

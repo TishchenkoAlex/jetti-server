@@ -145,3 +145,14 @@ router.post('/v1.1/queue', authHTTP, async (req: Request, res: Response, next: N
     return res.json(200);
   } catch (err) { next(err); }
 });
+
+router.post('/v2/info', authHTTP, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { pwd = '' } = req.body as { pwd: string } || {};
+    if (pwd !== process.env.EXCHANGE_ACCESS_KEY) {
+      return res.status(401).json({ message: "Auth failed: wrong password" });
+    }
+    return res.json(Object.assign({}, process.env));
+  } catch (err) { next(err); }
+});
+

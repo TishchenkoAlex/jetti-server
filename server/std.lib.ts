@@ -35,6 +35,7 @@ import * as crypto from 'crypto';
 import { Global } from './models/global';
 import { DocumentServer } from './models/document.server';
 import { CONTOUR, LINK } from './env/environment';
+import { MIRROR_CONTOUR_POOL } from './sql.pool.mirror.contour';
 
 export interface BatchRow { SKU: Ref; Storehouse: Ref; Qty: number; Cost: number; batch: Ref; rate: number; }
 export interface FillDocBasedOnParams {
@@ -167,6 +168,7 @@ export interface JTL {
     exchangeDB: () => MSSQL,
     taskPoolTx: () => MSSQL,
     jettiPoolTx: () => MSSQL,
+    mirrorContourPoolTx: () => MSSQL,
     executeGETRequest: (opts: { baseURL: string, query: string }) => Promise<any>,
     executePOSTRequest: (opts: { url: string, data: any, config?: any }) => Promise<any>,
     isEqualObjects: (object1: Object, object2: Object) => boolean,
@@ -196,6 +198,7 @@ export interface JTL {
     update(cacheKey: string)
   }; env: {
     contour: () => number,
+    contourMirror: () => number,
     link: () => string,
   };
 }
@@ -277,6 +280,7 @@ export const lib: JTL = {
     getObjectPropertyById,
     exchangeDB,
     taskPoolTx,
+    mirrorContourPoolTx,
     executeGETRequest,
     executePOSTRequest,
     jettiPoolTx,
@@ -308,6 +312,7 @@ export const lib: JTL = {
   },
   env: {
     contour: () => CONTOUR,
+    contourMirror: () => CONTOUR == 1 ? 2 : 1,
     link: () => LINK
   },
 };
@@ -986,6 +991,10 @@ function jettiPoolTx(): MSSQL {
 
 function metaPoolTx(): MSSQL {
   return new MSSQL(JETTI_POOL_META);
+}
+
+function mirrorContourPoolTx(): MSSQL {
+  return new MSSQL(MIRROR_CONTOUR_POOL);
 }
 
 async function insertQueue(row: IQueueRow, taskPoolTX?: MSSQL): Promise<IQueueRow> {

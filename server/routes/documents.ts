@@ -18,6 +18,7 @@ import { createDocument } from '../models/documents.factory';
 import { FormListSettings } from 'jetti-middle/dist/common/classes/form-list';
 import { userContextFilter } from '../fuctions/filterBuilder';
 import { DocumentServer } from '../models/document.server';
+import { handleCommonCommand } from '../models/Commands/common';
 
 export const router = express.Router();
 
@@ -618,17 +619,21 @@ router.post('/command/:type/:command', async (req: Request, res: Response, next:
         const type: DocTypes = req.params.type as DocTypes;
         const args: { [key: string]: any } = req.params.args as any;
         const serverDoc = await createDocumentServer(type, doc, tx);
-
-        const docModule: (args: { [key: string]: any }) => Promise<void> = serverDoc['serverModule'][command];
-        if (typeof docModule === 'function') await docModule(args);
-        if (serverDoc.onCommand) await serverDoc.onCommand(command, args, tx);
-
-        const result: IViewModel = {
+        const commonCommandResult = await handleCommonCommand(serverDoc, command, args, tx);
+        if (!commonCommandResult) {
+            const docModule: (args: { [key: string]: any }) => Promise<void> = serverDoc['serverModule'][command];
+            if (typeof docModule === 'function') await docModule(args);
+            if (serverDoc.onCommand) await serverDoc.onCommand(command, args, tx);
+          } else {
+            console.warn(`Command ${command} was handled by common handler with result:`, commonCommandResult);
+          }
+        const result: IViewModel & { [key: string]: any } = {
           metadata: serverDoc.Prop() as DocumentOptions,
           schema: serverDoc.Props(),
           model: (await buildViewModel<DocumentBase>(serverDoc, tx))!,
           columnsDef: [] as ColumnDef[],
           settings: new FormListSettings(),
+          commandResult: commonCommandResult,
         };
         res.json(result);
       } catch (ex) { throw new Error(ex); }
