@@ -391,8 +391,8 @@ async function checkCommonDataValidity(serverDoc: DocumentBaseServer) {
 }
 
 export async function checkCommonDataEditor(serverDoc: DocumentBaseServer, tx: MSSQL) {
-  const isCommonDataCatalog = Type.isCatalog(serverDoc.type) && serverDoc.company === COMMON_COMPANY;
-  const isReadOnly = isCommonDataCatalog && !tx.isRoleAvailable('Common data editor');
+  const isCommonData = serverDoc.company === COMMON_COMPANY;
+  const isReadOnly = isCommonData && !tx.isRoleAvailable('Common data editor');
 
   if (isReadOnly)
     throw new Error(`beforeSave: "${serverDoc.description || serverDoc.id}" is common data and cannot be changed by current user`);
