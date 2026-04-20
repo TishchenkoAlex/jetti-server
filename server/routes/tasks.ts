@@ -4,7 +4,8 @@ import { JQueue, mapJob } from '../models/Tasks/tasks';
 import { User } from '../routes/user.settings';
 import { SDB } from './middleware/db-sessions';
 import { lib } from '../std.lib';
-import { IJobs } from 'jetti-middle';
+import { IJob, IJobs } from 'jetti-middle';
+import { Job } from 'bull';
 
 export const router = express.Router();
 
@@ -47,16 +48,16 @@ router.get('/jobs', async (req: Request, res: Response, next: NextFunction) => {
       JQueue.getWaiting(),
     ]);
     const result: IJobs = {
-      Active: all[0].map(el => mapJob(el)),
-      Completed: all[1].map(el => mapJob(el)),
-      Delayed: all[2].map(el => mapJob(el)),
-      Failed: all[3].map(el => mapJob(el)),
-      Waiting: all[4].map(el => mapJob(el)),
+      Active: all[0].map((el: Job<any>) => mapJob(el)).filter((e): e is IJob => e != null),
+      Completed: all[1].map((el: Job<any>) => mapJob(el)).filter((e): e is IJob => e != null),
+      Delayed: all[2].map((el: Job<any>) => mapJob(el)).filter((e): e is IJob => e != null),
+      Failed: all[3].map((el: Job<any>) => mapJob(el)).filter((e): e is IJob => e != null),
+      Waiting: all[4].map((el: Job<any>) => mapJob(el)).filter((e): e is IJob => e != null  ),
     };
-    result.Completed.length = Math.min(5, result.Completed.length);
-    result.Delayed.length = Math.min(5, result.Delayed.length);
-    result.Failed.length = Math.min(5, result.Failed.length);
-    result.Waiting.length = Math.min(5, result.Waiting.length);
+    result.Completed.length = Math.min(0, result.Completed.length);
+    result.Delayed.length = Math.min(0, result.Delayed.length);
+    result.Failed.length = Math.min(0, result.Failed.length);
+    result.Waiting.length = Math.min(0, result.Waiting.length);
     res.json(result);
   } catch (err) { next(err); }
 });

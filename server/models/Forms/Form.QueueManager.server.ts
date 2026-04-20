@@ -111,7 +111,8 @@ export default class FormQueueManagerServer extends FormQueueManager implements 
     for (const jobCode of jobsCodes) {
       const job = await JQueue.getJob('' + jobCode);
       if (!job) continue;
-      job.remove();
+      await job.remove(); 
+      await lib.util.sleep(100);
     }
   }
 

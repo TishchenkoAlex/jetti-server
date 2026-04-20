@@ -108,48 +108,60 @@ JQueue.on('error', err => {
 });
 
 JQueue.on('active', (job, jobPromise) => {
+  if (!job.data) return;
   job.data.message = `${job.data.job.id} is active`;
   userSocketsEmit(job.data.user, job.data.job.id, mapJob(job));
 });
 
 JQueue.on('failed', (job, err) => {
+  if (!job.data) return;
   job.data.message = `${job.data.job.id} failed, ${err.message}`;
   const MapJob = mapJob(job);
+  if (!MapJob) return;
   MapJob.failedReason = err.message;
   MapJob.finishedOn = new Date().getTime();
   userSocketsEmit(job.data.user, job.data.job.id, MapJob);
 });
 
 JQueue.on('progress', (job, progress: number) => {
+  if (!job.data) return;
   userSocketsEmit(job.data.user, job.data.job.id, mapJob(job));
 });
 
 JQueue.on('completed', job => {
+  if (!job.data) return;
   job.data.message = `${job.data.job.id} completed`;
   const MapJob = mapJob(job);
+  if (!MapJob) return;
   MapJob.finishedOn = new Date().getTime();
   userSocketsEmit(job.data.user, job.data.job.id, MapJob);
 });
 
 JQueue.on('removed', job => {
+  if (!job.data) return;
   job.data.message = `${jobFullDescription(job)}"  is removed`;
   const MapJob = mapJob(job);
+  if (!MapJob) return;
   MapJob.finishedOn = new Date().getTime();
   userSocketsEmit(job.data.user, job.data.job.id, MapJob);
 });
 
 JQueue.on('stalled', job => {
+  if (!job.data) return;
   job.data.message = `${job.data.job.id} is stalled`;
   const MapJob = mapJob(job);
+  if (!MapJob) return;
   MapJob.finishedOn = new Date().getTime();
   userSocketsEmit(job.data.user, job.data.job.id, MapJob);
 });
 
 export function jobFullDescription(j: Queue.Job): string {
+  if (!j) return '';
   return `${j.data.job.id}:${j.id} "${j.data.job.description}"`;
 }
 
 export function mapJob(j: Queue.Job) {
+  if (!j) return null;
   const job = j.toJSON();
   const result: IJob = {
     id: job.id.toString(),
