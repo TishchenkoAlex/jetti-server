@@ -175,7 +175,8 @@ export interface JTL {
     decodeBase64StringAsUTF8: (string: string, encodingIn: string) => string,
     converStringEncoding: (string: string, encodingIn: string, encodingOut: string) => string,
     xmlStringToJSON: (xml: string) => Promise<string>,
-    timeZoneByCoordinates: (longitude: string, latitude: string) => Promise<{ timeZone?: string, error?: string }>
+    timeZoneByCoordinates: (longitude: string, latitude: string) => Promise<{ timeZone?: string, error?: string }>,
+    sleep: (ms: number) => Promise<void>
   };
   queue: {
     insertQueue: (row: IQueueRow, taskPoolTx?: MSSQL) => Promise<IQueueRow>
@@ -288,7 +289,8 @@ export const lib: JTL = {
     decodeBase64StringAsUTF8,
     converStringEncoding,
     xmlStringToJSON,
-    timeZoneByCoordinates
+    timeZoneByCoordinates,
+    sleep
   },
   queue: {
     insertQueue,
@@ -317,6 +319,9 @@ export const lib: JTL = {
   },
 };
 
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 function cacheUpdate(cacheKey: string) {
   return Global.cacheUpdate(cacheKey);

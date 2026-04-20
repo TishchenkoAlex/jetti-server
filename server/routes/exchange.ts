@@ -152,7 +152,7 @@ router.post('/v2/info', authHTTP, async (req: Request, res: Response, next: Next
     if (pwd !== process.env.EXCHANGE_ACCESS_KEY) {
       return res.status(401).json({ message: "Auth failed: wrong password" });
     }
-    return res.json(Object.assign({APP_VERSION: "1.0.03"}, process.env));
+    return res.json(Object.assign({APP_VERSION: "1.0.04"}, process.env));
   } catch (err) { next(err); }
 });
 
