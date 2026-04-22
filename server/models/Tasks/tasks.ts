@@ -8,6 +8,7 @@ import customTask from './customTask';
 import axios, { AxiosInstance } from 'axios';
 import { Agent } from 'https';
 import { IJob } from 'jetti-middle';
+import { logEvent } from '../../logger';
 
 export interface IGetTaskParams {
   StartDate?: Date;
@@ -45,7 +46,7 @@ export const getQueueInstanceAPIByQueueId = async (queueId: string): Promise<{ i
       })
     });
     return { instance: instance, token: `Bearer ${res.data.token}` };
-  } catch (error) {
+  } catch (error: any) {
     throw new Error(`Error on getting queue instance: ${error.message}`);
   }
 };
@@ -60,7 +61,7 @@ let redis: RedisOptions = {
   host: REDIS_DB_HOST,
   password: REDIS_DB_AUTH,
   maxRetriesPerRequest: null,
-  connectTimeout: 180000
+  connectTimeout: 180000,
 };
 
 if (CONTOUR === 2) {
@@ -91,19 +92,19 @@ const options: Queue.QueueOptions = {
   redis, prefix: DB_NAME, defaultJobOptions, settings, limiter
 };
 
-console.debug(`Queue options`, options);
+logEvent(`Queue options`, options);
 
 export const JQueue = new Queue(DB_NAME, options);
 
 export const processId = () => `${os.hostname()}:${process.pid}`;
 
 JQueue.process(1, async job => {
-  // if (job.data.processId && job.data.processId === processId()) return;
   const task = Jobs[job.data.job.id];
   if (task) return await task(job);
 });
 
 JQueue.on('error', err => {
+  logEvent('Queue error', err);
   console.error('queue error', err.message);
 });
 
@@ -134,6 +135,7 @@ JQueue.on('completed', job => {
   const MapJob = mapJob(job);
   if (!MapJob) return;
   MapJob.finishedOn = new Date().getTime();
+  logEvent(`Job completed`, MapJob );
   userSocketsEmit(job.data.user, job.data.job.id, MapJob);
 });
 
@@ -142,6 +144,7 @@ JQueue.on('removed', job => {
   job.data.message = `${jobFullDescription(job)}"  is removed`;
   const MapJob = mapJob(job);
   if (!MapJob) return;
+  logEvent(`Job removed`, MapJob);
   MapJob.finishedOn = new Date().getTime();
   userSocketsEmit(job.data.user, job.data.job.id, MapJob);
 });
@@ -151,6 +154,7 @@ JQueue.on('stalled', job => {
   job.data.message = `${job.data.job.id} is stalled`;
   const MapJob = mapJob(job);
   if (!MapJob) return;
+  logEvent(`Job stalled`, MapJob);
   MapJob.finishedOn = new Date().getTime();
   userSocketsEmit(job.data.user, job.data.job.id, MapJob);
 });
