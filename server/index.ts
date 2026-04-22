@@ -77,7 +77,7 @@ function errorHandler(err: Error, req: Request, res: Response, next: NextFunctio
   const errText = `${err.message}${errAny.response ? ' Response data: ' + JSON.stringify(errAny.response.data) : ''}`;
   console.error(errText, 'Stack', err.stack);
   const status = err && errAny.status ? errAny.status : 500;
-  logEvent(`Error: ${errText}, status: ${status}, path: ${req.path}, stack: ${err.stack}`);
+  // logEvent(`Error: ${errText}, status: ${status}, path: ${req.path}, stack: ${err.stack}`);
   res.status(status).send(errText);
 }
 

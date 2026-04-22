@@ -104,7 +104,6 @@ JQueue.process(1, async job => {
 });
 
 JQueue.on('error', err => {
-  logEvent('Queue error', err);
   console.error('queue error', err.message);
 });
 
@@ -144,7 +143,6 @@ JQueue.on('removed', job => {
   job.data.message = `${jobFullDescription(job)}"  is removed`;
   const MapJob = mapJob(job);
   if (!MapJob) return;
-  logEvent(`Job removed`, MapJob);
   MapJob.finishedOn = new Date().getTime();
   userSocketsEmit(job.data.user, job.data.job.id, MapJob);
 });
@@ -154,7 +152,6 @@ JQueue.on('stalled', job => {
   job.data.message = `${job.data.job.id} is stalled`;
   const MapJob = mapJob(job);
   if (!MapJob) return;
-  logEvent(`Job stalled`, MapJob);
   MapJob.finishedOn = new Date().getTime();
   userSocketsEmit(job.data.user, job.data.job.id, MapJob);
 });
