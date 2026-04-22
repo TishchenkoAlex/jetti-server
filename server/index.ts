@@ -11,7 +11,7 @@ import { Server as SocketIO } from 'socket.io';
 import { createAdapter } from 'socket.io-redis';
 import { RedisClient } from 'redis';
 
-import { REDIS_DB_HOST, REDIS_DB_AUTH, DB_NAME, REDIS_DB_PORT, CONTOUR } from './env/environment';
+import { REDIS_DB_HOST, REDIS_DB_AUTH, DB_NAME, REDIS_DB_PORT, CONTOUR, APP_VERSION } from './env/environment';
 import { updateDynamicMeta } from './models/Dynamic/dynamic.common';
 import { Global } from './models/global';
 import { SQLGenegatorMetadata } from './fuctions/SQLGenerator.MSSQL.Metadata';
@@ -31,6 +31,7 @@ import { router as exchange } from './routes/exchange';
 import { jettiDB, tasksDB } from './routes/middleware/db-sessions';
 import * as swaggerDocument from './swagger.json';
 import * as swaggerUi from 'swagger-ui-express';
+import { logEvent } from './logger';
 
 export const ARGS: Record<string, any> = {};
 
@@ -68,7 +69,7 @@ app.use('/swagger', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.get('*', (req: Request, res: Response) => {
   res.status(200);
-  res.send('Jetti API 1.0.0');
+  res.send(`Jetti API ${APP_VERSION} is running. DB: ${DB_NAME}, contour: ${CONTOUR}`);
 });
 
 function errorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
@@ -76,23 +77,24 @@ function errorHandler(err: Error, req: Request, res: Response, next: NextFunctio
   const errText = `${err.message}${errAny.response ? ' Response data: ' + JSON.stringify(errAny.response.data) : ''}`;
   console.error(errText, 'Stack', err.stack);
   const status = err && errAny.status ? errAny.status : 500;
+  logEvent(`Error: ${errText}, status: ${status}, path: ${req.path}, stack: ${err.stack}`);
   res.status(status).send(errText);
 }
 
 app.use(errorHandler);
-
-export const IO = new SocketIO(HTTP, { cors: { origin: '*.*', methods: ['GET', 'POST'] } });
-IO.use(authIO);
 
 let redisOpts: any = { host: REDIS_DB_HOST, password: REDIS_DB_AUTH };
 if (CONTOUR === 2) {
   redisOpts = { ...redisOpts, port: REDIS_DB_PORT, tls: { servername: REDIS_DB_HOST } };
 }
 
-console.debug(`RedisClient options:`, redisOpts);
-const pubClient = new RedisClient(redisOpts);
-const subClient = pubClient.duplicate();
+logEvent(`Redis options`, redisOpts);
 
+const pubClient = new RedisClient(redisOpts);
+
+export const IO = new SocketIO(HTTP, { cors: { origin: '*.*', methods: ['GET', 'POST'] } });
+IO.use(authIO);
+const subClient = pubClient.duplicate();
 IO.adapter(createAdapter({ pubClient, subClient }));
 IO.of('/').adapter.on('error', (error) => { });
 
@@ -102,13 +104,13 @@ export const publisher = new RedisClient(redisOpts);
 subscriber.on('message', function (channel, message) {
   if (channel === 'updateDynamicMeta') updateDynamicMeta();
   if (channel === 'updateCached') Global.cache().update(message);
-  console.info(`New redis event:`, { channel, message })
+  logEvent(`New redis event: ${channel}, message: ${message}`);
 });
 subscriber.subscribe('updateDynamicMeta');
 
 const port = ARGS.PORT || (process.env.PORT) || '3000';
-HTTP.listen(port, () => console.log(`API running on port: ${port}\nDB: ${DB_NAME}\nCPUs: ${os.cpus().length}`));
-JQueue.getJobCounts().then(jobs => console.log('JOBS:', jobs));
+HTTP.listen(port, () => logEvent(`API running on port: ${port}\nDB: ${DB_NAME}\nCPUs: ${os.cpus().length}`));
+JQueue.getJobCounts().then(jobs => logEvent('JOBS:', jobs)).catch(err => logEvent('Error on getting queue jobs count', err));
 
 Global.init().then(e => {
 

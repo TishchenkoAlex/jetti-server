@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import * as jwt from 'jsonwebtoken';
-import { JTW_KEY, SERVICE_ACCOUNTS } from '../env/environment';
+import { getEnvironment, JTW_KEY, SERVICE_ACCOUNTS } from '../env/environment';
 import { authHTTP } from './middleware/check-auth';
 import { MSSQL } from '../mssql';
 import { TASKS_POOL } from '../sql.pool.tasks';
 import { IJWTPayload } from 'jetti-middle';
 import { getUser } from './auth';
 import { getUserRoles } from '../fuctions/UsersPermissions';
+import { getLog } from '../logger';
 
 export const router = Router();
 
@@ -152,7 +153,11 @@ router.post('/v2/info', authHTTP, async (req: Request, res: Response, next: Next
     if (pwd !== process.env.EXCHANGE_ACCESS_KEY) {
       return res.status(401).json({ message: "Auth failed: wrong password" });
     }
-    return res.json(Object.assign({APP_VERSION: "1.0.04"}, process.env));
+    
+    const PROCESS_ENV = Object.assign({}, process.env)
+    const ENVIRONMENT = getEnvironment();
+
+    return res.json({PROCESS_ENV, ENVIRONMENT, LOG_GLOBAL: getLog() });
   } catch (err) { next(err); }
 });
 

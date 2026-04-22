@@ -5,6 +5,7 @@ import * as Bull from 'bull';
 import { lib } from '../../std.lib';
 import { TASKS_POOL } from '../../sql.pool.tasks';
 import { MSSQL } from '../../mssql';
+import { logEvent } from '../../logger';
 
 export default class FormQueueManagerServer extends FormQueueManager implements IServerForm {
   async Execute() {
@@ -69,6 +70,7 @@ export default class FormQueueManagerServer extends FormQueueManager implements 
 
   async removeJobsCompleted() {
     const jobsCodes = this.JobsStat.filter(e => e.status === 'completed').map(e => e.code);
+    logEvent(`Removing completed jobs: ${jobsCodes.length} items`);
 
     if (this.QueueId === 'JETTI') {
       await this.removeJobs(jobsCodes);
@@ -108,11 +110,16 @@ export default class FormQueueManagerServer extends FormQueueManager implements 
 
   async removeJobs(jobsCodes: string[]) {
     await JQueue.whenCurrentJobsFinished();
+    logEvent(`Removing jobs: ${jobsCodes.length} items`);
     for (const jobCode of jobsCodes) {
       const job = await JQueue.getJob('' + jobCode);
-      if (!job) continue;
-      await job.remove(); 
-      await lib.util.sleep(100);
+      if (!job) {
+        logEvent(`Job not found: ${jobCode}`);
+      } else {
+        await job.remove();
+        logEvent(`Job removed: ${jobCode}`);
+        await lib.util.sleep(200);
+      }
     }
   }
 
