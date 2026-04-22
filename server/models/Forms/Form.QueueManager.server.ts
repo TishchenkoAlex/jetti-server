@@ -118,7 +118,7 @@ export default class FormQueueManagerServer extends FormQueueManager implements 
       } else {
         await job.remove();
         logEvent(`Job removed: ${jobCode}`);
-        await lib.util.sleep(200);
+        await lib.util.sleep(100);
       }
     }
   }
