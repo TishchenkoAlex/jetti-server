@@ -29,6 +29,8 @@ CREATE OR ALTER VIEW[dbo].[Catalog.Documents] AS
         , d.[IconURL] [IconURL]
         , d.[Tags] [Tags]
         , d.[LoadDataOnInit] [LoadDataOnInit]
+        , d.[MaxCountByOwner] [MaxCountByOwner]
+        , d.[IsDescriptionOptional] [IsDescriptionOptional]
       
         , ISNULL(l5.id, d.id) [AttachmentType.Level5.id]
         , ISNULL(l4.id, ISNULL(l5.id, d.id)) [AttachmentType.Level4.id]

@@ -1,9 +1,9 @@
-import { REGISTER_ACCUMULATION_SOURCE } from './../../env/environment';
+import { EXCHANGE_SERVICE_USER } from './../../env/environment';
 import { CatalogCounterpartieBankAccount } from './../Catalogs/Catalog.Counterpartie.BankAccount';
 import { DocumentOperationServer } from './Document.Operation.server';
 import { CatalogPersonBankAccount } from './../Catalogs/Catalog.Person.BankAccount';
 import { lib } from '../../std.lib';
-import { IServerDocument, DocumentBaseServer, createDocumentServer } from '../documents.factory.server';
+import { IServerDocument, createDocumentServer } from '../documents.factory.server';
 import { MSSQL } from '../../mssql';
 import { PostResult } from '../post.interfaces';
 import { DocumentCashRequest } from './Document.CashRequest';
@@ -13,7 +13,7 @@ import { CatalogCompany } from '../Catalogs/Catalog.Company';
 import { CatalogBankAccount } from '../Catalogs/Catalog.BankAccount';
 import { CatalogContract } from '../Catalogs/Catalog.Contract';
 import { DeleteProcess } from '../../routes/bp';
-import { upsertDocument, insertDocument } from '../../routes/utils/post';
+import { upsertDocument } from '../../routes/utils/post';
 import { CatalogTaxOffice } from '../Catalogs/Catalog.TaxOffice';
 import { TypesCashRecipient } from '../Types/Types.CashRecipient';
 import { CatalogPerson } from '../Catalogs/Catalog.Person';
@@ -218,7 +218,7 @@ export class DocumentCashRequestServer extends DocumentCashRequest implements IS
     this['PayDay'] = body.PayDay;
     this['info'] = body.Info;
     this['date'] = body.Date ? body.Date : new Date;
-    this['user'] = '63C8AE00-5985-11EA-B2B2-7DD8BECCDACF'; // Exchange-PORTAL
+    this['user'] = EXCHANGE_SERVICE_USER; // Exchange-PORTAL
     if (this.workflowID) {
       await DeleteProcess(this.workflowID);
       this.workflowID = '';

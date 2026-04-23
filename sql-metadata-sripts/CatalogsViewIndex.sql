@@ -20,6 +20,8 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."IconURL"')), '') [IconURL]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Tags"')), '') [Tags]
 , ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."LoadDataOnInit"')), 0) [LoadDataOnInit]
+, ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."MaxCountByOwner"')), 0) [MaxCountByOwner]
+, ISNULL(TRY_CONVERT(BIT, JSON_VALUE(doc,N'$."IsDescriptionOptional"')), 0) [IsDescriptionOptional]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.Attachment.Type';
 GO
