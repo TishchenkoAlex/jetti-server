@@ -1,12 +1,24 @@
 import { DocumentBase, JDocument, Props, Ref } from 'jetti-middle';
 
-export interface IAttachmentsSettings {
+export interface IAttachmentsSettingsRaw {
   AttachmentType: string;
   AttachmentTypeDescription: string;
   StorageType: 'URL' | 'FILE';
   MaxFileSize: number;
   FileFilter: string;
-  Tags: string[];
+  MaxCountByOwner: number;
+  IsDescriptionOptional: boolean;
+}
+export interface IAttachmentsSettings extends IAttachmentsSettingsRaw {
+  TotalCount: number;
+  VersionNumber: number;
+}
+export interface IAttachmentsCount {
+   TotalCount: number;
+   VersionNumber: number;
+   MaxCountByOwner: number;
+   AttachmentType: string;
+   AttachmentTypeDescription: string;
 }
 
 @JDocument({
@@ -54,6 +66,9 @@ export class CatalogAttachment extends DocumentBase {
 
   @Props({ type: 'string' })
   Hash = '';
+
+  @Props({ type: 'number' })
+  VersionNumber = 0;
 
 }
 

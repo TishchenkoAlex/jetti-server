@@ -14,7 +14,7 @@ import { adminMode, postDocument, unpostDocument, setPostedSate, IUpdateInsertDo
 import { MSSQL } from './mssql';
 import { v1 } from 'uuid';
 import { BankStatementUnloader } from './fuctions/BankStatementUnloader';
-import { IAttachmentsSettings, CatalogAttachment } from './models/Catalogs/Catalog.Attachment';
+import { IAttachmentsSettings, CatalogAttachment, IAttachmentsCount, IAttachmentsSettingsRaw } from './models/Catalogs/Catalog.Attachment';
 import { x100 } from './x100.lib';
 import { TASKS_POOL } from './sql.pool.tasks';
 import { IQueueRow } from './models/Tasks/common';
@@ -34,7 +34,7 @@ import * as xml2js from 'xml2js';
 import * as crypto from 'crypto';
 import { Global } from './models/global';
 import { DocumentServer } from './models/document.server';
-import { CONTOUR, LINK } from './env/environment';
+import { CONTOUR, EXCHANGE_SERVICE_USER, LINK } from './env/environment';
 import { MIRROR_CONTOUR_POOL } from './sql.pool.mirror.contour';
 
 export interface BatchRow { SKU: Ref; Storehouse: Ref; Qty: number; Cost: number; batch: Ref; rate: number; }
@@ -155,6 +155,7 @@ export interface JTL {
     getAttachmentsByOwner: (ownerId: Ref, withDeleted: boolean, tx: MSSQL) => Promise<CatalogAttachment[]>,
     getAttachmentStorageById: (attachmentId: Ref, tx: MSSQL) => Promise<string>,
     getAttachmentsSettingsByOwner: (ownerId: Ref, tx: MSSQL) => Promise<IAttachmentsSettings[]>,
+    getAttachmentsCountByOwner: (ownerId: Ref, tx: MSSQL) => Promise<IAttachmentsCount[]>,
     salaryCompanyByCompany: (company: Ref, tx: MSSQL) => Promise<string | null>,
     bankStatementUnloadById: (docsID: string[], tx: MSSQL) => Promise<string>,
     adminMode: (mode: boolean, tx: MSSQL) => Promise<void>,
@@ -269,6 +270,7 @@ export const lib: JTL = {
     delAttachments,
     getAttachmentsByOwner,
     getAttachmentStorageById,
+    getAttachmentsCountByOwner,
     getAttachmentsSettingsByOwner,
     salaryCompanyByCompany,
     bankStatementUnloadById,
@@ -1106,36 +1108,50 @@ function round(num: number, precision = 4): number {
 async function addAttachments(attachments: CatalogAttachment[], tx: MSSQL): Promise<any[]> {
   const keys = Object.keys(new CatalogAttachment);
   const result: any[] = [];
-  let userId = '';
-  // const getCurrentUserIdByMail = async () => {
-  //   return await byCode('Catalog.User', tx.user.email, tx);
-  // };
+  const userId = tx.userId();
+
   for (const attachment of attachments) {
     if (!attachment.owner) throw new Error('Attachment owner is empty!');
-    let ob;
-    if (attachment.id && attachment.timestamp) ob = await createDocServerById(attachment.id, tx);
-    else {
+    const count = await getAttachmentsCountByOwner(attachment.owner, tx, attachment.id ? [attachment.id] : undefined);
+    const typeCount = count.find(e => e.AttachmentType === attachment.AttachmentType);
+    if (typeCount && typeCount.MaxCountByOwner && typeCount.TotalCount >= typeCount.MaxCountByOwner)
+      throw new Error(`Maximum number of attachments ${typeCount.TotalCount} of this type (${typeCount.AttachmentTypeDescription}) has been reached for this owner`);
+    const nextVersion = typeCount ? (typeCount.VersionNumber || 0) + 1 : 1; 
+    let ob: CatalogAttachment | null = null;
+    const isExisting = attachment.id && attachment.timestamp;
+    if (isExisting) {
+      ob = await createDocServerById(attachment.id, tx);
+    } else {
       ob = await createDocServer<CatalogAttachment>('Catalog.Attachment', undefined, tx);
-      if (!userId) userId = tx.userId();
       ob.user = userId;
       ob.date = new Date;
       ob.company = (await byId(attachment.owner, tx))!.company;
     }
+
+    if (!attachment.Storage && ob?.Storage) {  // Storage is empty when only description is updated
+      attachment.Storage = ob.Storage;
+    }
+
     Object.keys(attachment)
       .filter(e => keys.includes(e) && attachment[e])
-      .forEach(e => ob[e] = attachment[e]);
+      .forEach(e => ob![e] = attachment[e]);
 
-    ob.user = ob.user || '63C8AE00-5985-11EA-B2B2-7DD8BECCDACF'; // EXCHANGE SERVICE
+    ob!.user = ob!.user || EXCHANGE_SERVICE_USER; // EXCHANGE SERVICE
+    ob!.VersionNumber = nextVersion;
 
-    ob = await saveDoc(ob, tx);
+    const servDoc = await saveDoc(ob!, tx);
 
     const resOb = {
       ...attachment,
-      timestamp: ob.timestamp,
-      date: ob.date,
-      user: ob.user,
-      id: ob.id,
-      Hash: crypto.createHash('sha1').update(attachment.Storage).digest('base64')
+      VersionNumber: ob!.VersionNumber,
+      timestamp: servDoc!.timestamp,
+      date: servDoc!.date,
+      user: servDoc!.user,
+      id: servDoc!.id,
+      Hash: crypto
+        .createHash('sha1')
+        .update(attachment.Storage)
+        .digest('base64')
     };
 
     if (!resOb['userDescription'] && resOb.user)
@@ -1179,7 +1195,9 @@ FROM
             at.description AttachmentTypeDescription,
             at.IconURL,
             at.StorageType,
-            at.LoadDataOnInit
+            at.LoadDataOnInit,
+            at.MaxCountByOwner,
+            a.VersionNumber
         FROM
             [Catalog.Attachment.v] a WITH (NOEXPAND)
             LEFT JOIN [Catalog.Attachment.Type.v] at WITH (NOEXPAND) ON a.AttachmentType = at.id
@@ -1204,6 +1222,51 @@ async function getAttachmentStorageById(attachmentId: Ref, tx: MSSQL): Promise<s
   return res ? res.Storage : '';
 }
 
+async function getAttachmentsCountByOwner(
+  ownerId: Ref,
+  tx: MSSQL,
+  excludedIds: string[] = []
+): Promise<IAttachmentsCount[]> {
+  const hasExcludedIds = excludedIds.length > 0;
+
+  const query = `
+    SELECT
+        COUNT(
+          CASE
+            WHEN a.deleted = 0
+              ${hasExcludedIds ? 'AND ex.value IS NULL' : ''}
+            THEN 1
+          END
+        ) AS TotalCount,
+        MAX(a.VersionNumber) AS VersionNumber,
+        t.[MaxCountByOwner] AS [MaxCountByOwner],
+        t.id AS AttachmentType,
+        t.[description] AS AttachmentTypeDescription
+    FROM [dbo].[Catalog.Attachment.v] a WITH (NOEXPAND)
+    INNER JOIN [dbo].[Catalog.Attachment.Type.v] t
+        ON a.AttachmentType = t.id
+    ${hasExcludedIds ? `
+    LEFT JOIN (
+        SELECT TRIM([value]) AS [value]
+        FROM STRING_SPLIT(@p2, ',')
+        WHERE [value] <> ''
+    ) ex
+        ON ex.[value] = a.id
+    ` : ''}
+    WHERE a.[owner] = @p1
+    GROUP BY
+        t.[MaxCountByOwner],
+        t.id,
+        t.[description];
+  `;
+
+  const params = hasExcludedIds
+    ? [ownerId, excludedIds.join(',')]
+    : [ownerId];
+
+  return tx.manyOrNone<IAttachmentsCount>(query, params);
+}
+
 async function getAttachmentsSettingsByOwner(ownerId: Ref, tx: MSSQL): Promise<IAttachmentsSettings[]> {
   const owner = await byId(ownerId as string, tx);
   if (!owner) return [];
@@ -1213,7 +1276,8 @@ async function getAttachmentsSettingsByOwner(ownerId: Ref, tx: MSSQL): Promise<I
       JSON_VALUE(d.doc, N'$.FileFilter')  FileFilter,
       JSON_VALUE(d.doc, N'$.MaxFileSize')  MaxFileSize,
       JSON_VALUE(d.doc, N'$.IconURL')  IconURL,
-      JSON_VALUE(d.doc, N'$.Tags')  Tags
+      JSON_VALUE(d.doc, N'$.IsDescriptionOptional')  IsDescriptionOptional,
+      JSON_VALUE(d.doc, N'$.MaxCountByOwner')  MaxCountByOwner
   FROM [dbo].[Documents] d
 
   where d.type = 'Catalog.Attachment.Type'
@@ -1226,7 +1290,8 @@ async function getAttachmentsSettingsByOwner(ownerId: Ref, tx: MSSQL): Promise<I
       JSON_VALUE(d.doc, N'$.FileFilter') FileFilter,
       JSON_VALUE(d.doc, N'$.MaxFileSize') MaxFileSize,
       JSON_VALUE(d.doc, N'$.IconURL')  IconURL,
-      JSON_VALUE(d.doc, N'$.Tags')  Tags
+      JSON_VALUE(d.doc, N'$.IsDescriptionOptional')  IsDescriptionOptional,
+      JSON_VALUE(d.doc, N'$.MaxCountByOwner')  MaxCountByOwner
   FROM [dbo].[Documents] d
   CROSS APPLY OPENJSON (d.doc, N'$.Owners')
   WITH (
@@ -1237,14 +1302,15 @@ async function getAttachmentsSettingsByOwner(ownerId: Ref, tx: MSSQL): Promise<I
       and owners.[OwnerType] = @p1
   ORDER by AttachmentTypeDescription`;
   if (Type.isCatalog(owner.type)) query = query.replace('.AllDocuments', '.AllCatalogs');
-  const qRes = await tx.manyOrNone(query, [owner.type]) as any[];
+  const qRes = await tx.manyOrNone<IAttachmentsSettingsRaw>(query, [owner.type]);
   if (!qRes.length) return [];
-  return [...new Set(qRes.map(e => {
-    return { ...e, Tags: [...new Set(e.Tags.split(';').map(tag => tag.trim()).filter(tag => tag))] };
-  }))];
-
+  const attachmentsCount = await lib.util.getAttachmentsCountByOwner(ownerId, tx);
+  return qRes.map((res) => ({
+    ...res,
+    TotalCount: attachmentsCount.find((c) => c.AttachmentType === res.AttachmentType)?.TotalCount || 0,
+    VersionNumber: attachmentsCount.find((c) => c.AttachmentType === res.AttachmentType)?.VersionNumber || 0
+  }));
 }
-
 
 export async function movementsByDoc<T extends RegisterAccumulation>(type: RegisterAccumulationTypes, doc: Ref, tx: MSSQL) {
   const queryText = `

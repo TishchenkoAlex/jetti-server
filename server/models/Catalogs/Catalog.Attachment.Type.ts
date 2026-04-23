@@ -39,6 +39,12 @@ export class CatalogAttachmentType extends DocumentBase {
   @Props({ type: 'table' })
   Owners: OwnerType[] = [new OwnerType()];
 
+  @Props({ type: 'number', label: 'Max count by owner' })
+  MaxCountByOwner = 0; 
+
+  @Props({ type: 'boolean', label: 'Is Description Optional' })
+  IsDescriptionOptional = false; 
+
 }
 
 class OwnerType {

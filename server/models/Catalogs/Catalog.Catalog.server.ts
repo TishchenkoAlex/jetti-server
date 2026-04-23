@@ -60,7 +60,7 @@ export class CatalogCatalogServer extends CatalogCatalog implements IServerDocum
     return res;
   }
 
-  async fillByType(tx: MSSQL) {
+  async fillByType(args: any, tx: MSSQL) {
     if (!this.typeString) throw new Error('Type is not defined');
     const mapDimension = (dimension: any) =>
       ({ name: Object.keys(dimension)[0], type: dimension[Object.keys(dimension)[0]] });

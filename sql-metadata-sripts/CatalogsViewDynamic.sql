@@ -199,6 +199,7 @@ GO
         , d.[FileName] [FileName]
         , d.[MIMEType] [MIMEType]
         , d.[Hash] [Hash]
+        , d.[VersionNumber] [VersionNumber]
       
         , ISNULL(l5.id, d.id) [Attachment.Level5.id]
         , ISNULL(l4.id, ISNULL(l5.id, d.id)) [Attachment.Level4.id]

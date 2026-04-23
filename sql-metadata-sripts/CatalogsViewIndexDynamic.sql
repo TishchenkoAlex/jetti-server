@@ -149,6 +149,7 @@ SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, 
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."FileName"')), '') [FileName]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."MIMEType"')), '') [MIMEType]
 , ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc, N'$."Hash"')), '') [Hash]
+, ISNULL(TRY_CONVERT(MONEY, JSON_VALUE(doc,N'$."VersionNumber"')), 0) [VersionNumber]
 FROM dbo.[Documents]
 WHERE [type] = N'Catalog.Attachment';
 GO
