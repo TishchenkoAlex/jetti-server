@@ -21,6 +21,16 @@ spec:
     spec:
       containers:
       - env:
+        - name: DB_HOST_MIRROR_CONTOUR
+          value: sql-jetti-db.sushi-m.net
+        - name: DB_PORT_MIRROR_CONTOUR
+          value: "1433"
+        - name: DB_NAME_MIRROR_CONTOUR
+          value: sm
+        - name: DB_USER_MIRROR_CONTOUR
+          value: jetti
+        - name: DB_PASSWORD_MIRROR_CONTOUR
+          value: DB_PASSWORD
         - name: DB_PORT
           value: "1433"
         - name: DB_HOST
