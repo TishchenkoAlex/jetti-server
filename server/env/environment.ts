@@ -4,7 +4,7 @@ import { ConnectionConfig } from 'tedious';
 dotenv();
 export type ConnectionConfigAndPool = ConnectionConfig & { pool: { min: number, max: number, idleTimeoutMillis: number } };
 
-export const APP_VERSION = process.env.APP_VERSION || '1.0.05';
+export const APP_VERSION = process.env.APP_VERSION || '1.0.06';
 export const CONTOUR = parseInt(process.env.CONTOUR || "1");
 export const DB_NAME = process.env.DB_NAME!;
 export const JETTI_IS_HOST = process.env.JETTI_IS_HOST || 'http://localhost:3500';
