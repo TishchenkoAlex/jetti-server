@@ -4,7 +4,7 @@ import { ConnectionConfig } from 'tedious';
 dotenv();
 export type ConnectionConfigAndPool = ConnectionConfig & { pool: { min: number, max: number, idleTimeoutMillis: number } };
 
-export const APP_VERSION = process.env.APP_VERSION || '1.0.06';
+export const APP_VERSION = process.env.APP_VERSION || '1.0.07';
 export const CONTOUR = parseInt(process.env.CONTOUR || "1");
 export const DB_NAME = process.env.DB_NAME!;
 export const JETTI_IS_HOST = process.env.JETTI_IS_HOST || 'http://localhost:3500';
@@ -25,9 +25,9 @@ export let LINK = process.env.LINK || "https://x100-jetti.web.app";
 export let REDIS_DB_HOST = process.env.REDIS_DB_HOST!;
 export let REDIS_DB_AUTH = process.env.REDIS_DB_AUTH;
 export let REDIS_DB_PORT = parseInt(process.env.REDIS_DB_PORT as string, undefined) || 6379;
-export let DB_HOST_MIRROR_CONTOUR = process.env.DB_HOST_MIRROR_CONTOUR;
-export let DB_USER_MIRROR_CONTOUR = process.env.DB_USER_MIRROR_CONTOUR;
-export let DB_PASSWORD_MIRROR_CONTOUR = process.env.DB_PASSWORD_MIRROR_CONTOUR;
+export let DB_HOST_MIRROR_CONTOUR = process.env.DB_HOST_MIRROR_CONTOUR || 'sql-jetti-db.sushi-m.net';
+export let DB_USER_MIRROR_CONTOUR = process.env.DB_USER_MIRROR_CONTOUR || process.env.DB_USER;
+export let DB_PASSWORD_MIRROR_CONTOUR = process.env.DB_PASSWORD_MIRROR_CONTOUR || process.env.DB_PASSWORD;
 export let DB_PORT_MIRROR_CONTOUR = parseInt(process.env.DB_PORT_MIRROR_CONTOUR as string, undefined) || 1433;
 
 if (CONTOUR === 2) {
