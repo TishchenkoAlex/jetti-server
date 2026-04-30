@@ -10,7 +10,7 @@ export const DB_NAME = process.env.DB_NAME!;
 export const JETTI_IS_HOST = process.env.JETTI_IS_HOST || 'http://localhost:3500';
 export const JTW_KEY = process.env.JTW_KEY!;
 export const bpApiHost = 'https://bp.x100-group.com/JettiProcesses/hs';
-export const LOGIC_USECASHREQUESTAPPROVING = process.env.LOGIC_USECASHREQUESTAPPROVING || '0';
+export const LOGIC_USECASHREQUESTAPPROVING = '0';
 export const REGISTER_ACCUMULATION_SOURCE = process.env.REGISTER_ACCUMULATION_SOURCE || '';
 export const TRANSFORMED_REGISTER_MOVEMENTS_TABLE = '[dbo].[Register.Accumulation.Balance.RC]';
 export const ARCH_USER = process.env.ARCH_USER || 'AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA';
@@ -159,17 +159,17 @@ export const sqlConfigExchange: ConnectionConfigAndPool = {
 };
 
 export const sqlConfigMirrorContour: ConnectionConfigAndPool = {
-  server: process.env.DB_HOST_MIRROR_CONTOUR!,
+  server: DB_HOST_MIRROR_CONTOUR,
   authentication: {
     type: 'default',
     options: {
-      userName: process.env.DB_USER_MIRROR_CONTOUR!,
-      password: process.env.DB_PASSWORD_MIRROR_CONTOUR!
+      userName: DB_USER_MIRROR_CONTOUR,
+      password: DB_PASSWORD_MIRROR_CONTOUR
     }
   },
   options: {
     encrypt: false,
-    database: process.env.DB_NAME_MIRROR_CONTOUR!,
+    database: DB_NAME,
     port: DB_PORT_MIRROR_CONTOUR,
     requestTimeout: 3 * 60 * 60 * 1000,
     rowCollectionOnRequestCompletion: true,
