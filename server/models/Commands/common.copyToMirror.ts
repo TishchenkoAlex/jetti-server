@@ -1,6 +1,7 @@
 import { MSSQL } from "../../mssql";
 import { lib } from "../../std.lib";
 import { DocumentBaseServer } from "../documents.factory.server";
+import type { CommonCommandResult } from "./common";
 
 type CopyResult =
   | { status: "inserted"; id: string }
@@ -11,9 +12,30 @@ export async function copyToMirrorContourHandler(
   doc: DocumentBaseServer,
   args: any,
   tx: MSSQL,
-) {
+): Promise<CommonCommandResult> {
   if (!doc.id) throw new Error("Document must be saved before copying");
-  return await copyToMirrorContour(doc.id, tx);
+  const result = await copyToMirrorContour(doc.id, tx);
+  return mapCopyResult(result);
+}
+
+function mapCopyResult(result: CopyResult): CommonCommandResult {
+  let status: CommonCommandResult["status"] = result.status === "skipped" ? "warn" : "success";
+  let message = "";
+
+  if (result.status === "skipped") {
+    if (result.reason === "source_not_found") {
+      message = "Source document not found.";
+      status = "error";
+    }
+    if (result.reason === "target_is_newer_or_equal")
+      message = "Target document is newer or has the same timestamp.";
+  } else if (result.status === "inserted") {
+    message = "Document inserted into mirror contour.";
+  } else if (result.status === "updated") {
+    message = "Document updated in mirror contour.";
+  }
+
+  return { status, message };
 }
 
 async function copyToMirrorContour(id: string, sourceDb: MSSQL): Promise<CopyResult> {
