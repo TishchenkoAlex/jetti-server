@@ -88,7 +88,7 @@ if (CONTOUR === 2) {
   redisOpts = { ...redisOpts, port: REDIS_DB_PORT, tls: { servername: REDIS_DB_HOST } };
 }
 
-logEvent(`Redis options`, redisOpts);
+// logEvent(`Redis options`, redisOpts);
 
 const pubClient = new RedisClient(redisOpts);
 
