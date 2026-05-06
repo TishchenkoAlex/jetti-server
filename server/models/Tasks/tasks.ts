@@ -92,7 +92,7 @@ const options: Queue.QueueOptions = {
   redis, prefix: DB_NAME, defaultJobOptions, settings, limiter
 };
 
-logEvent(`Queue options`, options);
+// logEvent(`Queue options`, options);
 
 export const JQueue = new Queue(DB_NAME, options);
 

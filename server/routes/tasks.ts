@@ -52,12 +52,12 @@ router.get('/jobs', async (req: Request, res: Response, next: NextFunction) => {
       Completed: all[1].map((el: Job<any>) => mapJob(el)).filter((e): e is IJob => e != null),
       Delayed: all[2].map((el: Job<any>) => mapJob(el)).filter((e): e is IJob => e != null),
       Failed: all[3].map((el: Job<any>) => mapJob(el)).filter((e): e is IJob => e != null),
-      Waiting: all[4].map((el: Job<any>) => mapJob(el)).filter((e): e is IJob => e != null  ),
+      Waiting: all[4].map((el: Job<any>) => mapJob(el)).filter((e): e is IJob => e != null),
     };
-    result.Completed.length = Math.min(0, result.Completed.length);
-    result.Delayed.length = Math.min(0, result.Delayed.length);
-    result.Failed.length = Math.min(0, result.Failed.length);
-    result.Waiting.length = Math.min(0, result.Waiting.length);
+    result.Completed.length = Math.min(5, result.Completed.length);
+    result.Delayed.length = Math.min(5, result.Delayed.length);
+    result.Failed.length = Math.min(5, result.Failed.length);
+    result.Waiting.length = Math.min(5, result.Waiting.length);
     res.json(result);
   } catch (err) { next(err); }
 });
