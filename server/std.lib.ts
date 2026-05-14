@@ -34,8 +34,9 @@ import * as xml2js from 'xml2js';
 import * as crypto from 'crypto';
 import { Global } from './models/global';
 import { DocumentServer } from './models/document.server';
-import { CONTOUR, EXCHANGE_SERVICE_USER, LINK } from './env/environment';
+import { EXCHANGE_SERVICE_USER, LINK } from './env/environment';
 import { MIRROR_CONTOUR_POOL } from './sql.pool.mirror.contour';
+import { Contour } from './models/contour';
 
 export interface BatchRow { SKU: Ref; Storehouse: Ref; Qty: number; Cost: number; batch: Ref; rate: number; }
 export interface FillDocBasedOnParams {
@@ -106,7 +107,10 @@ export interface JTL {
     executeCommand: (params: ExecuteCommandParams, tx: MSSQL) => Promise<IFlatDocument | null>
     noSqlDocument: (flatDoc: IFlatDocument) => INoSqlDocument | null;
     flatDocument: (noSqldoc: INoSqlDocument) => IFlatDocument | null;
-    docPrefix: (type: string, tx: MSSQL) => Promise<string>
+    docPrefix: (type: string, tx: MSSQL) => Promise<string>,
+    contourByCompany: (company: string | undefined, tx?: MSSQL) => Promise<0 | 1 | 2 | 3>,
+    isOwnContourCompany: (company: string | undefined, tx?: MSSQL) => Promise<boolean>,
+    isReadOnlyContourCompany: (company: string | undefined, tx?: MSSQL) => Promise<boolean>
   };
   info: {
     sliceLast: <T extends RegisterInfo>(type: string, date: Date, company: Ref,
@@ -197,7 +201,8 @@ export interface JTL {
   };
   cache: {
     get: <T>(key: string) => T | undefined,
-    update(cacheKey: string)
+    update: (cacheKey: string) => void,
+    clear: () => void
   }; env: {
     contour: () => number,
     contourMirror: () => number,
@@ -239,7 +244,10 @@ export const lib: JTL = {
     noSqlDocument,
     flatDocument,
     docPrefix,
-    isDocumentUsedInAccumulationWithPropValueById
+    isDocumentUsedInAccumulationWithPropValueById,
+    contourByCompany,
+    isOwnContourCompany,
+    isReadOnlyContourCompany
   },
   meta: {
     updateSQLViewsByType,
@@ -312,11 +320,12 @@ export const lib: JTL = {
   },
   cache: {
     get: cacheGet,
-    update: cacheUpdate
+    update: cacheUpdate,
+    clear: () => Contour.clearCache()
   },
   env: {
-    contour: () => CONTOUR,
-    contourMirror: () => CONTOUR == 1 ? 2 : 1,
+    contour: () => Contour.contour,
+    contourMirror: () => Contour.contourMirror,
     link: () => LINK
   },
 };
@@ -618,6 +627,19 @@ async function docPrefix(type: string, tx: MSSQL): Promise<string> {
     return result ? result.result : '';
   }
   return '';
+}
+
+async function contourByCompany(company: string| undefined, tx?: MSSQL): Promise<0 | 1 | 2 | 3> {
+  return await Contour.contourByCompany(company, tx);
+}
+
+async function isOwnContourCompany(company: string| undefined, tx?: MSSQL): Promise<boolean> {
+  return await Contour.isOwnContourCompany(company, tx);
+}
+
+async function isReadOnlyContourCompany(company: string | undefined, tx?: MSSQL): Promise<boolean> {
+  const contour = await Contour.contourByCompany(company, tx);
+  return Contour.isReadOnlyContour(contour);
 }
 
 async function formControlRef(id: Ref, tx: MSSQL): Promise<RefValue | null> {
@@ -1116,7 +1138,7 @@ async function addAttachments(attachments: CatalogAttachment[], tx: MSSQL): Prom
     const typeCount = count.find(e => e.AttachmentType === attachment.AttachmentType);
     if (typeCount && typeCount.MaxCountByOwner && typeCount.TotalCount >= typeCount.MaxCountByOwner)
       throw new Error(`Maximum number of attachments ${typeCount.TotalCount} of this type (${typeCount.AttachmentTypeDescription}) has been reached for this owner`);
-    const nextVersion = typeCount ? (typeCount.VersionNumber || 0) + 1 : 1; 
+    const nextVersion = typeCount ? (typeCount.VersionNumber || 0) + 1 : 1;
     let ob: CatalogAttachment | null = null;
     const isExisting = attachment.id && attachment.timestamp;
     if (isExisting) {

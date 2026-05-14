@@ -28,6 +28,7 @@ import { CatalogOperationTypeServer } from './Catalogs/Catalog.Operation.Type.se
 import { CatalogUsersGroupServer } from './Catalogs/Catalog.UsersGroup.server';
 import { CatalogDepartmentServer } from './Catalogs/Catalog.Department.server';
 import { putCommonCommands } from './Commands/common';
+import { getContourProtectByCompany } from '../routes/utils/post';
 
 export interface IServerDocument {
 
@@ -52,7 +53,7 @@ export interface IServerDocument {
   baseOn?(id: Ref, tx: MSSQL, params?: any): Promise<DocumentBaseServer>;
 }
 
-export type DocumentBaseServer = DocumentBase & IServerDocument;
+export type DocumentBaseServer = DocumentBase & IServerDocument & { readonly?: boolean };
 
 export const RegisteredServerDocument: RegisteredDocumentType[] = [
   { type: 'Catalog.Department', Class: CatalogDepartmentServer },
@@ -97,6 +98,7 @@ export async function createDocumentServer<T extends DocumentBaseServer>
 
   if (result.selfCreated && await result.selfCreated(tx, document)) {
     putCommonCommands(result, tx);
+    result.readonly = await getContourProtectByCompany(result, tx);
     return result;
   }
 
@@ -171,6 +173,7 @@ export async function createDocumentServer<T extends DocumentBaseServer>
   result.Prop = () => Prop;
 
   putCommonCommands(result, tx);
+  result.readonly = await getContourProtectByCompany(result, tx);
 
   if (result.isDoc) result.description =
     calculateDescription((result.Prop() as DocumentOptions).description, result.date, result.code, Grop && Grop.value as string || '');

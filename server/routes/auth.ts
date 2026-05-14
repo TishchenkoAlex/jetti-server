@@ -14,13 +14,16 @@ import { createDocument } from '../models/documents.factory';
 import { DocumentOptions, INoSqlDocument, IJWTPayload } from 'jetti-middle';
 import { createForm } from '../models/Forms/form.factory';
 import { CatalogOperationGroup } from '../models/Catalogs/Catalog.Operation.Group';
+import { Contour } from '../models/contour';
 
 export const router = express.Router();
 
 function getUserEnviroment(user: CatalogUser) {
   return {
     view: { id: user.id, code: user.code, type: user.type, value: user.description },
-    settings: { LOGIC_USECASHREQUESTAPPROVING: LOGIC_USECASHREQUESTAPPROVING }
+    settings: { LOGIC_USECASHREQUESTAPPROVING: LOGIC_USECASHREQUESTAPPROVING },
+    contour: Contour.contour,
+    link: lib.env.link()
   };
 }
 
