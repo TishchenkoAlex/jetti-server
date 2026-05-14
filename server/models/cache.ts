@@ -40,4 +40,9 @@ export class JCache implements CacheStorage {
         console.info('[JCache.set]', key);
         this.storage.set(key, value);
     };
+
+    clear() {
+        console.info('[JCache.clear]');
+        [...this._updaters.keys()].forEach(e => this.storage.set(e, new Map()));
+    }       
 }

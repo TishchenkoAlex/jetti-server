@@ -26,7 +26,7 @@ const CommonCommands: CommonCommand[] = [
     icon: "diff",
     order: 101,
     handler: compareWithMirrorContourHandler,
-    predicate: (doc, tx) => Type.isCatalog(doc.type) || Type.isDocument(doc.type) && tx.isAdmin,
+    predicate: (doc, tx) => (Type.isCatalog(doc.type) || Type.isDocument(doc.type)) && tx.isAdmin,
   },
   {
     method: "CopyToMirrorContour",
@@ -34,7 +34,7 @@ const CommonCommands: CommonCommand[] = [
     icon: "copy",
     order: 100,
     handler: copyToMirrorContourHandler,
-    predicate: (doc, tx) => Type.isCatalog(doc.type) && tx.isRoleAvailable('Common data editor'),
+    predicate: (doc, tx) => (Type.isCatalog(doc.type) || Type.isDocument(doc.type)) && tx.isRoleAvailable('Common data editor'),
   }
 ];
 

@@ -4,7 +4,7 @@ import { ConnectionConfig } from 'tedious';
 dotenv();
 export type ConnectionConfigAndPool = ConnectionConfig & { pool: { min: number, max: number, idleTimeoutMillis: number } };
 
-export const APP_VERSION = process.env.APP_VERSION || '1.0.07';
+export const APP_VERSION = process.env.APP_VERSION || '1.0.10';
 export const CONTOUR = parseInt(process.env.CONTOUR || "1");
 export const DB_NAME = process.env.DB_NAME!;
 export const JETTI_IS_HOST = process.env.JETTI_IS_HOST || 'http://localhost:3500';
@@ -16,6 +16,7 @@ export const TRANSFORMED_REGISTER_MOVEMENTS_TABLE = '[dbo].[Register.Accumulatio
 export const ARCH_USER = process.env.ARCH_USER || 'AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA';
 export const COMMON_COMPANY = process.env.COMMON_COMPANY || '00000000-0000-0000-0000-000000000000';
 export const EXCHANGE_SERVICE_USER = process.env.EXCHANGE_SERVICE_USER || '63C8AE00-5985-11EA-B2B2-7DD8BECCDACF';
+export const COMPANY_BY_CONTOUR_CACHE_TTL_SECONDS = parseInt(process.env.COMPANY_BY_CONTOUR_CACHE_TTL_SECONDS || '3600', undefined);
 
 export const SERVICE_ACCOUNTS = (process.env.SERVICE_ACCOUNTS || 'exchange@sushi-master.net,kolpakov.d@sushi-master.net,setka.service.account@sushi-master.net,exchange@sushi-m.net').split(',');
 

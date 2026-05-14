@@ -15,6 +15,7 @@ import { DocumentBase, JDocument, Props, Ref } from 'jetti-middle';
   ],
   commands: [
     { method: 'Fill', icon: 'pi pi-plus', label: 'Заполнить', order: 1 },
+    { method: 'FillTop50', icon: 'pi pi-plus', label: 'Заполнить Top 50', order: 1 },
     { method: 'RefreshLinkedDocuments', icon: 'pi pi-plus', label: 'Обновить ссылки на документы', order: 2 },
     { method: 'Create', icon: 'pi pi-plus', label: 'Создать документы', order: 2 },
     {

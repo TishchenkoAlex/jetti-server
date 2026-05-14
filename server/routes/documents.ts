@@ -153,6 +153,7 @@ const viewAction = async (req: Request, res: Response, next: NextFunction) => {
       metadata['Group'] = await lib.doc.formControlRef(params.group, sdb);
     else if (params.used)
       metadata['Used'] = await lib.doc.formControlRef(params.used, sdb);
+    metadata['readonly'] = ServerDoc.readonly || false;
     const result: IViewModel = { schema: ServerDoc.Props(), model, columnsDef, metadata, settings };
     res.json(result);
   } catch (err) { next(err); }

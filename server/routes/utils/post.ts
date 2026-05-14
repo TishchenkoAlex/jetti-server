@@ -5,6 +5,7 @@ import { DocumentBaseServer, createDocumentServer } from '../../models/documents
 import { INoSqlDocument, Ref, Type } from 'jetti-middle';
 import { READONLY } from './post-rules/readonly';
 import { ARCH_USER, COMMON_COMPANY } from '../../env/environment';
+import { Contour } from '../../models/contour';
 
 export interface IUpdateInsertDocumentOptions { withExchangeInfo: boolean; }
 
@@ -372,6 +373,7 @@ async function beforeSaveDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
     await checkCommonDataValidity(serverDoc);
     await checkDocumentUnique(serverDoc, tx);
     await checkProtectedPropsModify(serverDoc, tx);
+    await checkContourProtectByCompany(serverDoc, tx);
   }
   const beforeSave: (tx: MSSQL) => Promise<DocumentBaseServer> = serverDoc['serverModule']['beforeSave'];
   if (typeof beforeSave === 'function') await beforeSave(tx);
@@ -396,6 +398,19 @@ export async function checkCommonDataEditor(serverDoc: DocumentBaseServer, tx: M
 
   if (isReadOnly)
     throw new Error(`beforeSave: "${serverDoc.description || serverDoc.id}" is common data and cannot be changed by current user`);
+}
+
+export async function checkContourProtectByCompany(serverDoc: DocumentBaseServer, tx: MSSQL) {
+  const isReadOnly = await getContourProtectByCompany(serverDoc, tx);
+
+  if (isReadOnly)
+    throw new Error(`beforeSave: "${serverDoc.description || serverDoc.id}" belongs to the protected contour and cannot be modified in the current contour (${Contour.contour}).`);
+}
+
+export async function getContourProtectByCompany(serverDoc: DocumentBaseServer, tx: MSSQL) {
+  if (!serverDoc.company || tx.isRoleAvailable('Readonly company contour editor')) return false;
+  const contour = await Contour.contourByCompany(serverDoc.company as string | undefined, tx);
+  return Contour.isReadOnlyContour(contour);
 }
 
 async function checkDocumentUnique(serverDoc: DocumentBaseServer, tx: MSSQL) {
