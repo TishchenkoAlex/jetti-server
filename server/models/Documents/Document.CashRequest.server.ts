@@ -719,9 +719,10 @@ export class DocumentCashRequestServer extends DocumentCashRequest implements IS
     return country && country.id === 'BA065230-4D6A-11EA-9419-5B6F020710B8';
   }
 
-  async beforePostDocumentOperation(docOperation: DocumentOperationServer, tx: MSSQL) {
+  async beforePostDocumentOperation(docOperation: DocumentOperationServer & { serverModule?: any }, tx: MSSQL) {
     if (await this.isSuperuser(tx)) return;
     if (docOperation.Operation === '6A374EA0-4F57-11EA-821D-9904759DD7D7') return; // ЗАКРЫТИЕ - Заявки на расход ДС
+    if (docOperation.serverModule?.SETTINGS?.disabledCashRequestBalanceControl) return; // контроль отключен в настройках документа
     if (this.Operation === 'Выплата заработной платы') {
       const rest = await this.getAmountBalanceWithCashRecipients(tx, false);
       const Errors: { Employee, Amount: number }[] = [];

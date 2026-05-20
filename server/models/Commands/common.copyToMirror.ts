@@ -1,9 +1,11 @@
+import { Type } from "jetti-middle";
 import { MSSQL } from "../../mssql";
 import { lib } from "../../std.lib";
 import { DocumentBaseServer } from "../documents.factory.server";
 import type { CommonCommandResult } from "./common";
 
 type CopyResult =
+  | { status: "error"; id: string; reason: string }
   | { status: "inserted"; id: string }
   | { status: "updated"; id: string }
   | { status: "skipped"; id: string; reason: "target_is_newer_or_equal" | "source_not_found" };
@@ -179,6 +181,16 @@ async function copyToMirrorContour(id: string, sourceDb: MSSQL): Promise<CopyRes
     return { status: "skipped", id, reason: "source_not_found" };
   }
 
+  const needToPost = (resp.status === "inserted" || resp.status === "updated") && sourceDoc.posted && Type.isDocument(sourceDoc.type);
+
+  if (needToPost) {
+    // после копирования в контур-отражение, если документ был проведен, нужно попытаться провести его там
+    const errorMsg = await postInMirrorContour(id, targetDb);
+    if (errorMsg) {
+      return { status: "error", id, reason: `post failed in mirror contour ${errorMsg}, but document was ${resp.status}!` };
+    }
+  }
+
   if (resp.status === "inserted") {
     return { status: "inserted", id };
   }
@@ -188,4 +200,12 @@ async function copyToMirrorContour(id: string, sourceDb: MSSQL): Promise<CopyRes
   }
 
   return { status: "skipped", id, reason: "target_is_newer_or_equal"};
+}
+
+async function postInMirrorContour(id: string, targetDb: MSSQL): Promise<string | undefined> {
+  try {
+    await lib.doc.postById(id, targetDb);
+  } catch (error: any) {
+    return error.message || 'unknown error';
+  }
 }
