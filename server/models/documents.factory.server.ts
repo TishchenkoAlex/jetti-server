@@ -98,7 +98,7 @@ export async function createDocumentServer<T extends DocumentBaseServer>
 
   if (result.selfCreated && await result.selfCreated(tx, document)) {
     putCommonCommands(result, tx);
-    result.readonly = await getContourProtectByCompany(result, tx);
+    await setReadonly(result, tx);
     return result;
   }
 
@@ -173,9 +173,15 @@ export async function createDocumentServer<T extends DocumentBaseServer>
   result.Prop = () => Prop;
 
   putCommonCommands(result, tx);
-  result.readonly = await getContourProtectByCompany(result, tx);
+  await setReadonly(result, tx);
 
   if (result.isDoc) result.description =
     calculateDescription((result.Prop() as DocumentOptions).description, result.date, result.code, Grop && Grop.value as string || '');
   return result;
 }
+
+async function setReadonly(result: DocumentBaseServer, tx: MSSQL) {
+  if (await getContourProtectByCompany(result, tx))
+    result.readonly = true;
+}
+
