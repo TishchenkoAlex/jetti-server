@@ -59,7 +59,7 @@ async function compareWithMirrorContour(
   ])).sort();
 
   return {
-    differentProperties,
+    differentProperties: differentProperties.filter((property) => !['module', 'readonly', 'version'].includes(property)),
     targetMissing: !targetDoc,
   };
 }
