@@ -181,11 +181,11 @@ async function copyToMirrorContour(id: string, sourceDb: MSSQL): Promise<CopyRes
     return { status: "skipped", id, reason: "source_not_found" };
   }
 
-  const needToPost = (resp.status === "inserted" || resp.status === "updated") && sourceDoc.posted && Type.isDocument(sourceDoc.type);
+  const needToPost = (resp.status === "inserted" || resp.status === "updated") && Type.isDocument(sourceDoc.type);
 
   if (needToPost) {
     // после копирования в контур-отражение, если документ был проведен, нужно попытаться провести его там
-    const errorMsg = await postInMirrorContour(id, targetDb);
+    const errorMsg = await postInMirrorContour(id, targetDb, sourceDoc.posted);
     if (errorMsg) {
       return { status: "error", id, reason: `post failed in mirror contour ${errorMsg}, but document was ${resp.status}!` };
     }
@@ -199,12 +199,16 @@ async function copyToMirrorContour(id: string, sourceDb: MSSQL): Promise<CopyRes
     return { status: "updated", id };
   }
 
-  return { status: "skipped", id, reason: "target_is_newer_or_equal"};
+  return { status: "skipped", id, reason: "target_is_newer_or_equal" };
 }
 
-async function postInMirrorContour(id: string, targetDb: MSSQL): Promise<string | undefined> {
+async function postInMirrorContour(id: string, targetDb: MSSQL, posted: boolean): Promise<string | undefined> {
   try {
-    await lib.doc.postById(id, targetDb);
+    if (posted) {
+      await lib.doc.postById(id, targetDb);
+    } else {
+      await lib.doc.unPostById(id, targetDb);
+    }
   } catch (error: any) {
     return error.message || 'unknown error';
   }
