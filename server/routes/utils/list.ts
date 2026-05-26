@@ -237,7 +237,7 @@ export async function List(params: DocListRequestBody & { used: string }, tx: MS
     return `@p${Object.keys(sqlParams).indexOf(key) + 1}`;
   }
 
-  if (!Type.isType(params.type))
+  if (!Type.isType(params.type) && !isTypeListOperation(params.type))
     queryFilter.where += userContextFilter(tx.userContext, params.type === 'Catalog.Company' ? 'd.id' : `"company.id"`);
 
   const queryBuilder = (isAfter: boolean) => {
@@ -290,7 +290,7 @@ SELECT * FROM(${QueryList}) d WHERE id IN(
       query = `${queryFilter.tempTable}SELECT TOP ${params.count + 1} * FROM(${QueryList}) d WHERE ${(queryFilter.where)} ${usedInQuery('>')} ${orderbyAfter} `;
   }
 
-  if (Type.isCatalog(params.type)) {
+  if (Type.isCatalog(params.type) && !isTypeListOperation(params.type)) {
     if (query.includes('SELECT *')) {
       query = query.replace('SELECT *', `SELECT *, IIF([user.id] = '${ARCH_USER}', CAST(1 AS bit), CAST(0 AS bit)) archived`);
     } else
@@ -302,6 +302,10 @@ SELECT * FROM(${QueryList}) d WHERE id IN(
   const data = await tx.manyOrNone<any>(query, Object.values(sqlParams));
 
   return listPostProcess(data, params);
+}
+
+function isTypeListOperation(type: string) {
+  return type === 'Catalog.Subcount';
 }
 
 function listPostProcess(data: any[], params: DocListRequestBody) {
