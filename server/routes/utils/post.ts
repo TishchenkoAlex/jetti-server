@@ -4,8 +4,9 @@ import { MSSQL } from '../../mssql';
 import { DocumentBaseServer, createDocumentServer } from '../../models/documents.factory.server';
 import { INoSqlDocument, Ref, Type } from 'jetti-middle';
 import { READONLY } from './post-rules/readonly';
-import { ARCH_USER, COMMON_COMPANY } from '../../env/environment';
+import { ARCH_USER, COMMON_COMPANY, HOLDING_COMPANY } from '../../env/environment';
 import { Contour } from '../../models/contour';
+import { copyToMirrorContourHandler } from '../../models/Commands/common.copyToMirror';
 
 export interface IUpdateInsertDocumentOptions { withExchangeInfo: boolean; }
 
@@ -161,14 +162,16 @@ export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
   DECLARE @DocDate DATETIME;
   DECLARE @ReadonlyDate DATETIME;
   DECLARE @CheckReadonlyPeriod BIT;
-  
+  DECLARE @OldCompany UNIQUEIDENTIFIER;
+
   SET @ReadonlyDate = @p3;
   SET @CheckReadonlyPeriod = @p4;
   
   SELECT 
     @DocId = id, 
     @DocDate = [date], 
-    @Operation = operation 
+    @Operation = operation,
+    @OldCompany = company
   FROM Documents 
   WHERE id = @p2;
   
@@ -242,21 +245,46 @@ export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
       Documents.id = @DocId;
   END
 
-  SELECT * FROM Documents WHERE id = @p2`;
+  SELECT *, @OldCompany AS oldCompany, company AS newCompany FROM Documents WHERE id = @p2`;
 
   const checkReadonlyPeriod = Type.isDocument(serverDoc.type) && !tx.isRoleAvailable(READONLY.ROLE);
 
-  const response = await tx.oneOrNone<INoSqlDocument>(query, [
+  const response = await tx.oneOrNone<INoSqlDocument & { oldCompany?: Ref, newCompany?: Ref }>(query, [
     jsonDoc,
     serverDoc.id,
     READONLY.DATE,
-    checkReadonlyPeriod
+    checkReadonlyPeriod   
   ]);
 
   await afterSaveDocument(serverDoc, tx);
+  await copyToMirror(serverDoc, response, tx);
 
   serverDoc.map(response!!);
   return serverDoc;
+}
+
+async function copyToMirror(serverDoc: DocumentBaseServer, companies: { oldCompany?: Ref | null, newCompany?: Ref | null } | null, tx: MSSQL) {
+
+  try {
+    if (companies) {
+      const oldCompany = companies?.oldCompany ?? null;
+      const newCompany = companies?.newCompany ?? null;
+
+      const shouldCopyToMirror = [oldCompany, newCompany].includes(HOLDING_COMPANY);
+
+      if (shouldCopyToMirror) {
+        await copyToMirrorContourHandler(serverDoc, { oldCompany, newCompany }, tx);
+        console.debug(`Document ${serverDoc.id} copied to mirror contour on company change. Old Company: ${oldCompany}, New Company: ${newCompany}`);
+      }
+
+      delete companies.oldCompany;
+      delete companies.newCompany;
+    }
+  } catch (error) {
+    console.error('Error copying document to mirror contour:', error);
+    throw new Error(`Error copying document to mirror contour: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
 }
 
 // export async function _upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
