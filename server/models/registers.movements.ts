@@ -5,17 +5,16 @@ import { DocumentBaseServer } from "./documents.factory.server";
 import { Ref, RegisterAccumulation, RegisterInfo } from "jetti-middle";
 import { v1 } from "uuid";
 import { RLS_PARTITION, RegisterRlsPeriod } from "./register.info.rls.period";
-import { lib } from "../std.lib";
 import { checkClosedPeriodPartitionAll, checkClosedPeriodPartitionInventory } from "../routes/utils/post-rules/closedPeriod";
-import { checkRlsUpdate } from "../routes/utils/post-rules/rlsUpdate";
 import { checkReadonlyPeriodRegisters } from "../routes/utils/post-rules/readonly";
+import { HOLDING_COMPANY } from "../env/environment";
 
 const CONST = {
     REGISTER_TYPE: {
         RLS: 'Register.Info.RLS.Period',
         INVENTORY: 'Register.Accumulation.Inventory'
     },
-    HOLDING_COMPANY: '9F00DDE0-F043-11E9-9115-B72821305A00',
+    HOLDING_COMPANY,
     HOLDING_REGISTERS: ['Register.Accumulation.PL', 'Register.Accumulation.Balance'],
     DELETE_QUERY: `
     DELETE FROM "Register.Account" WHERE document = @p1;
