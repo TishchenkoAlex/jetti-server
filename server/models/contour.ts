@@ -121,5 +121,8 @@ export class Contour {
         const { contour = 0 } = await db.oneOrNone<{ contour: ContourId }>(`SELECT [dbo].[ContourByCompany] (@p1) contour`, [company]) ?? {};
         return contour;
     }
-    
+
+    static isOwnContour(contour: ContourId) {
+        return contour === this.contour;
+    }
 }
