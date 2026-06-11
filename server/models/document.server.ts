@@ -3,14 +3,12 @@ import { MSSQL } from "../mssql";
 import { DocumentBaseServer, createDocumentServer } from "./documents.factory.server";
 import { DocTypes } from "./documents.types";
 import { lib } from "../std.lib";
-import { checkContourProtectByCompany, setPostedSate, upsertDocument } from "../routes/utils/post";
+import { checkCommonDataEditor, checkContourProtectByCompany, setPostedSate, upsertDocument } from "../routes/utils/post";
 import { buildViewModel } from "../routes/documents";
 import { PostResult } from "./post.interfaces";
 import { RegistersMovements } from "./registers.movements";
 import { checkReadonlyPeriod } from "../routes/utils/post-rules/readonly";
 import { ARCH_USER } from "../env/environment";
-import { copyToMirrorContourHandler } from "./Commands/common.copyToMirror";
-import { Contour } from "./contour";
 
 enum DocLiveCycleEvent {
     onUnPost = 'onUnPost',
@@ -149,6 +147,7 @@ export class DocumentServer<T extends DocumentBaseServer> {
         if (deleted === this.deleted) return this.doc;
 
         this.checkReadonlyPeriod();
+        await checkCommonDataEditor(this.doc, this.tx);
         await checkContourProtectByCompany(this.doc, this.tx);
 
         if (deleted) await this.handleLifeCycleEvent(DocLiveCycleEvent.beforeDelete);
@@ -169,8 +168,6 @@ export class DocumentServer<T extends DocumentBaseServer> {
 
 
         if (deleted) await this.handleLifeCycleEvent(DocLiveCycleEvent.afterDelete);
-
-        await DocumentServer.copyToMirror(this.doc, this.tx);
 
         return this.doc;
     }
@@ -256,40 +253,5 @@ export class DocumentServer<T extends DocumentBaseServer> {
 
     async getPostResult(): Promise<PostResult> {
         return await this.doc.onPost!(this.tx);
-    }
-
-    static async copyToMirror(serverDoc: DocumentBaseServer, tx: MSSQL, companies?: { oldCompany?: Ref | null, newCompany?: Ref | null } | null) {
-
-        if (tx.isMirrorContourOperation()) {
-            return;
-        }
-        
-        try {
-
-            const oldCompany = companies?.oldCompany ?? serverDoc.company ?? null;
-            const newCompany = companies?.newCompany ?? serverDoc.company ?? null;
-            const uniqComps = [...new Set([oldCompany, newCompany])].filter(company => !!company);
-
-            let shouldCopyToMirror = false;
-
-            for (const company of uniqComps) {
-                if (await Contour.isAutoMirrorContourCompany(company, tx)) {
-                    shouldCopyToMirror = true;
-                    break;
-                }
-            }
-
-            if (shouldCopyToMirror) {
-                await copyToMirrorContourHandler(serverDoc, tx);
-                console.debug(`Document ${serverDoc.id} copied to mirror contour`);
-            }
-
-            delete companies?.oldCompany;
-            delete companies?.newCompany;
-
-        } catch (error) {
-            console.error('Error copying document to mirror contour:', error);
-            throw new Error(`Error copying document to mirror contour: ${error instanceof Error ? error.message : String(error)}`);
-        }
     }
 }

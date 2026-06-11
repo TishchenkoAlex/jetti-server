@@ -4,27 +4,140 @@ import { MSSQL } from '../../mssql';
 import { DocumentBaseServer, createDocumentServer } from '../../models/documents.factory.server';
 import { INoSqlDocument, Ref, Type } from 'jetti-middle';
 import { READONLY } from './post-rules/readonly';
-import { ARCH_USER } from '../../env/environment';
+import { ARCH_USER, COMMON_COMPANY } from '../../env/environment';
 import { Contour } from '../../models/contour';
-import { DocumentServer } from '../../models/document.server';
 
 export interface IUpdateInsertDocumentOptions { withExchangeInfo: boolean; }
 
 export async function postDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
+
   throw `Deprecated method "postDocument"`
+
+  // const beforePost: (tx: MSSQL) => Promise<DocumentBaseServer> = serverDoc['serverModule']['beforePost'];
+  // if (typeof beforePost === 'function') await beforePost(tx);
+  // if (serverDoc.beforePost) await serverDoc.beforePost(tx);
+
+  // if (serverDoc.isDoc && serverDoc.onPost) {
+  //   const Registers = await serverDoc.onPost(tx);
+  //   await InsertRegistersIntoDB(serverDoc, Registers, tx);
+  // }
+
+  // const afterPost: (tx: MSSQL) => Promise<DocumentBaseServer> = serverDoc['serverModule']['afterPost'];
+  // if (typeof afterPost === 'function') await afterPost(tx);
+  // if (serverDoc.afterPost) await serverDoc.afterPost(tx);
+
 }
 
 export async function unpostDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
-  throw `Deprecated method "unpostDocument"`
+    throw `Deprecated method "unpostDocument"`
+  // if (!serverDoc.isDoc) return;
+
+  // const onUnPost: (tx: MSSQL) => Promise<DocumentBaseServer> = serverDoc['serverModule']['onUnPost'];
+  // if (typeof onUnPost === 'function') await onUnPost(tx);
+  // if (serverDoc.onUnPost) await serverDoc.onUnPost(tx);
+
+  // await DocumentsMovements.beforeDelete(serverDoc.id, tx);
+
+  // await tx.none(`
+  //   DELETE FROM "Register.Info" WHERE document = @p1;
+  //   DELETE FROM "Register.Account" WHERE document = @p1;
+  //   DELETE FROM "Accumulation" WHERE document = @p1;
+  // `, [serverDoc.id, serverDoc.date]);
 }
 
 
 export async function insertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
-  throw `Deprecated method "insertDocument" use "upsertDocument" instead`
+
+    throw `Deprecated method "insertDocument" use "upsertDocument" instead`
+
+  // await beforeSaveDocument(serverDoc, tx);
+
+  // const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
+  // await updateAcrhivedUser(noSqlDocument, tx);
+  // const jsonDoc = JSON.stringify(noSqlDocument);
+  // const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
+
+  // const response = <INoSqlDocument>await tx.oneOrNone<INoSqlDocument>(`
+  //   INSERT INTO Documents(
+  //     [id], [type], [date], [code], [description], [posted], [deleted],
+  //     [parent], [isfolder], [company], [user], [info], [doc] ${withExchangeInfo ? ', [ExchangeCode], [ExchangeBase]' : ''})
+  //   SELECT
+  //     [id], [type], [date], [code], [description], [posted], [deleted],
+  //     [parent], [isfolder], [company], [user], [info], [doc]
+  //     ${withExchangeInfo ? ', [ExchangeCode], [ExchangeBase]' : ''}
+  //   FROM OPENJSON(@p1) WITH (
+  //     [id] UNIQUEIDENTIFIER,
+  //     [date] DATETIME,
+  //     [type] NVARCHAR(100),
+  //     [code] NVARCHAR(36),
+  //     [description] NVARCHAR(150),
+  //     [posted] BIT,
+  //     [deleted] BIT,
+  //     [parent] UNIQUEIDENTIFIER,
+  //     [isfolder] BIT,
+  //     [company] UNIQUEIDENTIFIER,
+  //     [user] UNIQUEIDENTIFIER,
+  //     [info] NVARCHAR(max),
+  //     [doc] NVARCHAR(max) N'$.doc' AS JSON
+  //     ${withExchangeInfo ? `
+  //     ,[ExchangeCode] NVARCHAR(50),
+  //     [ExchangeBase] NVARCHAR(50)` : ''}
+  //   );
+  //   SELECT * FROM Documents WHERE id = @p2`, [jsonDoc, serverDoc.id]);
+
+  // await afterSaveDocument(serverDoc, tx);
+  // serverDoc.map(response);
+  // return serverDoc;
+
 }
 
 export async function updateDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
+
   throw `Deprecated method "updateDocument" use "upsertDocument" instead`
+
+  // await beforeSaveDocument(serverDoc, tx);
+
+  // const noSqlDocument = lib.doc.noSqlDocument(serverDoc);
+  // await updateAcrhivedUser(noSqlDocument, tx);
+  // const jsonDoc = JSON.stringify(noSqlDocument);
+  // const withExchangeInfo = (opts && opts.withExchangeInfo) || serverDoc['ExchangeBase'];
+
+  // const response = <INoSqlDocument>await tx.oneOrNone<INoSqlDocument>(`
+  //   UPDATE Documents
+  //     SET
+  //       type = i.type, parent = i.parent,
+  //       date = i.date, code = i.code, description = i.description,
+  //       posted = i.posted, deleted = i.deleted, isfolder = i.isfolder,
+  //       "user" = i."user", company = i.company, info = i.info, timestamp = GETDATE(),
+  //       ${withExchangeInfo ? 'ExchangeCode = i.ExchangeCode,  ExchangeBase = i.ExchangeBase,' : ''} doc = i.doc
+  //     FROM (
+  //       SELECT *
+  //       FROM OPENJSON(@p1) WITH (
+  //         [id] UNIQUEIDENTIFIER,
+  //         [date] DATETIME,
+  //         [type] NVARCHAR(100),
+  //         [code] NVARCHAR(36),
+  //         [description] NVARCHAR(150),
+  //         [posted] BIT,
+  //         [deleted] BIT,
+  //         [isfolder] BIT,
+  //         [company] UNIQUEIDENTIFIER,
+  //         [user] UNIQUEIDENTIFIER,
+  //         [info] NVARCHAR(max),
+  //         [parent] UNIQUEIDENTIFIER,
+  //         ${withExchangeInfo ? `
+  //         [ExchangeCode] NVARCHAR(50),
+  //         [ExchangeBase] NVARCHAR(50),` : ''}
+  //         [doc] NVARCHAR(max) N'$.doc' AS JSON
+  //       )
+  //     ) i
+  //   WHERE Documents.id = i.id;
+  //   SELECT * FROM Documents WHERE id = @p2`, [jsonDoc, serverDoc.id]);
+
+  // await afterSaveDocument(serverDoc, tx);
+
+  // serverDoc.map(response);
+  // return serverDoc;
 }
 
 async function updateAcrhivedUser(doc: INoSqlDocument | null, tx: MSSQL) {
@@ -48,16 +161,14 @@ export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
   DECLARE @DocDate DATETIME;
   DECLARE @ReadonlyDate DATETIME;
   DECLARE @CheckReadonlyPeriod BIT;
-  DECLARE @OldCompany UNIQUEIDENTIFIER;
-
+  
   SET @ReadonlyDate = @p3;
   SET @CheckReadonlyPeriod = @p4;
   
   SELECT 
     @DocId = id, 
     @DocDate = [date], 
-    @Operation = operation,
-    @OldCompany = company
+    @Operation = operation 
   FROM Documents 
   WHERE id = @p2;
   
@@ -131,11 +242,11 @@ export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
       Documents.id = @DocId;
   END
 
-  SELECT *, @OldCompany AS oldCompany, company AS newCompany FROM Documents WHERE id = @p2`;
+  SELECT * FROM Documents WHERE id = @p2`;
 
   const checkReadonlyPeriod = Type.isDocument(serverDoc.type) && !tx.isRoleAvailable(READONLY.ROLE);
 
-  const response = await tx.oneOrNone<INoSqlDocument & { oldCompany?: Ref, newCompany?: Ref }>(query, [
+  const response = await tx.oneOrNone<INoSqlDocument>(query, [
     jsonDoc,
     serverDoc.id,
     READONLY.DATE,
@@ -143,7 +254,6 @@ export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
   ]);
 
   await afterSaveDocument(serverDoc, tx);
-  await DocumentServer.copyToMirror(serverDoc, tx, response);
 
   serverDoc.map(response!!);
   return serverDoc;
@@ -259,17 +369,16 @@ async function beforeSaveDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
   }
 
   if (!tx.user.disableChecks) {
-    await checkContourProtectByCompany(serverDoc, tx);
+    await checkCommonDataEditor(serverDoc, tx);
     await checkCommonDataValidity(serverDoc);
     await checkDocumentUnique(serverDoc, tx);
     await checkProtectedPropsModify(serverDoc, tx);
+    await checkContourProtectByCompany(serverDoc, tx);
   }
-
   const beforeSave: (tx: MSSQL) => Promise<DocumentBaseServer> = serverDoc['serverModule']['beforeSave'];
   if (typeof beforeSave === 'function') await beforeSave(tx);
   if (serverDoc.beforeSave) await serverDoc.beforeSave(tx);
   serverDoc.timestamp = new Date();
-
 }
 
 async function afterSaveDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
@@ -283,11 +392,25 @@ async function checkCommonDataValidity(serverDoc: DocumentBaseServer) {
     throw new Error(`beforeSave: "${serverDoc.description || serverDoc.id}" cannot be a parent of itself`);
 }
 
-export async function checkContourProtectByCompany(serverDoc: DocumentBaseServer, tx: MSSQL) {
-  const isReadOnly = await Contour.isReadOnlyContourCompany(serverDoc.company as string | undefined, tx);
+export async function checkCommonDataEditor(serverDoc: DocumentBaseServer, tx: MSSQL) {
+  const isCommonData = serverDoc.company === COMMON_COMPANY;
+  const isReadOnly = isCommonData && !tx.isRoleAvailable('Common data editor');
 
   if (isReadOnly)
-    throw new Error(`beforeSave: "${serverDoc.description || serverDoc.id}" is common data and cannot be changed.`);
+    throw new Error(`beforeSave: "${serverDoc.description || serverDoc.id}" is common data and cannot be changed by current user`);
+}
+
+export async function checkContourProtectByCompany(serverDoc: DocumentBaseServer, tx: MSSQL) {
+  const isReadOnly = await getContourProtectByCompany(serverDoc, tx);
+
+  if (isReadOnly)
+    throw new Error(`beforeSave: "${serverDoc.description || serverDoc.id}" belongs to the protected contour and cannot be modified in the current contour (${Contour.contour}).`);
+}
+
+export async function getContourProtectByCompany(serverDoc: DocumentBaseServer, tx: MSSQL) {
+  if (!serverDoc.company || tx.isRoleAvailable('Readonly company contour editor')) return false;
+  const contour = await Contour.contourByCompany(serverDoc.company as string | undefined, tx);
+  return Contour.isReadOnlyContour(contour);
 }
 
 async function checkDocumentUnique(serverDoc: DocumentBaseServer, tx: MSSQL) {
