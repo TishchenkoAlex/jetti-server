@@ -28,7 +28,8 @@ import { CatalogOperationTypeServer } from './Catalogs/Catalog.Operation.Type.se
 import { CatalogUsersGroupServer } from './Catalogs/Catalog.UsersGroup.server';
 import { CatalogDepartmentServer } from './Catalogs/Catalog.Department.server';
 import { putCommonCommands } from './Commands/common';
-import { getContourProtectByCompany } from '../routes/utils/post';
+import { Contour } from './contour';
+import { DEBUG_MODE } from '../env/environment';
 
 export interface IServerDocument {
 
@@ -181,7 +182,7 @@ export async function createDocumentServer<T extends DocumentBaseServer>
 }
 
 async function setReadonly(result: DocumentBaseServer, tx: MSSQL) {
-  if (await getContourProtectByCompany(result, tx))
-    result.readonly = true;
+  if (result.type === 'Document.UserSettings' && DEBUG_MODE) return;
+    result.readonly = await Contour.isReadOnlyContourCompany(result.company as string | undefined, tx);
 }
 
