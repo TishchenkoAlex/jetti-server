@@ -15,12 +15,12 @@ export async function postDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
 }
 
 export async function unpostDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
-    throw `Deprecated method "unpostDocument"`
+  throw `Deprecated method "unpostDocument"`
 }
 
 
 export async function insertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
-    throw `Deprecated method "insertDocument" use "upsertDocument" instead`
+  throw `Deprecated method "insertDocument" use "upsertDocument" instead`
 }
 
 export async function updateDocument(serverDoc: DocumentBaseServer, tx: MSSQL, opts?: IUpdateInsertDocumentOptions) {
@@ -139,7 +139,7 @@ export async function upsertDocument(serverDoc: DocumentBaseServer, tx: MSSQL, o
     jsonDoc,
     serverDoc.id,
     READONLY.DATE,
-    checkReadonlyPeriod   
+    checkReadonlyPeriod
   ]);
 
   await afterSaveDocument(serverDoc, tx);
@@ -269,7 +269,7 @@ async function beforeSaveDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
   if (typeof beforeSave === 'function') await beforeSave(tx);
   if (serverDoc.beforeSave) await serverDoc.beforeSave(tx);
   serverDoc.timestamp = new Date();
-  
+
 }
 
 async function afterSaveDocument(serverDoc: DocumentBaseServer, tx: MSSQL) {
