@@ -3,6 +3,7 @@ import { MSSQL } from "../../mssql";
 import { DocumentBaseServer } from "../documents.factory.server";
 import { compareWithMirrorContourHandler } from "./common.compareWithMirror";
 import { copyToMirrorContourHandler } from "./common.copyToMirror";
+import { Contour } from "../contour";
 
 export interface CommonCommandResult {
   status: "warn" | "success" | "error";
@@ -15,8 +16,8 @@ interface CommonCommand {
   label: string;
   icon: string;
   order: number;
-  handler: (doc: DocumentBaseServer, args: any, tx: MSSQL) => Promise<CommonCommandResult>;
-  predicate: (doc: DocumentBaseServer, tx: MSSQL) => boolean;
+  handler: (doc: DocumentBaseServer, tx: MSSQL, args?: any) => Promise<CommonCommandResult>;
+  predicate: (doc: DocumentBaseServer, tx: MSSQL) => Promise<boolean>;
 }
 
 const CommonCommands: CommonCommand[] = [
@@ -26,7 +27,7 @@ const CommonCommands: CommonCommand[] = [
     icon: "diff",
     order: 101,
     handler: compareWithMirrorContourHandler,
-    predicate: (doc, tx) => (Type.isCatalog(doc.type) || Type.isDocument(doc.type)) && tx.isAdmin,
+    predicate: async (doc, tx) => Type.isRefType(doc.type) && (tx.isAdmin || await Contour.isCommonDataContourCompany(doc.company as string | undefined, tx)),
   },
   {
     method: "CopyToMirrorContour",
@@ -34,16 +35,25 @@ const CommonCommands: CommonCommand[] = [
     icon: "copy",
     order: 100,
     handler: copyToMirrorContourHandler,
-    predicate: (doc, tx) => (Type.isCatalog(doc.type) || Type.isDocument(doc.type)) && tx.isRoleAvailable('Common data editor'),
+    predicate: async (doc, tx) => Type.isRefType(doc.type) && Contour.isCommonDataEditor(tx) && await Contour.isCommonDataContourCompany(doc.company as string | undefined, tx),
   }
 ];
 
-export function putCommonCommands(doc: DocumentBaseServer, tx: MSSQL) {
+export async function putCommonCommands(doc: DocumentBaseServer, tx: MSSQL) {
   const prop = doc.Prop() as DocumentOptions;
   prop.commands = prop.commands || [];
-  CommonCommands
-    .filter(c => c.predicate(doc, tx) && !prop.commands!.some((e) => e.method === c.method))
-    .forEach((c) => prop.commands!.push(c));
+
+  for (const command of CommonCommands) {
+    const alreadyExists = prop.commands.some((e) => e.method === command.method);
+
+    if (alreadyExists) continue;
+
+    const available = await command.predicate(doc, tx);
+
+    if (available) {
+      prop.commands.push(command);
+    }
+  }
 }
 
 export async function handleCommonCommand(
@@ -57,7 +67,7 @@ export async function handleCommonCommand(
   if (!command) return;
 
   try {
-    return await command.handler(doc, args, tx);
+    return await command.handler(doc, tx, args);
   } catch (error) {
     throw new Error(`Error on executing command "${command.label}": ${error instanceof Error ? error.message : error}`);
   }
