@@ -58,4 +58,8 @@ export class Contour {
     static isReadOnlyContour(contour: ContourId) {
         return (!this.commonContours.includes(contour) && contour !== this.contour);
     }
+
+    static isOwnContour(contour: ContourId) {
+        return contour === this.contour;
+    }
 }
