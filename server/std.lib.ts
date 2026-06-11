@@ -10,7 +10,7 @@ import {
 } from 'jetti-middle';
 import { DocumentBaseServer, createDocumentServer } from './models/documents.factory.server';
 import { createRegisterAccumulation as createAccumulationRegister, RegisterAccumulationTypes, registeredRegisterAccumulationTypes, } from './models/Registers/Accumulation/factory';
-import { adminMode, IUpdateInsertDocumentOptions as IDocumentUpsertOptions, upsertDocument } from './routes/utils/post';
+import { adminMode, postDocument, unpostDocument, setPostedSate, IUpdateInsertDocumentOptions as IDocumentUpsertOptions, upsertDocument } from './routes/utils/post';
 import { MSSQL } from './mssql';
 import { v1 } from 'uuid';
 import { BankStatementUnloader } from './fuctions/BankStatementUnloader';
@@ -108,20 +108,14 @@ export interface JTL {
     noSqlDocument: (flatDoc: IFlatDocument) => INoSqlDocument | null;
     flatDocument: (noSqldoc: INoSqlDocument) => IFlatDocument | null;
     docPrefix: (type: string, tx: MSSQL) => Promise<string>,
-    contourByCompany(company: string | undefined | null, tx?: MSSQL): Promise<-1 | 0 | 1 | 2 | 3>
+    contourByCompany: (company: string | undefined, tx?: MSSQL) => Promise<0 | 1 | 2 | 3>,
+    isOwnContourCompany: (company: string | undefined, tx?: MSSQL) => Promise<boolean>,
+    isReadOnlyContourCompany: (company: string | undefined, tx?: MSSQL) => Promise<boolean>
   };
   info: {
     sliceLast: <T extends RegisterInfo>(type: string, date: Date, company: Ref,
       analytics: { [key: string]: any }, tx: MSSQL) => Promise<T | null>,
     exchangeRate: (date: Date, company: Ref, currency: Ref, tx: MSSQL) => Promise<number>
-  };
-  contour: {
-    contourByCompany: (company: string | undefined | null, tx?: MSSQL) => Promise<-1 | 0 | 1 | 2 | 3>,
-    isOwnContourCompany: (company: string | undefined | null, tx?: MSSQL) => Promise<boolean>,
-    isReadOnlyContourCompany: (company: string | undefined | null, tx?: MSSQL) => Promise<boolean>,
-    isCommonContourCompany: (company: string | undefined | null, tx?: MSSQL) => Promise<boolean>,
-    contour: () => number,
-    contourMirror: () => number
   };
   accum: {
     balance: <T>(
@@ -251,15 +245,9 @@ export const lib: JTL = {
     flatDocument,
     docPrefix,
     isDocumentUsedInAccumulationWithPropValueById,
-    contourByCompany
-  },
-  contour: {
     contourByCompany,
     isOwnContourCompany,
-    isReadOnlyContourCompany,
-    isCommonContourCompany,
-    contour: () => Contour.contour,
-    contourMirror: () => Contour.contourMirror,
+    isReadOnlyContourCompany
   },
   meta: {
     updateSQLViewsByType,
@@ -641,20 +629,17 @@ async function docPrefix(type: string, tx: MSSQL): Promise<string> {
   return '';
 }
 
-async function contourByCompany(company: string| undefined | null, tx?: MSSQL): Promise<-1 | 0 | 1 | 2 | 3> {
+async function contourByCompany(company: string| undefined, tx?: MSSQL): Promise<0 | 1 | 2 | 3> {
   return await Contour.contourByCompany(company, tx);
 }
 
-async function isOwnContourCompany(company: string| undefined | null, tx?: MSSQL): Promise<boolean> {
+async function isOwnContourCompany(company: string| undefined, tx?: MSSQL): Promise<boolean> {
   return await Contour.isOwnContourCompany(company, tx);
 }
 
-async function isReadOnlyContourCompany(company: string | undefined | null, tx?: MSSQL): Promise<boolean> {
-  return await Contour.isReadOnlyContourCompany(company, tx);
-}
-
-async function isCommonContourCompany(company: string | undefined | null, tx?: MSSQL): Promise<boolean> {
-  return await Contour.isCommonContourCompany(company, tx);
+async function isReadOnlyContourCompany(company: string | undefined, tx?: MSSQL): Promise<boolean> {
+  const contour = await Contour.contourByCompany(company, tx);
+  return Contour.isReadOnlyContour(contour);
 }
 
 async function formControlRef(id: Ref, tx: MSSQL): Promise<RefValue | null> {
