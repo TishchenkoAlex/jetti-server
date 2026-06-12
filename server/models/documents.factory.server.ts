@@ -22,13 +22,14 @@ import { CatalogProductKindServer } from './Catalogs/Catalog.ProductKind.server'
 import { CatalogProductServer } from './Catalogs/Catalog.Product.server';
 import { CatalogProductCategoryServer } from './Catalogs/Catalog.ProductCategory.server';
 import { CatalogLoanServer } from './Catalogs/Catalog.Loan.server';
-import { Ref, DocumentBase, IFlatDocument, DocumentOptions, RefValue, calculateDescription, Type } from 'jetti-middle';
+import { Ref, DocumentBase, IFlatDocument, DocumentOptions, RefValue, calculateDescription, Type, PropOptions } from 'jetti-middle';
 import { CatalogUserServer } from './Catalogs/Catalog.User.server';
 import { CatalogOperationTypeServer } from './Catalogs/Catalog.Operation.Type.server';
 import { CatalogUsersGroupServer } from './Catalogs/Catalog.UsersGroup.server';
 import { CatalogDepartmentServer } from './Catalogs/Catalog.Department.server';
 import { putCommonCommands } from './Commands/common';
-import { getContourProtectByCompany } from '../routes/utils/post';
+import { Contour } from './contour';
+import { DEBUG_MODE } from '../env/environment';
 
 export interface IServerDocument {
 
@@ -99,6 +100,9 @@ export async function createDocumentServer<T extends DocumentBaseServer>
   if (result.selfCreated && await result.selfCreated(tx, document)) {
     putCommonCommands(result, tx);
     await setReadonly(result, tx);
+    const props = result.Props();
+    setRequiredProps(props, true, ['company']);
+    result.Props = () => props;
     return result;
   }
 
@@ -168,6 +172,8 @@ export async function createDocumentServer<T extends DocumentBaseServer>
     }
   }
   if (!Operation && result.onCreate) await result.onCreate(tx);
+
+  setRequiredProps(Props, true, ['company']);
   // protect against mutate
   result.Props = () => Props;
   result.Prop = () => Prop;
@@ -180,8 +186,15 @@ export async function createDocumentServer<T extends DocumentBaseServer>
   return result;
 }
 
-async function setReadonly(result: DocumentBaseServer, tx: MSSQL) {
-  if (await getContourProtectByCompany(result, tx))
-    result.readonly = true;
+export async function setReadonly(result: DocumentBaseServer, tx: MSSQL) {
+  if (result.type === 'Document.UserSettings' && DEBUG_MODE) return;
+    result.readonly = await Contour.isReadOnlyContourCompany(result.company as string | undefined, tx);
 }
 
+export function setRequiredProps(props: { [x: string]: PropOptions }, required: boolean, propsToSet: string[] = []) {
+  propsToSet.forEach(prop => {
+    if (props[prop]) {
+      props[prop].required = required;
+    }
+  });
+}
