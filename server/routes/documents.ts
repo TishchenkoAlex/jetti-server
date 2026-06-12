@@ -19,6 +19,7 @@ import { FormListSettings } from 'jetti-middle/dist/common/classes/form-list';
 import { userContextFilter } from '../fuctions/filterBuilder';
 import { DocumentServer } from '../models/document.server';
 import { handleCommonCommand } from '../models/Commands/common';
+import { Contour } from '../models/contour';
 
 export const router = express.Router();
 
@@ -153,7 +154,7 @@ const viewAction = async (req: Request, res: Response, next: NextFunction) => {
       metadata['Group'] = await lib.doc.formControlRef(params.group, sdb);
     else if (params.used)
       metadata['Used'] = await lib.doc.formControlRef(params.used, sdb);
-    metadata['readonly'] = ServerDoc.readonly || false;
+    metadata['readonly'] = await Contour.isReadOnlyContourCompany(ServerDoc.company as string | undefined, sdb);
     const result: IViewModel = { schema: ServerDoc.Props(), model, columnsDef, metadata, settings };
     res.json(result);
   } catch (err) { next(err); }

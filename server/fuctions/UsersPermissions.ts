@@ -3,6 +3,7 @@ import { DocumentTypes, CatalogTypes } from './../models/documents.types';
 import { MSSQL } from '../mssql';
 import { JETTI_POOL } from '../sql.pool.jetti';
 import { Ref } from 'jetti-middle';
+import { DEBUG_MODE } from '../env/environment';
 
 const sdba = new MSSQL(JETTI_POOL,
     { email: 'service@service.com', isAdmin: true, description: 'service account', env: {}, roles: [] });
@@ -43,6 +44,11 @@ export const getUserPermissions = async (user: CatalogUser): Promise<UserPermiss
     result.Catalogs = PermissionsData.filter(e => e.kind === 'Catalog').map(k => (
         { DocType: k.DocType as CatalogTypes, read: !!k.read, write: !!k.write }
     ));
+
+    if (DEBUG_MODE) {
+        result.Roles = result.Roles.filter(e => e !== 'Readonly company contour editor' && e !== 'Common data editor');
+    }
+
     return result;
 };
 
