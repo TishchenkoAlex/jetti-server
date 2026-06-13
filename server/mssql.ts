@@ -52,6 +52,10 @@ export class MSSQL {
     this.user = { email: '', isAdmin: false, env: {}, description: '', roles: [], ...user };
   }
 
+  private readonly context = {
+    isMirrorContourOperation: false
+  }
+
   userId() {
     return this.user.env.view ? this.user.env.view.id : null;
   }
@@ -70,6 +74,14 @@ export class MSSQL {
 
   get timezoneOffset(): number {
     return this.user.timezoneOffset || 0;
+  }
+
+  setMirrorContourOperation(value: boolean) {
+    this.context.isMirrorContourOperation = value;
+  }
+
+  isMirrorContourOperation() {
+    return this.context?.isMirrorContourOperation === true;
   }
 
   private setParams(params: any[], request: Request) {

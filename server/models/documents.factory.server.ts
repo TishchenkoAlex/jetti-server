@@ -28,7 +28,8 @@ import { CatalogOperationTypeServer } from './Catalogs/Catalog.Operation.Type.se
 import { CatalogUsersGroupServer } from './Catalogs/Catalog.UsersGroup.server';
 import { CatalogDepartmentServer } from './Catalogs/Catalog.Department.server';
 import { putCommonCommands } from './Commands/common';
-import { getContourProtectByCompany } from '../routes/utils/post';
+import { Contour } from './contour';
+import { DEBUG_MODE } from '../env/environment';
 
 export interface IServerDocument {
 
@@ -97,7 +98,7 @@ export async function createDocumentServer<T extends DocumentBaseServer>
   }
 
   if (result.selfCreated && await result.selfCreated(tx, document)) {
-    putCommonCommands(result, tx);
+    await putCommonCommands(result, tx);
     await setReadonly(result, tx);
     const props = result.Props();
     setRequiredProps(props, true, ['company']);
@@ -177,7 +178,7 @@ export async function createDocumentServer<T extends DocumentBaseServer>
   result.Props = () => Props;
   result.Prop = () => Prop;
 
-  putCommonCommands(result, tx);
+  await putCommonCommands(result, tx);
   await setReadonly(result, tx);
 
   if (result.isDoc) result.description =

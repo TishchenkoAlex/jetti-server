@@ -12,7 +12,6 @@ type CopyResult =
 
 export async function copyToMirrorContourHandler(
   doc: DocumentBaseServer,
-  args: any,
   tx: MSSQL,
 ): Promise<CommonCommandResult> {
   if (!doc.id) throw new Error("Document must be saved before copying");
@@ -184,7 +183,6 @@ async function copyToMirrorContour(id: string, sourceDb: MSSQL): Promise<CopyRes
   const needToPost = (resp.status === "inserted" || resp.status === "updated") && Type.isDocument(sourceDoc.type);
 
   if (needToPost) {
-    // после копирования в контур-отражение, если документ был проведен, нужно попытаться провести его там
     const errorMsg = await postInMirrorContour(id, targetDb, sourceDoc.posted);
     if (errorMsg) {
       return { status: "error", id, reason: `post failed in mirror contour ${errorMsg}, but document was ${resp.status}!` };
@@ -204,6 +202,7 @@ async function copyToMirrorContour(id: string, sourceDb: MSSQL): Promise<CopyRes
 
 async function postInMirrorContour(id: string, targetDb: MSSQL, posted: boolean): Promise<string | undefined> {
   try {
+    targetDb.setMirrorContourOperation(true);
     if (posted) {
       await lib.doc.postById(id, targetDb);
     } else {
@@ -211,5 +210,7 @@ async function postInMirrorContour(id: string, targetDb: MSSQL, posted: boolean)
     }
   } catch (error: any) {
     return error.message || 'unknown error';
+  } finally {
+    targetDb.setMirrorContourOperation(false);
   }
 }
