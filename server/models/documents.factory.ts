@@ -126,7 +126,7 @@ export function createDocument<T extends DocumentBase>(type: string, document?: 
     ArrayProps.forEach(prop => result[prop].length = 0);
   }
   if (document) result.map(document);
-  if (!result.company) result.company = COMMON_COMPANY;
+  // if (!result.company) result.company = COMMON_COMPANY;
   return result as T;
 }
 
