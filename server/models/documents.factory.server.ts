@@ -98,7 +98,7 @@ export async function createDocumentServer<T extends DocumentBaseServer>
   }
 
   if (result.selfCreated && await result.selfCreated(tx, document)) {
-    putCommonCommands(result, tx);
+    await putCommonCommands(result, tx);
     await setReadonly(result, tx);
     const props = result.Props();
     setRequiredProps(props, true, ['company']);
@@ -178,7 +178,7 @@ export async function createDocumentServer<T extends DocumentBaseServer>
   result.Props = () => Props;
   result.Prop = () => Prop;
 
-  putCommonCommands(result, tx);
+  await putCommonCommands(result, tx);
   await setReadonly(result, tx);
 
   if (result.isDoc) result.description =
