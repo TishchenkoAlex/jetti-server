@@ -8,7 +8,6 @@ type CompareDocumentRow = JsonObject & { doc: JsonObject | string | null };
 
 export async function compareWithMirrorContourHandler(
   doc: DocumentBaseServer,
-  args: any,
   tx: MSSQL,
 ): Promise<CommonCommandResult> {
   if (!doc.id) return {
