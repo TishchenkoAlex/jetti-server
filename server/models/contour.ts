@@ -81,6 +81,12 @@ export class Contour {
         return contour === this.commonContour || contour === this.readonlyContour;
     }
 
+    static async isMirrorContourCompany(company: string | undefined | null, tx?: MSSQL): Promise<boolean> {
+        if (!company) return false;
+        const contour = await this.contourByCompany(company, tx);
+        return contour === this.contourMirror;
+    }
+
     static async isOwnContourCompany(company: string | undefined | null, tx?: MSSQL): Promise<boolean> {
         const contour = await this.contourByCompany(company, tx);
         return this.contour === contour;

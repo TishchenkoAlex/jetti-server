@@ -27,7 +27,7 @@ const CommonCommands: CommonCommand[] = [
     icon: "diff",
     order: 101,
     handler: compareWithMirrorContourHandler,
-    predicate: async (doc, tx) => Type.isRefType(doc.type) && (tx.isAdmin || await Contour.isCommonDataContourCompany(doc.company as string | undefined, tx)),
+    predicate: async (doc, tx) => Type.isRefType(doc.type) && (tx.isAdmin || await Contour.isCommonDataContourCompany(doc.company as string | undefined, tx) || await Contour.isMirrorContourCompany(doc.company as string | undefined, tx)),
   },
   {
     method: "CopyToMirrorContour",
@@ -35,7 +35,9 @@ const CommonCommands: CommonCommand[] = [
     icon: "copy",
     order: 100,
     handler: copyToMirrorContourHandler,
-    predicate: async (doc, tx) => Type.isRefType(doc.type) && Contour.isCommonDataEditor(tx) && await Contour.isCommonDataContourCompany(doc.company as string | undefined, tx),
+    predicate: async (doc, tx) => Type.isRefType(doc.type) &&
+      (Contour.isCommonDataEditor(tx) && await Contour.isCommonDataContourCompany(doc.company as string | undefined, tx))
+      || (Contour.isMirrorContourEditor(tx) && await Contour.isMirrorContourCompany(doc.company as string | undefined, tx)),
   }
 ];
 
