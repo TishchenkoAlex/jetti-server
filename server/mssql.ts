@@ -199,7 +199,7 @@ export class MSSQL {
       await this.commitTransaction(connection);
     } catch (error) {
       try { await this.rollbackTransaction(connection); } catch { }
-      throw new Error(error);
+      throw error instanceof Error ? error : new Error(String(error));
     } finally {
       if (!this.connection) this.sqlPool.pool.release(connection);
     }

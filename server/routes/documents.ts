@@ -25,8 +25,10 @@ export const router = express.Router();
 
 export async function buildViewModel<T>(ServerDoc: DocumentBase, tx: MSSQL) {
   let viewModelQuery = SQLGenegator.QueryObjectFromJSON(ServerDoc.Props());
-  const contextFilter = userContextFilter(tx.userContext, `d.company`);
-  if (contextFilter) viewModelQuery += ` WHERE (1=1) ${contextFilter}`;
+  if (!!ServerDoc?.company) {
+    const contextFilter = userContextFilter(tx.userContext, `d.company`);
+    if (contextFilter) viewModelQuery += ` WHERE (1=1) ${contextFilter}`;
+  }
   const NoSqlDocument = JSON.stringify(lib.doc.noSqlDocument(ServerDoc));
   const viewModel = await tx.oneOrNone<T>(viewModelQuery, [NoSqlDocument]);
   if (viewModel && ServerDoc.type == 'Document.CashRequest' && (ServerDoc['PayRollsDividend'] || []).length) {
@@ -623,12 +625,12 @@ router.post('/command/:type/:command', async (req: Request, res: Response, next:
         const serverDoc = await createDocumentServer(type, doc, tx);
         const commonCommandResult = await handleCommonCommand(serverDoc, command, args, tx);
         if (!commonCommandResult) {
-            const docModule: (args: { [key: string]: any }) => Promise<void> = serverDoc['serverModule'][command];
-            if (typeof docModule === 'function') await docModule(args);
-            if (serverDoc.onCommand) await serverDoc.onCommand(command, args, tx);
-          } else {
-            console.warn(`Command ${command} was handled by common handler with result:`, commonCommandResult);
-          }
+          const docModule: (args: { [key: string]: any }) => Promise<void> = serverDoc['serverModule'][command];
+          if (typeof docModule === 'function') await docModule(args);
+          if (serverDoc.onCommand) await serverDoc.onCommand(command, args, tx);
+        } else {
+          console.warn(`Command ${command} was handled by common handler with result:`, commonCommandResult);
+        }
         const result: IViewModel & { [key: string]: any } = {
           metadata: serverDoc.Prop() as DocumentOptions,
           schema: serverDoc.Props(),
