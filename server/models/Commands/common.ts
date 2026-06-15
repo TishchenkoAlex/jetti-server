@@ -5,7 +5,7 @@ import { compareWithMirrorContourHandler } from "./common.compareWithMirror";
 import { copyToMirrorContourHandler } from "./common.copyToMirror";
 import { Contour } from "../contour";
 
-export interface CommonCommandResult {
+export interface CommandResult {
   status: "warn" | "success" | "error";
   message: string;
   data?: any;
@@ -16,7 +16,7 @@ interface CommonCommand {
   label: string;
   icon: string;
   order: number;
-  handler: (doc: DocumentBaseServer, tx: MSSQL, args?: any) => Promise<CommonCommandResult>;
+  handler: (doc: DocumentBaseServer, tx: MSSQL, args?: any) => Promise<CommandResult>;
   predicate: (doc: DocumentBaseServer, tx: MSSQL) => Promise<boolean>;
 }
 
@@ -27,7 +27,7 @@ const CommonCommands: CommonCommand[] = [
     icon: "diff",
     order: 101,
     handler: compareWithMirrorContourHandler,
-    predicate: async (doc, tx) => Type.isRefType(doc.type) && (tx.isAdmin || await Contour.isCommonDataContourCompany(doc.company as string | undefined, tx)),
+    predicate: async (doc, tx) => Type.isRefType(doc.type) && (tx.isAdmin || await Contour.isCommonDataContourCompany(doc.company as string | undefined, tx) || await Contour.isMirrorContourCompany(doc.company as string | undefined, tx)),
   },
   {
     method: "CopyToMirrorContour",
@@ -35,7 +35,9 @@ const CommonCommands: CommonCommand[] = [
     icon: "copy",
     order: 100,
     handler: copyToMirrorContourHandler,
-    predicate: async (doc, tx) => Type.isRefType(doc.type) && Contour.isCommonDataEditor(tx) && await Contour.isCommonDataContourCompany(doc.company as string | undefined, tx),
+    predicate: async (doc, tx) => Type.isRefType(doc.type) &&
+      (Contour.isCommonDataEditor(tx) && await Contour.isCommonDataContourCompany(doc.company as string | undefined, tx))
+      || (Contour.isMirrorContourEditor(tx) && await Contour.isMirrorContourCompany(doc.company as string | undefined, tx)),
   }
 ];
 
@@ -61,7 +63,7 @@ export async function handleCommonCommand(
   method: string,
   args: any,
   tx: MSSQL,
-): Promise<CommonCommandResult | undefined> {
+): Promise<CommandResult | undefined> {
   const command = CommonCommands.find((c) => c.method === method);
 
   if (!command) return;
