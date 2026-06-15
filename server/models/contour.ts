@@ -21,6 +21,10 @@ export class Contour {
         return 'Common data editor';
     }
 
+    static get roleMirrorContourEditor() {
+        return 'Mirror contour editor';
+    }
+
     static get contour(): ContourId {
         return CONTOUR as ContourId;
     }
@@ -100,6 +104,10 @@ export class Contour {
         return tx?.isRoleAvailable(this.roleReadonlyContourEditor) ?? false
     }
 
+    static isMirrorContourEditor(tx?: MSSQL): boolean {
+        return tx?.isRoleAvailable(this.roleMirrorContourEditor) ?? false
+    }
+
     static async isReadOnlyContourCompany(company: string | undefined | null, tx?: MSSQL): Promise<boolean> {
         if (!company || tx?.isMirrorContourOperation()) return false;
 
@@ -107,7 +115,7 @@ export class Contour {
         const isOwnContour = this.contour === contour;
         if (isOwnContour) return false;
         const isMirrorContour = this.contourMirror === contour;
-        if (isMirrorContour) return true;
+        if (isMirrorContour) return !this.isMirrorContourEditor(tx);
         const isCommonContour = this.commonContour === contour;
         if (isCommonContour) return !this.isCommonDataEditor(tx);
         const isReadOnlyContour = this.readonlyContour === contour;
