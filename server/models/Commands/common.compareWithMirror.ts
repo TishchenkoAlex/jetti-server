@@ -1,7 +1,7 @@
 import { MSSQL } from "../../mssql";
 import { lib } from "../../std.lib";
 import { DocumentBaseServer } from "../documents.factory.server";
-import type { CommonCommandResult } from "./common";
+import type { CommandResult } from "./common";
 
 type JsonObject = { [key: string]: any };
 type CompareDocumentRow = JsonObject & { doc: JsonObject | string | null };
@@ -9,7 +9,7 @@ type CompareDocumentRow = JsonObject & { doc: JsonObject | string | null };
 export async function compareWithMirrorContourHandler(
   doc: DocumentBaseServer,
   tx: MSSQL,
-): Promise<CommonCommandResult> {
+): Promise<CommandResult> {
   if (!doc.id) return {
     status: "error",
     message: "Document must be saved before comparing",

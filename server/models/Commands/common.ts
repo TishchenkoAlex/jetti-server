@@ -5,7 +5,7 @@ import { compareWithMirrorContourHandler } from "./common.compareWithMirror";
 import { copyToMirrorContourHandler } from "./common.copyToMirror";
 import { Contour } from "../contour";
 
-export interface CommonCommandResult {
+export interface CommandResult {
   status: "warn" | "success" | "error";
   message: string;
   data?: any;
@@ -16,7 +16,7 @@ interface CommonCommand {
   label: string;
   icon: string;
   order: number;
-  handler: (doc: DocumentBaseServer, tx: MSSQL, args?: any) => Promise<CommonCommandResult>;
+  handler: (doc: DocumentBaseServer, tx: MSSQL, args?: any) => Promise<CommandResult>;
   predicate: (doc: DocumentBaseServer, tx: MSSQL) => Promise<boolean>;
 }
 
@@ -63,7 +63,7 @@ export async function handleCommonCommand(
   method: string,
   args: any,
   tx: MSSQL,
-): Promise<CommonCommandResult | undefined> {
+): Promise<CommandResult | undefined> {
   const command = CommonCommands.find((c) => c.method === method);
 
   if (!command) return;

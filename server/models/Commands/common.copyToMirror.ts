@@ -2,7 +2,7 @@ import { Type } from "jetti-middle";
 import { MSSQL } from "../../mssql";
 import { lib } from "../../std.lib";
 import { DocumentBaseServer } from "../documents.factory.server";
-import type { CommonCommandResult } from "./common";
+import type { CommandResult } from "./common";
 
 type CopyResult =
   | { status: "error"; id: string; reason: string }
@@ -13,14 +13,14 @@ type CopyResult =
 export async function copyToMirrorContourHandler(
   doc: DocumentBaseServer,
   tx: MSSQL,
-): Promise<CommonCommandResult> {
+): Promise<CommandResult> {
   if (!doc.id) throw new Error("Document must be saved before copying");
   const result = await copyToMirrorContour(doc.id, tx);
   return mapCopyResult(result);
 }
 
-function mapCopyResult(result: CopyResult): CommonCommandResult {
-  let status: CommonCommandResult["status"] = result.status === "skipped" ? "warn" : "success";
+function mapCopyResult(result: CopyResult): CommandResult {
+  let status: CommandResult["status"] = result.status === "skipped" ? "warn" : "success";
   let message = "";
 
   if (result.status === "skipped") {
