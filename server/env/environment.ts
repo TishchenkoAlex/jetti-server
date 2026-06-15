@@ -18,6 +18,8 @@ export const COMMON_COMPANY = process.env.COMMON_COMPANY || '00000000-0000-0000-
 export const HOLDING_COMPANY = process.env.HOLDING_COMPANY || '9F00DDE0-F043-11E9-9115-B72821305A00';
 export const EXCHANGE_SERVICE_USER = process.env.EXCHANGE_SERVICE_USER || '63C8AE00-5985-11EA-B2B2-7DD8BECCDACF';
 export const DEBUG_MODE = process.env.DEBUG_MODE === 'true';
+export const DEBUG_EXCLUDED_ROLES = (process.env.DEBUG_EXCLUDED_ROLES || '').split(',').map(e => e.trim());
+export const DEBUG_EXCLUDE_ALL_ROLES = process.env.DEBUG_EXCLUDE_ALL_ROLES === 'true';
 export const COMPANY_BY_CONTOUR_CACHE_TTL_SECONDS = parseInt(process.env.COMPANY_BY_CONTOUR_CACHE_TTL_SECONDS || '3600', undefined);
 
 export const SERVICE_ACCOUNTS = (process.env.SERVICE_ACCOUNTS || 'exchange@sushi-master.net,kolpakov.d@sushi-master.net,setka.service.account@sushi-master.net,exchange@sushi-m.net').split(',');
@@ -33,8 +35,8 @@ export let DB_USER_MIRROR_CONTOUR = process.env.DB_USER_MIRROR_CONTOUR || proces
 export let DB_PASSWORD_MIRROR_CONTOUR = process.env.DB_PASSWORD_MIRROR_CONTOUR || process.env.DB_PASSWORD;
 export let DB_PORT_MIRROR_CONTOUR = parseInt(process.env.DB_PORT_MIRROR_CONTOUR as string, undefined) || 1433;
 
-if (CONTOUR === 2) {
-  throw new Error('Contour 2 is not supported');
+if (!DEBUG_MODE && CONTOUR !== 1) {
+  throw new Error(`Contour ${CONTOUR} is not supported`);
 };
 
 export const portal1CApiConfig = {
