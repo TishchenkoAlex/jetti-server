@@ -18,12 +18,14 @@ interface CommonCommand {
   order: number;
   handler: (doc: DocumentBaseServer, tx: MSSQL, args?: any) => Promise<CommandResult>;
   predicate: (doc: DocumentBaseServer, tx: MSSQL) => Promise<boolean>;
+  isCommon?: boolean;
 }
 
 const CommonCommands: CommonCommand[] = [
   {
     method: "CompareWithMirrorContour",
     label: `Compare with mirror contour`,
+    isCommon: true,
     icon: "diff",
     order: 101,
     handler: compareWithMirrorContourHandler,
@@ -32,6 +34,7 @@ const CommonCommands: CommonCommand[] = [
   {
     method: "CopyToMirrorContour",
     label: `[ADMIN] COPY to mirror contour`,
+    isCommon: true,
     icon: "copy",
     order: 100,
     handler: copyToMirrorContourHandler,
