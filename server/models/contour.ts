@@ -1,4 +1,4 @@
-import { COMPANY_BY_CONTOUR_CACHE_TTL_SECONDS, CONTOUR } from "../env/environment";
+import { COMPANY_BY_CONTOUR_CACHE_TTL_SECONDS, CONTOUR, SERVICE_ACCOUNTS } from "../env/environment";
 import { MSSQL } from "../mssql";
 import { lib } from "../std.lib";
 
@@ -107,7 +107,7 @@ export class Contour {
     }
 
     static isReadonlyContourEditor(tx?: MSSQL): boolean {
-        return tx?.isRoleAvailable(this.roleReadonlyContourEditor) ?? false
+        return tx?.isRoleAvailable(this.roleReadonlyContourEditor) || SERVICE_ACCOUNTS.includes(tx?.email || 'never exist')
     }
 
     static isMirrorContourEditor(tx?: MSSQL): boolean {
