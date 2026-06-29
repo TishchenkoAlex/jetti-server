@@ -1,4 +1,4 @@
-import { COMPANY_BY_CONTOUR_CACHE_TTL_SECONDS, CONTOUR } from "../env/environment";
+import { COMPANY_BY_CONTOUR_CACHE_TTL_SECONDS, CONTOUR, SERVICE_ACCOUNTS } from "../env/environment";
 import { MSSQL } from "../mssql";
 import { lib } from "../std.lib";
 
@@ -19,6 +19,10 @@ export class Contour {
 
     static get roleCommonDataEditor() {
         return 'Common data editor';
+    }
+
+    static get roleMirrorContourEditor() {
+        return 'Mirror contour editor';
     }
 
     static get contour(): ContourId {
@@ -77,6 +81,12 @@ export class Contour {
         return contour === this.commonContour || contour === this.readonlyContour;
     }
 
+    static async isMirrorContourCompany(company: string | undefined | null, tx?: MSSQL): Promise<boolean> {
+        if (!company) return false;
+        const contour = await this.contourByCompany(company, tx);
+        return contour === this.contourMirror;
+    }
+
     static async isOwnContourCompany(company: string | undefined | null, tx?: MSSQL): Promise<boolean> {
         const contour = await this.contourByCompany(company, tx);
         return this.contour === contour;
@@ -97,7 +107,11 @@ export class Contour {
     }
 
     static isReadonlyContourEditor(tx?: MSSQL): boolean {
-        return tx?.isRoleAvailable(this.roleReadonlyContourEditor) ?? false
+        return tx?.isRoleAvailable(this.roleReadonlyContourEditor) || SERVICE_ACCOUNTS.includes(tx?.email || 'never exist')
+    }
+
+    static isMirrorContourEditor(tx?: MSSQL): boolean {
+        return tx?.isRoleAvailable(this.roleMirrorContourEditor) ?? false
     }
 
     static async isReadOnlyContourCompany(company: string | undefined | null, tx?: MSSQL): Promise<boolean> {
@@ -107,7 +121,7 @@ export class Contour {
         const isOwnContour = this.contour === contour;
         if (isOwnContour) return false;
         const isMirrorContour = this.contourMirror === contour;
-        if (isMirrorContour) return true;
+        if (isMirrorContour) return !this.isMirrorContourEditor(tx);
         const isCommonContour = this.commonContour === contour;
         if (isCommonContour) return !this.isCommonDataEditor(tx);
         const isReadOnlyContour = this.readonlyContour === contour;

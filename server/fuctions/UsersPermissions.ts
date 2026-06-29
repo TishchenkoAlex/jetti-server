@@ -3,7 +3,7 @@ import { DocumentTypes, CatalogTypes } from './../models/documents.types';
 import { MSSQL } from '../mssql';
 import { JETTI_POOL } from '../sql.pool.jetti';
 import { Ref } from 'jetti-middle';
-import { DEBUG_MODE } from '../env/environment';
+import { DEBUG_EXCLUDE_ALL_ROLES, DEBUG_EXCLUDED_ROLES, DEBUG_MODE } from '../env/environment';
 
 const sdba = new MSSQL(JETTI_POOL,
     { email: 'service@service.com', isAdmin: true, description: 'service account', env: {}, roles: [] });
@@ -33,7 +33,15 @@ export const getUserPermissions = async (user: CatalogUser): Promise<UserPermiss
     // if (!userId) throw new Error('Unknow user: ' + tx.user.email);
     // const user = await lib.doc.byIdT<CatalogUser>(userId as any, tx);
     // if (!user) throw new Error('Unknow user: ' + tx.user.email);
-    result.User = user;
+    const excludeAdmin = DEBUG_MODE && DEBUG_EXCLUDE_ALL_ROLES && user.isAdmin;
+
+    if (excludeAdmin) {
+        console.log(`DEBUG_MODE: Excluding admin privileges for user ${user.code}`);
+        result.User = {...user, isAdmin: false } as CatalogUser;
+    } else {
+        result.User = user;
+    }
+
     const PermissionsData = await sdba.manyOrNone<UserPermissionsRow>(PermissionsQuery, [result.User.id, result.User.isAdmin]);
     result.Subsystems = PermissionsData.filter(e => e.kind === 'Subsystem').map(k => ({ id: k.id, description: k.description }));
     result.UserGroups = PermissionsData.filter(e => e.kind === 'UserOrGroup' && e.id !== user.id).map(k => k.id);
@@ -46,7 +54,14 @@ export const getUserPermissions = async (user: CatalogUser): Promise<UserPermiss
     ));
 
     if (DEBUG_MODE) {
-        result.Roles = result.Roles.filter(e => e !== 'Readonly company contour editor' && e !== 'Common data editor');
+        const rolesBeforeFilter = result.Roles;
+        result.Roles = result.Roles.filter(e => !DEBUG_EXCLUDED_ROLES.includes(e));
+        if (DEBUG_EXCLUDE_ALL_ROLES) {
+            result.Roles = [];
+        }
+        if (result.Roles.length !== rolesBeforeFilter.length) {
+            console.log(`DEBUG_MODE: Excluding roles for user ${user.code}. Before: ${rolesBeforeFilter.join(', ')}. After: ${result.Roles.join(', ')}`);
+        }
     }
 
     return result;

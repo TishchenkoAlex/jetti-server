@@ -1162,7 +1162,9 @@ async function addAttachments(attachments: CatalogAttachment[], tx: MSSQL): Prom
       ob = await createDocServer<CatalogAttachment>('Catalog.Attachment', undefined, tx);
       ob.user = userId;
       ob.date = new Date;
-      ob.company = (await byId(attachment.owner, tx))!.company;
+      const owner = await byId(attachment.owner, tx);
+      if (!owner) throw new Error(`Attachment owner "${attachment.owner}" does not exist`);
+      ob.company = owner.company;
     }
 
     if (!attachment.Storage && ob?.Storage) {  // Storage is empty when only description is updated
