@@ -52,7 +52,7 @@ async function copyToMirrorContour(id: string, sourceDb: MSSQL): Promise<CopyRes
     return { status: "skipped", id, reason: "source_not_found" };
   }
 
-  const { ExchangeBase, ExchangeCode, operation, version, ...doc } = noSqlDocument.doc as any;
+  const { operation, version, ...doc } = noSqlDocument.doc as any;
 
   noSqlDocument.doc = doc; // убираем из JSON полей, которые не нужны в целевой БД и могут вызвать проблемы при сериализации/десериализации
   const jsonDoc = JSON.stringify(noSqlDocument);
