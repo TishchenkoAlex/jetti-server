@@ -10,6 +10,7 @@ import { createDocumentServer } from '../documents.factory.server';
 import { PropOptions, FormListFilter, DocumentBase, DocumentOptions, FormListOrder, Type } from 'jetti-middle';
 import { lib } from '../../std.lib';
 import { List } from '../../routes/utils/list';
+import { DEFAULT_POST_QUEUE_FLOW } from '../../env/environment';
 // tslint:disable: max-line-length
 // tslint:disable: no-shadowed-variable
 
@@ -129,7 +130,7 @@ export default class FormObjectsGroupModifyServer extends FormObjectsGroupModify
         saveDoc = true;
       }
       if (saveDoc) try {
-        await lib.doc.saveDoc(servDoc, this.tx);
+        await lib.doc.saveDoc(servDoc, this.tx, DEFAULT_POST_QUEUE_FLOW);
       } catch (e) {
         throw new Error(`On save doc ${row.id}:\n${e}`);
       }

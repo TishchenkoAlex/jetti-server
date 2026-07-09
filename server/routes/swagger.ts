@@ -100,16 +100,16 @@ router.post('/document', async (req: Request, res: Response, next: NextFunction)
         const propsKeys = Object.keys(props);
 
         const excludedProps = ['doc', 'docByKey', 'serverModule'];
-        const commonProps = ['ExchangeCode', 'ExchangeBase', 'version', 'operation'];
+        const commonProps = ['ExchangeCode', 'ExchangeBase', 'version', 'operation', 'readonly'];
 
         if (document.docByKeys) {
-          const unknowKeys = document.docByKeys
+          const unknownKeys = document.docByKeys
             .filter(keyVal => !propsKeys.includes(keyVal.key) && !commonProps.includes(keyVal.key))
             .map(keyVal => `${keyVal.key}`)
             .join(',');
 
-          if (unknowKeys.length) {
-            res.json(`Incorrect document meta: fields ${unknowKeys} do not exist in document type.`);
+          if (unknownKeys.length) {
+            res.json(`Incorrect document meta: field(s) "${unknownKeys}" do not exist in document type.`);
             return;
           }
 
@@ -117,13 +117,13 @@ router.post('/document', async (req: Request, res: Response, next: NextFunction)
             .forEach(keyVal => docServer![keyVal.key] = keyVal.value);
 
         } else if (document.doc) {
-          const unknowKeys = Object.keys(document.doc)
+          const unknownKeys = Object.keys(document.doc)
             .filter(key => !propsKeys.includes(key) && !commonProps.includes(key))
             .map(key => `${key}`)
             .join(',');
 
-          if (unknowKeys.length) {
-            res.json(`Incorrect document meta: fields ${unknowKeys} do not exist in document type.`);
+          if (unknownKeys.length) {
+            res.json(`Incorrect document meta: field(s) "${unknownKeys}" do not exist in document type.`);
             return;
           }
 
