@@ -78,6 +78,8 @@ BEGIN
     redirectedFromUser NVARCHAR(256) NULL,
     penaltyRuleSnapshot NVARCHAR(MAX) NULL,
     penaltyAmount DECIMAL(19, 4) NULL,
+    overdueAt DATETIME2(3) NULL,
+    penaltyAppliedAt DATETIME2(3) NULL,
     createdAt DATETIME2(3) NOT NULL CONSTRAINT DF_BusinessProcessTask_createdAt DEFAULT (SYSUTCDATETIME()),
     CONSTRAINT CK_BusinessProcessTask_Status CHECK (status IN (
       N'CREATED',

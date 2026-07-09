@@ -6,6 +6,7 @@ import {
 } from '../types/business-process.types';
 import { BusinessProcessTaskRepository } from '../repositories/bp-task.repository';
 import { AssignmentResolver } from './assignment-resolver';
+import { DelegationResolver } from './delegation-resolver';
 import { TaskDateResolver } from './task-date-resolver';
 
 export class BusinessProcessTaskFactory {
@@ -22,6 +23,8 @@ export class BusinessProcessTaskFactory {
     objectId: string;
     user?: string | null;
     author?: string | null;
+    templateCode?: string | null;
+    company?: string | null;
     context: Record<string, unknown>;
   }): Promise<BusinessProcessTask[]> {
     if (args.step.type !== 'USER_TASK') {
@@ -43,13 +46,19 @@ export class BusinessProcessTaskFactory {
     }
 
     const now = new Date();
+    const finalAssignees = await new DelegationResolver(args.db).applyToAssignees({
+      assignees,
+      date: now,
+      processTemplate: args.templateCode || null,
+      company: args.company || null,
+    });
     const activeFrom = this.dateResolver.resolveActiveFrom(args.step.waitUntilRule, args.context);
     const dueBase = activeFrom || now;
     const dueAt = this.dateResolver.resolveDueAt(args.step.dueRule, dueBase, args.context);
     const status: BusinessProcessTaskStatus = activeFrom && activeFrom.getTime() > now.getTime() ? 'WAITING' : 'ACTIVE';
     const taskRepository = new BusinessProcessTaskRepository(args.db);
 
-    return taskRepository.createMany(assignees.map(assignee => ({
+    return taskRepository.createMany(finalAssignees.map(assignee => ({
       instanceId: args.instanceId,
       objectType: args.objectType,
       objectId: args.objectId,
@@ -65,4 +74,3 @@ export class BusinessProcessTaskFactory {
     })));
   }
 }
-

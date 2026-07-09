@@ -109,6 +109,9 @@ export class TemplateService {
     }
 
     this.ruleEngine.validate(value.autoCompleteCondition);
+    this.validateDueRule(value.dueRule, `${path}.dueRule`);
+    this.validateWaitUntilRule(value.waitUntilRule, `${path}.waitUntilRule`);
+    this.validatePenaltyRule(value.penaltyRule, `${path}.penaltyRule`);
     this.validateAssignmentRule(value.type, value.assignmentRule, `${path}.assignmentRule`);
   }
 
@@ -182,5 +185,83 @@ export class TemplateService {
       default:
         throw new Error(`Invalid template at ${path}.type: unsupported assignmentRule.type`);
     }
+  }
+
+  private validateDueRule(rule: unknown, path: string): void {
+    if (rule == null) return;
+    if (!rule || typeof rule !== 'object' || Array.isArray(rule)) {
+      throw new Error(`Invalid template at ${path}: dueRule must be object`);
+    }
+
+    const value = rule as Record<string, unknown>;
+    const keys = ['hours', 'days', 'field'].filter(key => value[key] != null);
+    if (keys.length !== 1) throw new Error(`Invalid template at ${path}: dueRule must contain exactly one of hours, days or field`);
+
+    if (value.hours != null && (typeof value.hours !== 'number' || value.hours <= 0)) {
+      throw new Error(`Invalid template at ${path}.hours: hours must be positive number`);
+    }
+    if (value.days != null && (typeof value.days !== 'number' || value.days <= 0)) {
+      throw new Error(`Invalid template at ${path}.days: days must be positive number`);
+    }
+    if (value.field != null && (typeof value.field !== 'string' || !value.field.trim())) {
+      throw new Error(`Invalid template at ${path}.field: field must be non-empty string`);
+    }
+  }
+
+  private validateWaitUntilRule(rule: unknown, path: string): void {
+    if (rule == null) return;
+    if (!rule || typeof rule !== 'object' || Array.isArray(rule)) {
+      throw new Error(`Invalid template at ${path}: waitUntilRule must be object`);
+    }
+
+    const value = rule as Record<string, unknown>;
+    const keys = ['date', 'field'].filter(key => value[key] != null);
+    if (keys.length !== 1) throw new Error(`Invalid template at ${path}: waitUntilRule must contain exactly one of date or field`);
+
+    if (value.date != null) {
+      if (typeof value.date !== 'string' || Number.isNaN(new Date(value.date).getTime())) {
+        throw new Error(`Invalid template at ${path}.date: date must be valid date string`);
+      }
+    }
+    if (value.field != null && (typeof value.field !== 'string' || !value.field.trim())) {
+      throw new Error(`Invalid template at ${path}.field: field must be non-empty string`);
+    }
+  }
+
+  private validatePenaltyRule(rule: unknown, path: string): void {
+    if (rule == null) return;
+    if (!rule || typeof rule !== 'object' || Array.isArray(rule)) {
+      throw new Error(`Invalid template at ${path}: penaltyRule must be object`);
+    }
+
+    const value = rule as Record<string, unknown>;
+    if (value.amount != null) {
+      if (typeof value.amount !== 'number' || value.amount <= 0) {
+        throw new Error(`Invalid template at ${path}.amount: amount must be positive number`);
+      }
+      if (value.percent != null || value.field != null) {
+        throw new Error(`Invalid template at ${path}: amount penalty cannot be combined with percent or field`);
+      }
+      return;
+    }
+
+    if (value.percent != null) {
+      if (typeof value.percent !== 'number' || value.percent <= 0) {
+        throw new Error(`Invalid template at ${path}.percent: percent must be positive number`);
+      }
+      if (typeof value.field !== 'string' || !value.field.trim()) {
+        throw new Error(`Invalid template at ${path}.field: field is required for percent penalty`);
+      }
+      return;
+    }
+
+    if (value.field != null) {
+      if (typeof value.field !== 'string' || !value.field.trim()) {
+        throw new Error(`Invalid template at ${path}.field: field must be non-empty string`);
+      }
+      return;
+    }
+
+    throw new Error(`Invalid template at ${path}: penaltyRule must contain amount, field or percent with field`);
   }
 }

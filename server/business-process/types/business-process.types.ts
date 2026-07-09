@@ -47,7 +47,8 @@ export type BusinessProcessEventType =
   | 'TASK_AUTO_COMPLETED'
   | 'TASK_OVERDUE'
   | 'TASK_TIMEOUT'
-  | 'PENALTY_APPLIED';
+  | 'PENALTY_APPLIED'
+  | 'OBJECT_STATUS_CHANGED';
 
 export type BusinessProcessTaskDecision =
   | 'APPROVE'
@@ -133,6 +134,8 @@ export interface BusinessProcessTask {
   redirectedFromUser?: string | null;
   penaltyRuleSnapshot?: unknown;
   penaltyAmount?: number | null;
+  overdueAt?: Date | null;
+  penaltyAppliedAt?: Date | null;
   createdAt?: Date;
 }
 
@@ -173,6 +176,12 @@ export interface BusinessProcessStartResult {
   instance: BusinessProcessInstance;
   tasks: BusinessProcessTask[];
   alreadyRunning?: boolean;
+  objectStatusChanges?: Array<{
+    objectType: string;
+    objectId: string;
+    fromStatus?: string | null;
+    toStatus?: string | null;
+  }>;
 }
 
 export interface ResolvedAssignee {
@@ -198,4 +207,22 @@ export interface BusinessProcessTaskActionResult {
   instance: BusinessProcessInstance;
   createdTasks: BusinessProcessTask[];
   completed: boolean;
+  objectStatusChanges?: Array<{
+    objectType: string;
+    objectId: string;
+    fromStatus?: string | null;
+    toStatus?: string | null;
+  }>;
+}
+
+export interface BusinessProcessSchedulerTickResult {
+  activatedTasks: number;
+  overdueTasks: number;
+  penaltyCandidates: number;
+  penaltiesApplied: number;
+  skipped: number;
+  errors: Array<{
+    taskId?: string;
+    message: string;
+  }>;
 }

@@ -84,6 +84,37 @@ export class BusinessProcessTemplateRepository {
     return rows.map(row => this.mapTemplate(row));
   }
 
+  async listActiveForStart(args: {
+    objectType: string;
+    startMode: BusinessProcessTemplate['startMode'];
+    templateCode?: string | null;
+  }): Promise<BusinessProcessTemplate[]> {
+    const where = [
+      'status = N\'ACTIVE\'',
+      'active = 1',
+      'startMode = @p1',
+      `EXISTS (
+        SELECT 1
+        FROM OPENJSON(objectTypes)
+        WHERE [value] = @p2
+      )`,
+    ];
+    const params: unknown[] = [args.startMode, args.objectType];
+
+    if (args.templateCode) {
+      params.push(args.templateCode);
+      where.push(`code = @p${params.length}`);
+    }
+
+    const rows = await this.db.manyOrNone<TemplateRow>(
+      `${this.selectSql()}
+       WHERE ${where.join(' AND ')}
+       ORDER BY code, version DESC`,
+      params,
+    );
+    return rows.map(row => this.mapTemplate(row));
+  }
+
   async createDraft(input: CreateBusinessProcessTemplateDraftInput): Promise<BusinessProcessTemplate> {
     const id = uuid();
     const versionRow = await this.db.oneOrNone<{ version: number }>(

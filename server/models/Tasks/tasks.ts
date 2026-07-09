@@ -5,6 +5,7 @@ import sync from './sync';
 import { RedisOptions } from 'ioredis';
 import * as os from 'os';
 import customTask from './customTask';
+import businessProcessSchedulerTick from './businessProcessSchedulerTick';
 import axios, { AxiosInstance } from 'axios';
 import { Agent } from 'https';
 import { IJob } from 'jetti-middle';
@@ -52,9 +53,10 @@ export const getQueueInstanceAPIByQueueId = async (queueId: string): Promise<{ i
 };
 
 
-export const Jobs: { [key: string]: (job: Queue.Job) => Promise<void> } = {
+export const Jobs: { [key: string]: (job: Queue.Job) => Promise<any> } = {
   sync: sync,
-  customTask: customTask
+  customTask: customTask,
+  businessProcessSchedulerTick: businessProcessSchedulerTick
 };
 
 let redis: RedisOptions = {

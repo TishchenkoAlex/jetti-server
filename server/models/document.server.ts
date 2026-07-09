@@ -11,6 +11,10 @@ import { checkReadonlyPeriod } from "../routes/utils/post-rules/readonly";
 import { ARCH_USER } from "../env/environment";
 import { copyToMirrorContourHandler } from "./Commands/common.copyToMirror";
 import { Contour } from "./contour";
+import {
+    syncDocumentAfterBusinessProcess,
+    tryStartBusinessProcessForDocument,
+} from "../business-process/integration/document-hooks";
 
 enum DocLiveCycleEvent {
     onUnPost = 'onUnPost',
@@ -128,6 +132,19 @@ export class DocumentServer<T extends DocumentBaseServer> {
             await docServer.deleteMovements();
             if (serverDoc.deleted === false)
                 await docServer.insertMovements();
+            if (serverDoc.deleted === false && serverDoc.posted === true) {
+                const bpResults = await tryStartBusinessProcessForDocument({
+                    doc: docServer.docBase,
+                    event: 'ON_POST',
+                    tx,
+                    user: tx.email || null,
+                });
+                await syncDocumentAfterBusinessProcess({
+                    doc: docServer.docBase,
+                    results: bpResults,
+                    tx,
+                });
+            }
             return docServer;
         } catch (ex) {
             throw new Error(ex);
@@ -202,6 +219,20 @@ export class DocumentServer<T extends DocumentBaseServer> {
             else
                 await lib.queuePost.addId(this.doc.id, options!.postQueue!)
 
+            if (this.doc.posted) {
+                const bpResults = await tryStartBusinessProcessForDocument({
+                    doc: this.doc,
+                    event: 'ON_POST',
+                    tx: this.tx,
+                    user: this.tx.email || null,
+                });
+                await syncDocumentAfterBusinessProcess({
+                    doc: this.doc,
+                    results: bpResults,
+                    tx: this.tx,
+                });
+            }
+
             return this.doc;
         } catch (error) {
             throw new Error(error);
@@ -219,6 +250,17 @@ export class DocumentServer<T extends DocumentBaseServer> {
             if (this.doc.posted && this.doc.isDoc) {
                 await this.insertMovements();
             }
+            const bpResults = await tryStartBusinessProcessForDocument({
+                doc: this.doc,
+                event: 'ON_SAVE',
+                tx: this.tx,
+                user: this.tx.email || null,
+            });
+            await syncDocumentAfterBusinessProcess({
+                doc: this.doc,
+                results: bpResults,
+                tx: this.tx,
+            });
             return this.doc;
         } catch (error) {
             throw new Error(error);

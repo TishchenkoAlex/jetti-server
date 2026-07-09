@@ -9,8 +9,7 @@ export const router = express.Router();
 router.get('/my', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const db = SDB(req);
-    const roles = db.user && Array.isArray(db.user.roles) ? db.user.roles : [];
-    res.json(await new TaskService(db).getMyTasks(db.email, roles));
+    res.json(await new TaskService(db).getMyTasks(db.email));
   } catch (err) { next(err); }
 });
 
