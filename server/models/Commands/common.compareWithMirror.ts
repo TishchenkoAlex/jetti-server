@@ -58,7 +58,7 @@ async function compareWithMirrorContour(
   ])).sort();
 
   return {
-    differentProperties: differentProperties.filter((property) => !['module', 'readonly', 'version'].includes(property)),
+    differentProperties: differentProperties.filter((property) => !['module', 'operation', 'readonly', 'version'].includes(property)),
     targetMissing: !targetDoc,
   };
 }
@@ -77,8 +77,11 @@ async function readDocumentForCompare(id: string, tx: MSSQL): Promise<CompareDoc
         [parent],
         [isfolder],
         [company],
+        [user],
         [info],
-        [operation]
+        [operation],
+        [ExchangeCode],
+        [ExchangeBase]
       FROM Documents
       WHERE id = @p1
     `,

@@ -10,6 +10,17 @@ type CopyResult =
   | { status: "updated"; id: string }
   | { status: "skipped"; id: string; reason: "target_is_newer_or_equal" | "source_not_found" };
 
+type JsonObject = { [key: string]: any };
+type CopyDocumentRow = JsonObject & {
+  id: string;
+  type: string;
+  posted: boolean;
+  timestamp: Date | null;
+  doc: JsonObject | string | null;
+};
+const EXCHANGE_PROPERTIES = ["ExchangeBase", "ExchangeCode"] as const;
+type ExchangeProperty = typeof EXCHANGE_PROPERTIES[number];
+
 export async function copyToMirrorContourHandler(
   doc: DocumentBaseServer,
   tx: MSSQL,
@@ -40,22 +51,19 @@ function mapCopyResult(result: CopyResult): CommandResult {
 }
 
 async function copyToMirrorContour(id: string, sourceDb: MSSQL): Promise<CopyResult> {
-  const sourceDoc = await lib.doc.byId(id, sourceDb);
+  const sourceDoc = await readDocumentForCopy(id, sourceDb);
 
   if (!sourceDoc) {
     return { status: "skipped", id, reason: "source_not_found" };
   }
 
-  const noSqlDocument = lib.doc.noSqlDocument(sourceDoc);
-
-  if (!noSqlDocument) {
-    return { status: "skipped", id, reason: "source_not_found" };
-  }
-
-  const { operation, version, ...doc } = noSqlDocument.doc as any;
-
-  noSqlDocument.doc = doc; // убираем из JSON полей, которые не нужны в целевой БД и могут вызвать проблемы при сериализации/десериализации
-  const jsonDoc = JSON.stringify(noSqlDocument);
+  const docForCopy = docWithoutExcludedProperties(sourceDoc.doc);
+  const documentForCopy = {
+    ...sourceDoc,
+    doc: docForCopy,
+  };
+  const needRestoreAfterMovements = needsRestoreExchangeLayout(sourceDoc, docForCopy);
+  const jsonDoc = JSON.stringify(documentForCopy);
   const targetDb = lib.util.mirrorContourPoolTx();
 
   const query = `
@@ -72,7 +80,8 @@ async function copyToMirrorContour(id: string, sourceDb: MSSQL): Promise<CopyRes
     WHERE id = @p2;
 
     -- target уже новее или равен source -> пропускаем
-    IF @DocId IS NOT NULL
+    IF @p5 = 0
+       AND @DocId IS NOT NULL
        AND @TimestampInTarget IS NOT NULL
        AND @TimestampInSource IS NOT NULL
        AND @TimestampInTarget >= @TimestampInSource
@@ -171,9 +180,10 @@ async function copyToMirrorContour(id: string, sourceDb: MSSQL): Promise<CopyRes
     id: string;
   }>(query, [
     jsonDoc,
-    noSqlDocument.id,
-    noSqlDocument.timestamp,
-    noSqlDocument.type
+    sourceDoc.id,
+    sourceDoc.timestamp,
+    sourceDoc.type,
+    false,
   ]);
 
   if (!resp) {
@@ -187,6 +197,18 @@ async function copyToMirrorContour(id: string, sourceDb: MSSQL): Promise<CopyRes
     if (errorMsg) {
       return { status: "error", id, reason: `post failed in mirror contour ${errorMsg}, but document was ${resp.status}!` };
     }
+
+    if (needRestoreAfterMovements) {
+      // Unposting saves the target document through the regular serialization
+      // pipeline. Force the same copy if exchange fields changed location.
+      await targetDb.oneOrNone(query, [
+        jsonDoc,
+        sourceDoc.id,
+        sourceDoc.timestamp,
+        sourceDoc.type,
+        true,
+      ]);
+    }
   }
 
   if (resp.status === "inserted") {
@@ -198,6 +220,83 @@ async function copyToMirrorContour(id: string, sourceDb: MSSQL): Promise<CopyRes
   }
 
   return { status: "skipped", id, reason: "target_is_newer_or_equal" };
+}
+
+async function readDocumentForCopy(id: string, tx: MSSQL): Promise<CopyDocumentRow | null> {
+  return await tx.oneOrNone<CopyDocumentRow>(
+    `
+      SELECT
+        [id],
+        [type],
+        [date],
+        [code],
+        [description],
+        [posted],
+        [deleted],
+        [parent],
+        [isfolder],
+        [company],
+        [user],
+        [info],
+        [doc],
+        [timestamp],
+        [ExchangeCode],
+        [ExchangeBase]
+      FROM Documents
+      WHERE id = @p1
+    `,
+    [id],
+  );
+}
+
+function docWithoutExcludedProperties(doc: JsonObject | string | null): any {
+  const parsedDoc = typeof doc === "string" ? JSON.parse(doc) : doc;
+
+  if (!isPlainObject(parsedDoc)) return parsedDoc;
+
+  const { operation, version, ...result } = parsedDoc;
+  return result;
+}
+
+function isPlainObject(value: any): value is JsonObject {
+  return typeof value === "object" && value !== null && !Array.isArray(value) && !(value instanceof Date);
+}
+
+function needsRestoreExchangeLayout(source: CopyDocumentRow, doc: any): boolean {
+  // postById does not save Documents; only unPostById passes through upsertDocument.
+  if (source.posted || !isPlainObject(doc)) return false;
+
+  const effectiveValues = {
+    ExchangeBase: effectiveExchangeValue(source, doc, "ExchangeBase"),
+    ExchangeCode: effectiveExchangeValue(source, doc, "ExchangeCode"),
+  };
+
+  // Mirrors the withExchangeInfo condition used by upsertDocument during unposting.
+  const headersWillBeUpdated = !!effectiveValues.ExchangeBase;
+
+  return EXCHANGE_PROPERTIES.some((property) => {
+    const effectiveValue = effectiveValues[property];
+
+    // Movement handlers cannot populate a truthy exchange value.
+    if (!effectiveValue) return false;
+
+    const headerValueAfterSave = headersWillBeUpdated
+      ? effectiveValue
+      : source[property];
+
+    const headerWillChange = headerValueAfterSave !== source[property];
+    const docWillChange = !hasOwnProperty(doc, property) || doc[property] !== effectiveValue;
+
+    return headerWillChange || docWillChange;
+  });
+}
+
+function effectiveExchangeValue(source: CopyDocumentRow, doc: JsonObject, property: ExchangeProperty): any {
+  return hasOwnProperty(doc, property) ? doc[property] : source[property];
+}
+
+function hasOwnProperty(value: JsonObject, property: string): boolean {
+  return Object.prototype.hasOwnProperty.call(value, property);
 }
 
 async function postInMirrorContour(id: string, targetDb: MSSQL, posted: boolean): Promise<string | undefined> {
