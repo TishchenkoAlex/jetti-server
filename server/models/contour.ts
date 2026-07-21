@@ -12,6 +12,7 @@ type ContourCacheItem = {
 export class Contour {
 
     private static contourCache = new Map<string, ContourCacheItem>();
+    private static contourCompanies = { expiresAt: 0, value: '' };
 
     static get roleReadonlyContourEditor() {
         return 'Readonly company contour editor';
@@ -135,5 +136,26 @@ export class Contour {
         const { contour = 0 } = await db.oneOrNone<{ contour: ContourId }>(`SELECT [dbo].[ContourByCompany] (@p1) contour`, [company]) ?? {};
         return contour;
     }
+
+    static async getCompaniesAllowedInContourValue(tx?: MSSQL) {
+        if (this.isReadonlyContourEditor(tx) || this.isCommonDataEditor(tx)) return '';
+
+        const isExpired = Date.now() >= this.contourCompanies.expiresAt;
+
+        if (isExpired) {
+            const companies = await this.getCompaniesAllowedInContour(tx);
+            this.contourCompanies = {
+                value: companies.length ? companies.map(e => `'${e}'`).join(',') : 'NULL',
+                expiresAt: Date.now() + COMPANY_BY_CONTOUR_CACHE_TTL_SECONDS * 1000
+            };
+        }
+
+        return this.contourCompanies.value;
+    }
     
+    private static async getCompaniesAllowedInContour(tx?: MSSQL): Promise<string[]> {
+        const db = tx ?? lib.util.jettiPoolTx();
+        const rows = await db.manyOrNone<{ id: string }>(`SELECT [id] FROM [dbo].[Catalog.Company.v] WITH (NOEXPAND) WHERE [dbo].[ContourByCompany]([id]) <> @p1`, [this.contourMirror]);
+        return rows.map(row => row.id);
+    }
 }

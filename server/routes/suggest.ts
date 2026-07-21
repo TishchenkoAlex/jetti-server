@@ -8,6 +8,7 @@ import { createDocument } from '../models/documents.factory';
 import { FormListFilter, ISuggest, Type, DocumentOptions } from 'jetti-middle';
 import { SQLGenegatorMetadata } from '../fuctions/SQLGenerator.MSSQL.Metadata';
 import { ARCH_USER } from '../env/environment';
+import { Contour } from '../models/contour';
 
 export const router = express.Router();
 
@@ -45,6 +46,8 @@ router.post('/suggest/:type', async (req: Request, res: Response, next: NextFunc
       query = suggestQuery(allTypes(), 'Catalog.Subcount');
     else {
       filterQuery.where += userContextFilter(sdb.userContext, type === 'Catalog.Company' ? 'id' : 'company');
+      const companiesAllowedInContour = await Contour.getCompaniesAllowedInContourValue(sdb);
+      if (companiesAllowedInContour) filterQuery.where += ` AND [company] IN (${companiesAllowedInContour})`;
       query = `${filterQuery.tempTable}
     SELECT top 10 id as id,
       description as value,
