@@ -5,6 +5,7 @@ import { filterBuilder, userContextFilter } from '../../fuctions/filterBuilder';
 import { DocListRequestBody, DocListResponse, FormListFilter, DocumentBase, Type } from 'jetti-middle';
 import { ARGS } from '../..';
 import { ARCH_USER } from '../../env/environment';
+import { Contour } from '../../models/contour';
 
 
 export async function _List(params: DocListRequestBody & { used: string }, tx: MSSQL): Promise<DocListResponse> {
@@ -162,11 +163,13 @@ export async function List(params: DocListRequestBody & { used: string }, tx: MS
     // folders
     const queryList = configSchema().get(params.type)!.QueryList;
     const parentWhere = parent ? 'd.[parent.id] = @p1' : 'd.[parent.id] is NULL';
-    let queryText = `SELECT * FROM (${queryList}) d WHERE ${parentWhere} and isfolder = 1`;
+    const companiesAllowedInContour = await Contour.getCompaniesAllowedInContourValue(tx);
+    const contourFilter = companiesAllowedInContour ? ` AND "company.id" IN (${companiesAllowedInContour})` : '';
+    let queryText = `SELECT * FROM (${queryList}) d WHERE ${parentWhere} and isfolder = 1${contourFilter}`;
     if (parent) {
       const ancestors = await lib.doc.Ancestors(params.id, tx) as any[];
       const ancestorsId = ancestors.filter(el => el.parent !== parent).map(e => '\'' + e.id + '\'').join();
-      queryText = `${queryText} UNION SELECT * FROM (${queryList}) d WHERE id IN (${ancestorsId})`;
+      queryText = `${queryText} UNION SELECT * FROM (${queryList}) d WHERE id IN (${ancestorsId})${contourFilter}`;
     }
     queryText += `${userContextFilter(tx.userContext, `"company.id"`)} ORDER BY description`;
     const folders = await tx.manyOrNone(queryText, [parent]);
@@ -215,6 +218,11 @@ export async function List(params: DocListRequestBody & { used: string }, tx: MS
 
   valueOrder = valueOrder.filter(el => !(el.value === null || el.value === undefined));
   const queryFilter = await filterBuilder(params.filter, tx, params.type);
+
+  if (!Type.isType(params.type) && !isTypeListOperation(params.type)) {
+    const companiesAllowedInContour = await Contour.getCompaniesAllowedInContourValue(tx);
+    if (companiesAllowedInContour) queryFilter.where += ` AND "company.id" IN (${companiesAllowedInContour})`;
+  }
 
   const usedInQuery = (dir: '>' | '<') => {
     if (!params.used) {

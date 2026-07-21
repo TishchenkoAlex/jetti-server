@@ -70,7 +70,7 @@ export interface JTL {
   };
   doc: {
     byCode: (type: string, code: string, tx: MSSQL) => Promise<string | null>;
-    byId: (id: Ref, tx: MSSQL) => Promise<IFlatDocument | null>;
+    byId: (id: Ref, tx: MSSQL, filterByContour?: boolean) => Promise<IFlatDocument | null>;
     byIdT: <T extends DocumentBase>(id: Ref, tx: MSSQL) => Promise<T | null>;
     historyById: (id: Ref, tx: MSSQL) => Promise<IFlatDocument | null>;
     findDocumentByKey: (searchKey: { key: string, value?: any }[], tx: MSSQL) => Promise<IFlatDocument[] | null>
@@ -374,10 +374,13 @@ async function byCode(type: string, code: string, tx: MSSQL): Promise<string | n
   return result ? result.result as string : null;
 }
 
-async function byId(id: string, tx: MSSQL): Promise<IFlatDocument | null> {
+async function byId(id: string, tx: MSSQL, filterByContour = false): Promise<IFlatDocument | null> {
   if (!id) return null;
   const result = await tx.oneOrNone<INoSqlDocument | null>(`
   SELECT * FROM "Documents" WHERE id = @p1`, [id]);
+  if (filterByContour && !Contour.isCommonDataEditor(tx) && await Contour.isMirrorContourCompany(result?.company, tx)) {
+    return null;
+  }
   if (result) return flatDocument(result); else return null;
 }
 

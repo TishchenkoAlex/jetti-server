@@ -39,7 +39,7 @@ const CommonCommands: CommonCommand[] = [
     order: 100,
     handler: copyToMirrorContourHandler,
     predicate: async (doc, tx) => Type.isRefType(doc.type) &&
-      (Contour.isCommonDataEditor(tx) && await Contour.isCommonDataContourCompany(doc.company as string | undefined, tx))
+      Contour.isCommonDataEditor(tx)
       || (Contour.isMirrorContourEditor(tx) && await Contour.isMirrorContourCompany(doc.company as string | undefined, tx)),
   }
 ];
