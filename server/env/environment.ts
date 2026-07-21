@@ -3,7 +3,6 @@ import { ConnectionConfig } from 'tedious';
 
 dotenv();
 export type ConnectionConfigAndPool = ConnectionConfig & { pool: { min: number, max: number, idleTimeoutMillis: number } };
-
 export const APP_VERSION = process.env.APP_VERSION || '1.0.10';
 export const CONTOUR = parseInt(process.env.CONTOUR || "1");
 export const DB_NAME = process.env.DB_NAME!;

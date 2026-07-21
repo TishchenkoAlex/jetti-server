@@ -21,6 +21,8 @@ type TemplateRow = {
   steps: unknown;
   transitions: unknown;
   parameters?: unknown;
+  bpmnXml?: string | null;
+  visualMapping?: unknown;
   createdAt?: Date;
   updatedAt?: Date;
   createdBy?: string | null;
@@ -30,6 +32,7 @@ type TemplateRow = {
 
 export type CreateBusinessProcessTemplateDraftInput =
   Omit<BusinessProcessTemplate, 'id' | 'active' | 'version' | 'status'> & {
+    id?: string;
     createdBy?: string | null;
   };
 
@@ -116,7 +119,7 @@ export class BusinessProcessTemplateRepository {
   }
 
   async createDraft(input: CreateBusinessProcessTemplateDraftInput): Promise<BusinessProcessTemplate> {
-    const id = uuid();
+    const id = input.id || uuid();
     const versionRow = await this.db.oneOrNone<{ version: number }>(
       `SELECT ISNULL(MAX(version), 0) + 1 version
        FROM dbo.BusinessProcessTemplate
@@ -128,11 +131,11 @@ export class BusinessProcessTemplateRepository {
     await this.db.none(
       `INSERT INTO dbo.BusinessProcessTemplate (
         id, code, description, active, version, status, objectTypes, startMode,
-        startCondition, steps, transitions, parameters, createdBy
+        startCondition, steps, transitions, parameters, bpmnXml, visualMapping, createdBy
       )
       VALUES (
         @p1, @p2, @p3, @p4, @p5, N'DRAFT', JSON_QUERY(@p6), @p7,
-        JSON_QUERY(@p8), JSON_QUERY(@p9), JSON_QUERY(@p10), JSON_QUERY(@p11), @p12
+        JSON_QUERY(@p8), JSON_QUERY(@p9), JSON_QUERY(@p10), JSON_QUERY(@p11), @p12, JSON_QUERY(@p13), @p14
       )`,
       [
         id,
@@ -146,12 +149,57 @@ export class BusinessProcessTemplateRepository {
         toJson(input.steps),
         toJson(input.transitions),
         toJson(input.parameters),
+        input.bpmnXml || null,
+        toJson(input.visualMapping),
         input.createdBy || null,
       ],
     );
 
     const template = await this.getById(id);
     if (!template) throw new Error(`BusinessProcessTemplateRepository.createDraft failed to load created template ${id}`);
+    return template;
+  }
+
+  async updateDraft(id: string, input: CreateBusinessProcessTemplateDraftInput): Promise<BusinessProcessTemplate> {
+    const current = await this.getById(id);
+    if (!current) throw new Error(`Business process template ${id} not found`);
+    if (current.status !== 'DRAFT') {
+      throw new Error(`Business process template ${id} is ${current.status} and cannot be changed`);
+    }
+
+    await this.db.none(
+      `UPDATE dbo.BusinessProcessTemplate
+       SET code = @p2,
+           description = @p3,
+           objectTypes = JSON_QUERY(@p4),
+           startMode = @p5,
+           startCondition = JSON_QUERY(@p6),
+           steps = JSON_QUERY(@p7),
+           transitions = JSON_QUERY(@p8),
+           parameters = JSON_QUERY(@p9),
+           bpmnXml = @p10,
+           visualMapping = JSON_QUERY(@p11),
+           updatedAt = SYSUTCDATETIME()
+       WHERE id = @p1
+         AND status = N'DRAFT'`,
+      [
+        id,
+        input.code,
+        input.description || null,
+        toJson(input.objectTypes),
+        input.startMode,
+        toJson(input.startCondition),
+        toJson(input.steps),
+        toJson(input.transitions),
+        toJson(input.parameters),
+        input.bpmnXml || null,
+        toJson(input.visualMapping),
+      ],
+    );
+
+    const template = await this.getById(id);
+    if (!template) throw new Error(`BusinessProcessTemplateRepository.updateDraft failed to load template ${id}`);
+    if (template.status !== 'DRAFT') throw new Error(`Business process template ${id} changed status during update`);
     return template;
   }
 
@@ -213,7 +261,7 @@ export class BusinessProcessTemplateRepository {
   private selectSql(): string {
     return `SELECT
       id, code, description, active, version, status, objectTypes, startMode,
-      startCondition, steps, transitions, parameters, createdAt, updatedAt,
+      startCondition, steps, transitions, parameters, bpmnXml, visualMapping, createdAt, updatedAt,
       createdBy, activatedAt, archivedAt
     FROM dbo.BusinessProcessTemplate`;
   }
@@ -228,10 +276,12 @@ export class BusinessProcessTemplateRepository {
       status: row.status,
       objectTypes: parseJsonArray<string>(row.objectTypes, []),
       startMode: row.startMode,
-      startCondition: row.startCondition == null ? undefined : row.startCondition,
+      startCondition: parseJsonObject<Record<string, unknown>>(row.startCondition, undefined as any),
       steps: parseJsonArray<BusinessProcessStep>(row.steps, []),
       transitions: parseJsonArray<BusinessProcessTransition>(row.transitions, []),
       parameters: parseJsonObject<Record<string, unknown>>(row.parameters, undefined as any),
+      bpmnXml: row.bpmnXml || undefined,
+      visualMapping: parseJsonObject<BusinessProcessTemplate['visualMapping']>(row.visualMapping, undefined),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       createdBy: row.createdBy || null,

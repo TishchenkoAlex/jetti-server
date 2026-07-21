@@ -5,7 +5,7 @@ import { DocumentBaseServer, createDocumentServer } from '../models/documents.fa
 import { DocTypes } from '../models/documents.types';
 import { DocumentOperation } from '../models/Documents/Document.Operation';
 import { lib } from './../std.lib';
-import { List } from './utils/list';
+import { BusinessProcessListViewModel, isBusinessProcessListType, List } from './utils/list';
 import { MSSQL } from '../mssql';
 import { SDB } from './middleware/db-sessions';
 import { getIndexedOperationType } from '../models/indexedOperation';
@@ -66,6 +66,9 @@ const viewAction = async (req: Request, res: Response, next: NextFunction) => {
     const params: { [key: string]: any } = req.body;
     const id: string | undefined = params.id;
     const type: DocTypes = params.type;
+    if (isBusinessProcessListType(type)) {
+      return res.json(await BusinessProcessListViewModel(type, sdb, id));
+    }
     const Operation: string | undefined = req.query.Operation as string || params.operation as string || undefined;
     const isfolder: boolean = req.query.isfolder === 'true';
     const Group = params.group ? params.group : Operation ? (await lib.util.getObjectPropertyById(Operation, 'Group', sdb)).id : null;

@@ -67,11 +67,25 @@ export interface BusinessProcessTemplate {
   steps: BusinessProcessStep[];
   transitions: BusinessProcessTransition[];
   parameters?: Record<string, unknown>;
+  /** Optional visual representation. It is not the execution source of truth. */
+  bpmnXml?: string;
+  /** Optional mapping between backend route elements and diagram elements. */
+  visualMapping?: BusinessProcessVisualMapping;
   createdAt?: Date;
   updatedAt?: Date;
   createdBy?: string | null;
   activatedAt?: Date | null;
   archivedAt?: Date | null;
+}
+
+export interface BusinessProcessVisualMapping {
+  schemaVersion?: 1 | 2;
+  notation?: 'BPMN' | 'CUSTOM_GRAPH';
+  routeHash?: string;
+  startEventId?: string;
+  nodeMap?: Record<string, string>;
+  edgeMap?: Record<string, string>;
+  endNodeMap?: Record<string, string>;
 }
 
 export interface BusinessProcessStep {
@@ -89,6 +103,7 @@ export interface BusinessProcessStep {
 }
 
 export interface BusinessProcessTransition {
+  key: string;
   from: string;
   on: string;
   to: string;

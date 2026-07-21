@@ -18,12 +18,19 @@ export class TemplateService {
   ) {}
 
   async validateTemplate(template: unknown): Promise<void> {
-    this.validateTemplateShape(template);
+    this.validateTemplateShape(this.normalizeTemplate(template));
   }
 
   async createDraft(input: unknown, tx?: unknown): Promise<BusinessProcessTemplate> {
-    this.validateTemplateShape(input);
-    return this.repository(tx).createDraft(input as CreateBusinessProcessTemplateDraftInput);
+    const normalized = this.normalizeTemplate(input);
+    this.validateTemplateShape(normalized);
+    return this.repository(tx).createDraft(normalized as CreateBusinessProcessTemplateDraftInput);
+  }
+
+  async updateDraft(id: string, input: unknown, tx?: unknown): Promise<BusinessProcessTemplate> {
+    const normalized = this.normalizeTemplate(input);
+    this.validateTemplateShape(normalized);
+    return this.repository(tx).updateDraft(id, normalized as CreateBusinessProcessTemplateDraftInput);
   }
 
   async activate(id: string, tx?: unknown): Promise<BusinessProcessTemplate> {
@@ -77,12 +84,54 @@ export class TemplateService {
       throw new Error('Invalid template at $.transitions: transitions must be array');
     }
 
+    const transitionKeys = new Set<string>();
     value.transitions.forEach((transition, index) => {
-      this.validateTransition(transition, `$.transitions[${index}]`, stepKeys);
+      this.validateTransition(transition, `$.transitions[${index}]`, stepKeys, transitionKeys);
     });
 
     this.validateStartStepKey(value.parameters, stepKeys);
     this.ruleEngine.validate(value.startCondition);
+    this.validateVisualFields(value);
+  }
+
+  private validateVisualFields(value: Record<string, unknown>): void {
+    if (value.bpmnXml !== undefined && value.bpmnXml !== null && typeof value.bpmnXml !== 'string') {
+      throw new Error('Invalid template at $.bpmnXml: bpmnXml must be string');
+    }
+
+    if (value.visualMapping === undefined || value.visualMapping === null) return;
+    if (typeof value.visualMapping !== 'object' || Array.isArray(value.visualMapping)) {
+      throw new Error('Invalid template at $.visualMapping: visualMapping must be object');
+    }
+
+    const mapping = value.visualMapping as Record<string, unknown>;
+    if (mapping.schemaVersion !== undefined && ![1, 2].includes(mapping.schemaVersion as number)) {
+      throw new Error('Invalid template at $.visualMapping.schemaVersion: unsupported schema version');
+    }
+    if (mapping.notation !== undefined && !['BPMN', 'CUSTOM_GRAPH'].includes(mapping.notation as string)) {
+      throw new Error('Invalid template at $.visualMapping.notation: unsupported notation');
+    }
+    this.validateOptionalString(mapping.routeHash, '$.visualMapping.routeHash');
+    this.validateOptionalString(mapping.startEventId, '$.visualMapping.startEventId');
+    this.validateStringMap(mapping.nodeMap, '$.visualMapping.nodeMap');
+    this.validateStringMap(mapping.edgeMap, '$.visualMapping.edgeMap');
+    this.validateStringMap(mapping.endNodeMap, '$.visualMapping.endNodeMap');
+  }
+
+  private validateOptionalString(value: unknown, path: string): void {
+    if (value !== undefined && value !== null && (typeof value !== 'string' || !value.trim())) {
+      throw new Error(`Invalid template at ${path}: value must be non-empty string`);
+    }
+  }
+
+  private validateStringMap(value: unknown, path: string): void {
+    if (value === undefined || value === null) return;
+    if (typeof value !== 'object' || Array.isArray(value)) {
+      throw new Error(`Invalid template at ${path}: value must be object`);
+    }
+    if (Object.keys(value as object).some(key => typeof (value as Record<string, unknown>)[key] !== 'string')) {
+      throw new Error(`Invalid template at ${path}: values must be strings`);
+    }
   }
 
   private validateStep(step: unknown, path: string, stepKeys: Set<string>): void {
@@ -115,14 +164,31 @@ export class TemplateService {
     this.validateAssignmentRule(value.type, value.assignmentRule, `${path}.assignmentRule`);
   }
 
-  private validateTransition(transition: unknown, path: string, stepKeys: Set<string>): void {
+  private validateTransition(
+    transition: unknown,
+    path: string,
+    stepKeys: Set<string>,
+    transitionKeys: Set<string>,
+  ): void {
     if (!transition || typeof transition !== 'object' || Array.isArray(transition)) {
       throw new Error(`Invalid template at ${path}: transition must be object`);
     }
 
     const value = transition as BusinessProcessTransition;
+    if (typeof value.key !== 'string' || !value.key.trim()) {
+      throw new Error(`Invalid template at ${path}.key: transition key must be non-empty string`);
+    }
+    if (transitionKeys.has(value.key)) {
+      throw new Error(`Invalid template at ${path}.key: transition key must be unique`);
+    }
+    transitionKeys.add(value.key);
+
     if (typeof value.from !== 'string' || !stepKeys.has(value.from)) {
       throw new Error(`Invalid template at ${path}.from: from must reference existing step`);
+    }
+
+    if (!['APPROVE', 'REJECT', 'TIMEOUT', 'AUTO'].includes(value.on)) {
+      throw new Error(`Invalid template at ${path}.on: unsupported transition event`);
     }
 
     const endStates = ['END_APPROVED', 'END_REJECTED', 'END_CANCELLED'];
@@ -131,6 +197,35 @@ export class TemplateService {
     }
 
     this.ruleEngine.validate(value.condition);
+  }
+
+  private normalizeTemplate(template: unknown): unknown {
+    if (!template || typeof template !== 'object' || Array.isArray(template)) return template;
+
+    const value = template as Record<string, unknown>;
+    if (!Array.isArray(value.transitions)) return template;
+
+    const usedKeys = new Set<string>();
+    value.transitions.forEach(transition => {
+      if (!transition || typeof transition !== 'object' || Array.isArray(transition)) return;
+      const key = (transition as Record<string, unknown>).key;
+      if (typeof key === 'string' && key.trim()) usedKeys.add(key.trim());
+    });
+
+    let sequence = 1;
+    const transitions = value.transitions.map(transition => {
+      if (!transition || typeof transition !== 'object' || Array.isArray(transition)) return transition;
+
+      const item = transition as Record<string, unknown>;
+      if (typeof item.key === 'string' && item.key.trim()) return { ...item, key: item.key.trim() };
+
+      let key = `Transition_${sequence++}`;
+      while (usedKeys.has(key)) key = `Transition_${sequence++}`;
+      usedKeys.add(key);
+      return { ...item, key };
+    });
+
+    return { ...value, transitions };
   }
 
   private isStartMode(value: unknown): value is BusinessProcessStartMode {

@@ -44,6 +44,13 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   } catch (err) { next(err); }
 });
 
+router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const service = templateService(req);
+    res.json(await service.updateDraft(req.params.id, req.body, SDB(req)));
+  } catch (err) { next(err); }
+});
+
 router.post('/:id/activate', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const service = templateService(req);

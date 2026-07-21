@@ -13,6 +13,8 @@ BEGIN
     steps NVARCHAR(MAX) NOT NULL,
     transitions NVARCHAR(MAX) NOT NULL,
     parameters NVARCHAR(MAX) NULL,
+    bpmnXml NVARCHAR(MAX) NULL,
+    visualMapping NVARCHAR(MAX) NULL,
     createdBy NVARCHAR(256) NULL,
     activatedAt DATETIME2(3) NULL,
     archivedAt DATETIME2(3) NULL,
@@ -24,7 +26,8 @@ BEGIN
     CONSTRAINT CK_BusinessProcessTemplate_StepsJson CHECK (ISJSON(steps) = 1),
     CONSTRAINT CK_BusinessProcessTemplate_TransitionsJson CHECK (ISJSON(transitions) = 1),
     CONSTRAINT CK_BusinessProcessTemplate_StartConditionJson CHECK (startCondition IS NULL OR ISJSON(startCondition) = 1),
-    CONSTRAINT CK_BusinessProcessTemplate_ParametersJson CHECK (parameters IS NULL OR ISJSON(parameters) = 1)
+    CONSTRAINT CK_BusinessProcessTemplate_ParametersJson CHECK (parameters IS NULL OR ISJSON(parameters) = 1),
+    CONSTRAINT CK_BusinessProcessTemplate_VisualMappingJson CHECK (visualMapping IS NULL OR ISJSON(visualMapping) = 1)
   );
 END;
 GO

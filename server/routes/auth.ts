@@ -178,6 +178,32 @@ const RolesQuery = `
 `;
 
 interface MenuItem { type: string; icon: string; label: string; items?: MenuItem[]; routerLink?: string[]; }
+
+const businessProcessMenu: MenuItem = {
+  type: 'BusinessProcess',
+  icon: 'fas fa-project-diagram',
+  label: 'Business processes',
+  items: [
+    {
+      type: 'BusinessProcess.Instance',
+      icon: 'fas fa-project-diagram',
+      label: 'Processes',
+      routerLink: ['/BusinessProcess.Instance'],
+    },
+    {
+      type: 'BusinessProcess.Template',
+      icon: 'fas fa-file-alt',
+      label: 'Templates',
+      routerLink: ['/BusinessProcess.Template'],
+    },
+    {
+      type: 'BusinessProcess.Task',
+      icon: 'fas fa-tasks',
+      label: 'Tasks',
+      routerLink: ['/BusinessProcess.Task'],
+    },
+  ],
+};
 router.get('/subsystems', authHTTP, async (req, res, next) => {
   try {
     const payload: IJWTPayload = (<any>req).user;
@@ -233,5 +259,5 @@ export async function buildMenu(user: CatalogUser): Promise<MenuItem[]> {
     };
   });
   const subs = await Promise.all(sub);
-  return subs;
+  return [...subs, businessProcessMenu];
 }
