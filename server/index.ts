@@ -29,10 +29,12 @@ import { router as form } from './routes/form';
 import { router as bp } from './routes/bp';
 import { router as exchange } from './routes/exchange';
 import { router as businessProcess } from './business-process';
+import { ensureBusinessProcessSchedulerJob } from './business-process/services/scheduler-registration';
 import { jettiDB, tasksDB } from './routes/middleware/db-sessions';
 import * as swaggerDocument from './swagger.json';
 import * as swaggerUi from 'swagger-ui-express';
 import { logEvent } from './logger';
+import { registerSocketServer } from './sockets';
 
 export const ARGS: Record<string, any> = {};
 
@@ -95,6 +97,7 @@ if (CONTOUR === 2) {
 const pubClient = new RedisClient(redisOpts);
 
 export const IO = new SocketIO(HTTP, { cors: { origin: '*.*', methods: ['GET', 'POST'] } });
+registerSocketServer(IO);
 IO.use(authIO);
 const subClient = pubClient.duplicate();
 IO.adapter(createAdapter({ pubClient, subClient }));
@@ -113,6 +116,9 @@ subscriber.subscribe('updateDynamicMeta');
 const port = ARGS.PORT || (process.env.PORT) || '3000';
 HTTP.listen(port, () => logEvent(`API running on port: ${port}\nDB: ${DB_NAME}\nCPUs: ${os.cpus().length}`));
 JQueue.getJobCounts().then(jobs => logEvent('JOBS:', jobs)).catch(err => logEvent('Error on getting queue jobs count', err));
+ensureBusinessProcessSchedulerJob(JQueue)
+  .then(state => logEvent('Business process scheduler:', state))
+  .catch(err => logEvent('Error on registering business process scheduler', err));
 
 Global.init().then(e => {
 

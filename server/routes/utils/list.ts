@@ -3,11 +3,12 @@ import { MSSQL } from '../../mssql';
 import { lib } from '../../std.lib';
 import { filterBuilder, userContextFilter } from '../../fuctions/filterBuilder';
 import {
-  buildColumnDef, DocListRequestBody, DocListResponse, DocumentBase, FormListFilter,
-  FormListSettings, IViewModel, PropOptions, Type,
+  buildColumnDef, DocListRequestBody, DocListResponse, DocumentBase, DocumentOptions, FormListFilter,
+  FormListSettings, IViewModel, Type,
 } from 'jetti-middle';
 import { ARGS } from '../..';
 import { ARCH_USER } from '../../env/environment';
+import { BusinessProcess } from '../../models/BusinessProcess';
 
 
 export async function _List(params: DocListRequestBody & { used: string }, tx: MSSQL): Promise<DocListResponse> {
@@ -310,216 +311,76 @@ SELECT * FROM(${QueryList}) d WHERE id IN(
 }
 
 type BusinessProcessListConfig = {
+  Class: typeof DocumentBase;
   queryList: string;
   viewQueryList?: string;
   fields: string[];
   searchFields: string[];
   companyField?: string;
-  description: string;
-  icon: string;
-  schema: { [field: string]: any };
 };
 
 const businessProcessListConfigs = new Map<string, BusinessProcessListConfig>();
 
-function registerBusinessProcessListConfig(types: string[], config: BusinessProcessListConfig) {
-  types.forEach(type => businessProcessListConfigs.set(type, config));
+function registerBusinessProcessListConfig(
+  Class: typeof DocumentBase,
+  config: Omit<BusinessProcessListConfig, 'Class'>,
+) {
+  const metadata = new Class().Prop() as DocumentOptions;
+  businessProcessListConfigs.set(metadata.type, { ...config, Class });
 }
 
 registerBusinessProcessListConfig(
-  [
-    'Process', 'BusinessProcess', 'BusinessProcess.Process', 'BusinessProcess.Instance',
-    'BusinessProcessInstance',
-  ],
+  BusinessProcess.Instance,
   {
-    queryList: `SELECT * FROM dbo.BusinessProcessInstance`,
-    description: 'Processes',
-    icon: 'fas fa-project-diagram',
+    queryList: `SELECT source.*, CAST(0 AS BIT) deleted
+      FROM dbo.BusinessProcessInstance source`,
     fields: [
       'id', 'templateId', 'templateCode', 'templateVersion', 'templateHash', 'objectType',
-      'objectId', 'status', 'currentStepKey', 'startedAt', 'completedAt', 'author',
-      'company', 'context', 'idempotencyKey', 'createdAt', 'updatedAt',
+      'objectId', 'status', 'currentStepKey', 'startedAt', 'completedAt', 'authorUser',
+      'company', 'context', 'idempotencyKey', 'createdAt', 'updatedAt', 'deleted',
     ],
     searchFields: ['templateCode', 'objectType', 'status', 'currentStepKey'],
     companyField: '"company"',
-    schema: {
-      id: hiddenBusinessProcessListProp('string'),
-      type: hiddenBusinessProcessListProp('string'),
-      templateCode: businessProcessListProp('string', 'Template', 1),
-      templateVersion: businessProcessListProp('number', 'Version', 2),
-      objectType: businessProcessListProp('string', 'Object type', 3),
-      objectId: businessProcessListProp('string', 'Object', 4),
-      status: {
-        ...businessProcessListProp('enum', 'Status', 5,
-          ['RUNNING', 'COMPLETED', 'REJECTED', 'CANCELLED', 'FAILED']),
-        controlType: 'string',
-      },
-      currentStepKey: businessProcessListProp('string', 'Current step', 6),
-      startedAt: businessProcessListProp('datetime', 'Started at', 7),
-      completedAt: businessProcessListProp('datetime', 'Completed at', 8),
-      author: businessProcessListProp('string', 'Author', 9),
-      company: businessProcessListProp('string', 'Company', 10),
-      createdAt: businessProcessListProp('datetime', 'Created at', 11),
-      updatedAt: businessProcessListProp('datetime', 'Updated at', 12),
-    },
   },
 );
 
 registerBusinessProcessListConfig(
-  ['Task', 'BusinessProcess.Task', 'BusinessProcessTask'],
+  BusinessProcess.Task,
   {
-    queryList: `SELECT t.*, i.company
+    queryList: `SELECT t.*, i.company, CAST(0 AS BIT) deleted
       FROM dbo.BusinessProcessTask t
       INNER JOIN dbo.BusinessProcessInstance i ON i.id = t.instanceId`,
-    description: 'Tasks',
-    icon: 'fas fa-tasks',
     fields: [
       'id', 'instanceId', 'objectType', 'objectId', 'stepKey', 'title', 'status',
-      'assigneeUser', 'assigneeRole', 'activeFrom', 'dueAt', 'completedAt',
-      'decisionUser', 'decisionComment', 'delegatedFromUser', 'redirectedFromUser',
-      'penaltyRuleSnapshot', 'penaltyAmount', 'overdueAt', 'penaltyAppliedAt',
-      'createdAt', 'company',
+      'assigneeUser', 'activeFrom', 'deadlineAt', 'deadlineReachedAt', 'completedAt',
+      'decisionKey', 'decisionUser', 'decisionComment', 'decisionSource',
+      'delegatedFromUser', 'redirectedFromUser',
+      'penaltyStartedAt', 'penaltyAmount', 'penaltyLastCalculatedAt',
+      'nextPenaltyCalculationAt',
+      'createdAt', 'company', 'deleted',
     ],
-    searchFields: ['title', 'objectType', 'stepKey', 'status', 'assigneeUser', 'assigneeRole'],
+    searchFields: ['title', 'objectType', 'stepKey', 'status'],
     companyField: '"company"',
-    schema: {
-      id: hiddenBusinessProcessListProp('string'),
-      type: hiddenBusinessProcessListProp('string'),
-      title: businessProcessListProp('string', 'Task', 1),
-      status: {
-        ...businessProcessListProp('enum', 'Status', 2, [
-          'CREATED', 'WAITING', 'ACTIVE', 'APPROVED', 'REJECTED', 'REDIRECTED',
-          'AUTO_COMPLETED', 'TIMEOUT', 'OVERDUE', 'CANCELLED',
-        ]),
-        controlType: 'string',
-      },
-      objectType: businessProcessListProp('string', 'Object type', 3),
-      objectId: businessProcessListProp('string', 'Object', 4),
-      stepKey: businessProcessListProp('string', 'Step', 5),
-      assigneeUser: businessProcessListProp('string', 'Assignee', 6),
-      assigneeRole: businessProcessListProp('string', 'Assignee role', 7),
-      activeFrom: businessProcessListProp('datetime', 'Active from', 8),
-      dueAt: businessProcessListProp('datetime', 'Due at', 9),
-      completedAt: businessProcessListProp('datetime', 'Completed at', 10),
-      decisionUser: businessProcessListProp('string', 'Decision user', 11),
-      decisionComment: businessProcessListProp('string', 'Decision comment', 12),
-      penaltyAmount: businessProcessListProp('number', 'Penalty amount', 13),
-      overdueAt: businessProcessListProp('datetime', 'Overdue at', 14),
-      company: businessProcessListProp('string', 'Company', 15),
-      createdAt: businessProcessListProp('datetime', 'Created at', 16),
-    },
   },
 );
 
 registerBusinessProcessListConfig(
-  [
-    'ProcessTemplate', 'BusinessProcess.ProcessTemplate', 'BusinessProcess.Template',
-    'BusinessProcessTemplate',
-  ],
+  BusinessProcess.Template,
   {
     queryList: `SELECT
       id, code, description, active, version, status, objectTypes, startMode,
-      startCondition, steps, transitions, parameters, createdBy, activatedAt,
-      archivedAt, createdAt, updatedAt
+      rules, startCondition, steps, transitions, parameters, createdBy, activatedAt,
+      archivedAt, createdAt, updatedAt, CAST(0 AS BIT) deleted
       FROM dbo.BusinessProcessTemplate`,
     viewQueryList: `SELECT * FROM dbo.BusinessProcessTemplate`,
-    description: 'Process templates',
-    icon: 'fas fa-file-alt',
     fields: [
       'id', 'code', 'description', 'active', 'version', 'status', 'objectTypes',
-      'startMode', 'startCondition', 'steps', 'transitions', 'parameters', 'createdBy',
-      'activatedAt', 'archivedAt', 'createdAt', 'updatedAt',
+      'startMode', 'rules', 'startCondition', 'steps', 'transitions', 'parameters', 'createdBy',
+      'activatedAt', 'archivedAt', 'createdAt', 'updatedAt', 'deleted',
     ],
     searchFields: ['code', 'description', 'status', 'startMode', 'createdBy'],
-    schema: {
-      id: hiddenBusinessProcessListProp('string'),
-      type: hiddenBusinessProcessListProp('string'),
-      date: hiddenBusinessProcessListProp('datetime'),
-      posted: hiddenBusinessProcessListProp('boolean'),
-      deleted: hiddenBusinessProcessListProp('boolean'),
-      timestamp: hiddenBusinessProcessListProp('datetime'),
-      isfolder: hiddenBusinessProcessListProp('boolean'),
-      code: businessProcessListProp('string', 'Code', 1, undefined, false, true),
-      description: businessProcessListProp('string', 'Description', 2, undefined, false, true),
-      active: businessProcessListProp('boolean', 'Active', 3, undefined, true),
-      version: businessProcessListProp('number', 'Version', 4, undefined, true),
-      status: {
-        ...businessProcessListProp('enum', 'Status', 5,
-          ['DRAFT', 'ACTIVE', 'ARCHIVED'], true),
-        controlType: 'string',
-      },
-      objectTypes: businessProcessListProp('json', 'Object types', 6, undefined, false, true),
-      startMode: businessProcessListProp('enum', 'Start mode', 7,
-        ['MANUAL', 'ON_SAVE', 'ON_POST', 'ON_STATUS_CHANGE'], false, true),
-      createdBy: businessProcessListProp('string', 'Created by', 8, undefined, true),
-      activatedAt: businessProcessListProp('datetime', 'Activated at', 9, undefined, true),
-      archivedAt: businessProcessListProp('datetime', 'Archived at', 10, undefined, true),
-      createdAt: businessProcessListProp('datetime', 'Created at', 11, undefined, true),
-      updatedAt: businessProcessListProp('datetime', 'Updated at', 12, undefined, true),
-      startCondition: businessProcessPanelProp('json', 'Start condition', 1, 'Process map'),
-      steps: {
-        type: 'table', label: 'Steps', order: 2, panel: 'Process map', required: true, steps: {
-          key: businessProcessListProp('string', 'Key', 1, undefined, false, true),
-          title: businessProcessListProp('string', 'Title', 2, undefined, false, true),
-          type: businessProcessListProp('enum', 'Type', 3,
-            ['USER_TASK', 'SYSTEM_TASK', 'TIMER', 'AUTO'], false, true),
-          dueRule: businessProcessListProp('json', 'Due rule', 4, undefined, false),
-          penaltyRule: businessProcessListProp('json', 'Penalty rule', 5, undefined, false),
-          waitUntilRule: businessProcessListProp('json', 'Wait until rule', 6, undefined, false),
-          autoCompleteCondition: businessProcessListProp('json', 'Auto-complete condition', 7, undefined, false),
-          allowRedirect: businessProcessListProp('boolean', 'Allow redirect', 8, undefined, false),
-          allowDelegate: businessProcessListProp('boolean', 'Allow delegate', 9, undefined, false),
-          rejectPolicy: businessProcessListProp('enum', 'Reject policy', 10,
-            ['REJECT_PROCESS', 'RETURN_TO_PREVIOUS_STEP'], false),
-        },
-      },
-      transitions: {
-        type: 'table', label: 'Transitions', order: 3, panel: 'Process map', transitions: {
-          key: businessProcessListProp('string', 'Key', 1, undefined, false, true),
-          from: businessProcessListProp('string', 'From', 2, undefined, false, true),
-          on: businessProcessListProp('enum', 'Event', 3,
-            ['APPROVE', 'REJECT', 'TIMEOUT', 'AUTO'], false, true),
-          to: businessProcessListProp('string', 'To', 4, undefined, false, true),
-          condition: businessProcessListProp('json', 'Condition', 5, undefined, false),
-        },
-      },
-      parameters: businessProcessPanelProp('json', 'Parameters', 4, 'Process map'),
-      bpmnXml: hiddenBusinessProcessListProp('string'),
-      visualMapping: hiddenBusinessProcessListProp('json'),
-      addressing: {
-        type: 'table', label: 'Assignments', order: 1, panel: 'Addressing', addressing: {
-          stepKey: businessProcessListProp('string', 'Step key', 1, undefined, false, true),
-          type: businessProcessListProp('enum', 'Assignment type', 2, [
-            'FIXED_USER', 'ROLE', 'DOCUMENT_FIELD', 'RESPONSIBLE_PERSON',
-            'AUTHOR', 'MANAGER_OF_AUTHOR',
-          ], false, true),
-          userId: businessProcessListProp('string', 'User ID', 3, undefined, false),
-          role: businessProcessListProp('string', 'Role', 4, undefined, false),
-          field: businessProcessListProp('string', 'Document field', 5, undefined, false),
-        },
-      },
-    },
   },
 );
-
-function businessProcessListProp(
-  type: string,
-  label: string,
-  order: number,
-  value?: string[],
-  readOnly: boolean = true,
-  required: boolean = false,
-): PropOptions {
-  return { type, label, order, value, readOnly, required };
-}
-
-function businessProcessPanelProp(type: string, label: string, order: number, panel: string): PropOptions {
-  return { type, label, order, panel, readOnly: false };
-}
-
-function hiddenBusinessProcessListProp(type: string, value?: any): PropOptions {
-  return { type, value, hidden: true, hiddenInList: true, readOnly: true };
-}
 
 export async function BusinessProcessListViewModel(
   type: string,
@@ -530,6 +391,9 @@ export async function BusinessProcessListViewModel(
   if (!config) throw new Error(`Unsupported business process list type: ${type}`);
 
   const settings = new FormListSettings();
+  const entity = new config.Class();
+  const schema = entity.Props();
+  const metadata = entity.Prop() as DocumentOptions;
   const row = id
     ? await tx.oneOrNone<any>(`SELECT * FROM (${config.viewQueryList || config.queryList}) d WHERE d.id = @p1`, [id])
     : null;
@@ -537,16 +401,26 @@ export async function BusinessProcessListViewModel(
     ? businessProcessListFormModel(type, row)
     : businessProcessListFormModel(type, { id });
 
+  if (type === 'BusinessProcess.Instance' && row?.templateId) {
+    const template = await tx.oneOrNone<{ id: string; code: string; description?: string | null }>(
+      `SELECT id, code, description FROM dbo.BusinessProcessTemplate WHERE id = @p1`,
+      [row.templateId],
+    );
+    if (template) {
+      model.templateId = {
+        id: template.id,
+        code: template.code,
+        type: 'BusinessProcess.Template',
+        value: template.description || template.code,
+      };
+    }
+  }
+
   return {
-    schema: config.schema,
+    schema,
     model: model || {},
-    columnsDef: buildColumnDef(config.schema, settings),
-    metadata: {
-      type,
-      description: config.description,
-      menu: config.description,
-      icon: config.icon,
-    },
+    columnsDef: buildColumnDef(schema, settings),
+    metadata,
     settings,
   };
 }
@@ -567,16 +441,56 @@ function businessProcessListFormModel(type: string, row: any) {
     model.active = row.active || false;
     model.version = row.version || 1;
     model.status = row.status || 'DRAFT';
-    model.objectTypes = row.objectTypes || [];
+    model.objectTypes = businessProcessObjectTypeRows(row.objectTypes);
     model.startMode = row.startMode || 'MANUAL';
-    model.steps = businessProcessJsonArray(row.steps);
-    model.transitions = businessProcessTransitionRows(row.transitions);
-    model.addressing = model.steps
-      .filter(step => step.assignmentRule)
-      .map(step => ({ stepKey: step.key, ...step.assignmentRule }));
+    model.startCondition = businessProcessJsonEditorValue(row.startCondition);
+    model.parameters = businessProcessJsonEditorValue(row.parameters);
+    model.visualMapping = businessProcessJsonEditorValue(row.visualMapping);
+    model.rules = businessProcessJsonArray(row.rules).map(businessProcessRuleBindingFormRow);
+    const canonicalSteps = businessProcessJsonArray(row.steps);
+    model.steps = canonicalSteps.map(step => {
+      const { rules, decisions, ...stepFields } = step || {};
+      return {
+        ...stepFields,
+        completionPolicy: step?.completionPolicy || 'ANY',
+      };
+    });
+    model.stepRules = canonicalSteps.reduce((rows, step) => [
+      ...rows,
+      ...businessProcessJsonArray(step?.rules)
+        .map(businessProcessRuleBindingFormRow)
+        .map(rule => ({ stepKey: step.key, ...rule })),
+    ], [] as any[]);
+    model.stepDecisions = canonicalSteps.reduce((rows, step) => [
+      ...rows,
+      ...businessProcessJsonArray(step?.decisions).map(decision => ({ stepKey: step.key, ...decision })),
+    ], [] as any[]);
+    model.transitions = businessProcessTransitionRows(row.transitions).map(transition => ({
+      ...transition,
+      condition: businessProcessJsonEditorValue(transition?.condition),
+    }));
+  }
+
+  if (type === 'BusinessProcess.Instance') {
+    model.status = row.status || 'RUNNING';
+    model.templateVersion = row.templateVersion || 0;
+    model.context = businessProcessJsonEditorValue(row.context);
   }
 
   return model;
+}
+
+function businessProcessRuleBindingFormRow(value: any): any {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+  return {
+    ...value,
+    settings: businessProcessJsonEditorValue(value.settings),
+  };
+}
+
+function businessProcessJsonEditorValue(value: any): string {
+  if (value === null || value === undefined || value === '') return '';
+  return typeof value === 'string' ? value : JSON.stringify(value, null, 2);
 }
 
 function businessProcessJsonArray(value: any): any[] {
@@ -588,6 +502,15 @@ function businessProcessJsonArray(value: any): any[] {
   } catch (error) {
     return [];
   }
+}
+
+function businessProcessObjectTypeRows(value: any): Array<{ objectType: any }> {
+  return businessProcessJsonArray(value).map(item => {
+    if (item && typeof item === 'object' && !Array.isArray(item) && 'objectType' in item) {
+      return item as { objectType: any };
+    }
+    return { objectType: item };
+  });
 }
 
 function businessProcessTransitionRows(value: any): any[] {

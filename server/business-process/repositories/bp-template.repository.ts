@@ -6,6 +6,7 @@ import {
   BusinessProcessTemplateStatus,
   BusinessProcessTransition,
 } from '../types/business-process.types';
+import { BusinessProcessRuleBinding } from '../types/business-process-rule.types';
 import { parseJsonArray, parseJsonObject, toJson } from './bp-json';
 
 type TemplateRow = {
@@ -17,6 +18,7 @@ type TemplateRow = {
   status: BusinessProcessTemplateStatus;
   objectTypes: unknown;
   startMode: BusinessProcessTemplate['startMode'];
+  rules: unknown;
   startCondition?: unknown;
   steps: unknown;
   transitions: unknown;
@@ -38,6 +40,10 @@ export type CreateBusinessProcessTemplateDraftInput =
 
 export class BusinessProcessTemplateRepository {
   constructor(private readonly db: MSSQL) {}
+
+  get database(): MSSQL {
+    return this.db;
+  }
 
   async getById(id: string): Promise<BusinessProcessTemplate | null> {
     const row = await this.db.oneOrNone<TemplateRow>(`${this.selectSql()} WHERE id = @p1`, [id]);
@@ -131,11 +137,11 @@ export class BusinessProcessTemplateRepository {
     await this.db.none(
       `INSERT INTO dbo.BusinessProcessTemplate (
         id, code, description, active, version, status, objectTypes, startMode,
-        startCondition, steps, transitions, parameters, bpmnXml, visualMapping, createdBy
+        rules, startCondition, steps, transitions, parameters, bpmnXml, visualMapping, createdBy
       )
       VALUES (
         @p1, @p2, @p3, @p4, @p5, N'DRAFT', JSON_QUERY(@p6), @p7,
-        JSON_QUERY(@p8), JSON_QUERY(@p9), JSON_QUERY(@p10), JSON_QUERY(@p11), @p12, JSON_QUERY(@p13), @p14
+        JSON_QUERY(@p8), JSON_QUERY(@p9), JSON_QUERY(@p10), JSON_QUERY(@p11), JSON_QUERY(@p12), @p13, JSON_QUERY(@p14), @p15
       )`,
       [
         id,
@@ -145,6 +151,7 @@ export class BusinessProcessTemplateRepository {
         version,
         toJson(input.objectTypes),
         input.startMode,
+        toJson(input.rules),
         toJson(input.startCondition),
         toJson(input.steps),
         toJson(input.transitions),
@@ -173,12 +180,13 @@ export class BusinessProcessTemplateRepository {
            description = @p3,
            objectTypes = JSON_QUERY(@p4),
            startMode = @p5,
-           startCondition = JSON_QUERY(@p6),
-           steps = JSON_QUERY(@p7),
-           transitions = JSON_QUERY(@p8),
-           parameters = JSON_QUERY(@p9),
-           bpmnXml = @p10,
-           visualMapping = JSON_QUERY(@p11),
+           rules = JSON_QUERY(@p6),
+           startCondition = JSON_QUERY(@p7),
+           steps = JSON_QUERY(@p8),
+           transitions = JSON_QUERY(@p9),
+           parameters = JSON_QUERY(@p10),
+           bpmnXml = @p11,
+           visualMapping = JSON_QUERY(@p12),
            updatedAt = SYSUTCDATETIME()
        WHERE id = @p1
          AND status = N'DRAFT'`,
@@ -188,6 +196,7 @@ export class BusinessProcessTemplateRepository {
         input.description || null,
         toJson(input.objectTypes),
         input.startMode,
+        toJson(input.rules),
         toJson(input.startCondition),
         toJson(input.steps),
         toJson(input.transitions),
@@ -203,7 +212,7 @@ export class BusinessProcessTemplateRepository {
     return template;
   }
 
-  async activate(id: string, user?: string | null): Promise<BusinessProcessTemplate> {
+  async activate(id: string): Promise<BusinessProcessTemplate> {
     const run = async (db: MSSQL) => {
       const template = await new BusinessProcessTemplateRepository(db).getById(id);
       if (!template) throw new Error(`Business process template ${id} not found`);
@@ -246,7 +255,7 @@ export class BusinessProcessTemplateRepository {
     return activated;
   }
 
-  async archive(id: string, user?: string | null): Promise<void> {
+  async archive(id: string): Promise<void> {
     await this.db.none(
       `UPDATE dbo.BusinessProcessTemplate
        SET status = N'ARCHIVED',
@@ -261,7 +270,7 @@ export class BusinessProcessTemplateRepository {
   private selectSql(): string {
     return `SELECT
       id, code, description, active, version, status, objectTypes, startMode,
-      startCondition, steps, transitions, parameters, bpmnXml, visualMapping, createdAt, updatedAt,
+      rules, startCondition, steps, transitions, parameters, bpmnXml, visualMapping, createdAt, updatedAt,
       createdBy, activatedAt, archivedAt
     FROM dbo.BusinessProcessTemplate`;
   }
@@ -276,6 +285,7 @@ export class BusinessProcessTemplateRepository {
       status: row.status,
       objectTypes: parseJsonArray<string>(row.objectTypes, []),
       startMode: row.startMode,
+      rules: parseJsonArray<BusinessProcessRuleBinding>(row.rules, []),
       startCondition: parseJsonObject<Record<string, unknown>>(row.startCondition, undefined as any),
       steps: parseJsonArray<BusinessProcessStep>(row.steps, []),
       transitions: parseJsonArray<BusinessProcessTransition>(row.transitions, []),

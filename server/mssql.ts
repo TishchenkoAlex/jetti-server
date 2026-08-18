@@ -190,6 +190,21 @@ export class MSSQL {
     });
   }
 
+  /**
+   * Runs several commands on the same SQL connection without opening a transaction.
+   * Useful for session-scoped SQL Server features such as sp_getapplock.
+   */
+  async session<TResult>(func: (db: MSSQL) => Promise<TResult>): Promise<TResult> {
+    if (this.connection) return func(this);
+
+    const connection = await this.sqlPool.pool.acquire().promise;
+    try {
+      return await func(new MSSQL(this.sqlPool, this.user, connection));
+    } finally {
+      this.sqlPool.pool.release(connection);
+    }
+  }
+
   async tx(func: (tx: MSSQL, name?: string, isolationLevel?: ISOLATION_LEVEL) => Promise<void>,
     name?: string, isolationLevel = ISOLATION_LEVEL.READ_COMMITTED) {
     const connection = this.connection ? this.connection : await this.sqlPool.pool.acquire().promise;

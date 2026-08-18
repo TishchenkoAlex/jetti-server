@@ -17,11 +17,6 @@ export class DelegationResolver {
     const result: ResolvedAssignee[] = [];
 
     for (const assignee of args.assignees) {
-      if (!assignee.userId) {
-        result.push(assignee);
-        continue;
-      }
-
       const [delegation] = await this.delegations.listActiveForUserFrom({
         userFrom: assignee.userId,
         date: args.date,

@@ -21,6 +21,17 @@ export const DEBUG_EXCLUDED_ROLES = (process.env.DEBUG_EXCLUDED_ROLES || '').spl
 export const DEBUG_EXCLUDE_ALL_ROLES = process.env.DEBUG_EXCLUDE_ALL_ROLES === 'true';
 export const COMPANY_BY_CONTOUR_CACHE_TTL_SECONDS = parseInt(process.env.COMPANY_BY_CONTOUR_CACHE_TTL_SECONDS || '3600', undefined);
 export const DEFAULT_POST_QUEUE_FLOW = parseInt(process.env.DEFAULT_POST_QUEUE_FLOW as string) || 25;
+export const BUSINESS_PROCESS_SCHEDULER_ENABLED = String(
+  process.env.BUSINESS_PROCESS_SCHEDULER_ENABLED || 'false',
+).toLowerCase() === 'true';
+export const BUSINESS_PROCESS_SCHEDULER_INTERVAL_MS = Math.max(
+  10000,
+  parseInt(process.env.BUSINESS_PROCESS_SCHEDULER_INTERVAL_MS || '60000', 10) || 60000,
+);
+export const BUSINESS_PROCESS_SCHEDULER_LIMIT = Math.min(
+  5000,
+  Math.max(1, parseInt(process.env.BUSINESS_PROCESS_SCHEDULER_LIMIT || '500', 10) || 500),
+);
 export const SERVICE_ACCOUNTS = (process.env.SERVICE_ACCOUNTS || 'exchange@sushi-master.net,kolpakov.d@sushi-master.net,setka.service.account@sushi-master.net,exchange@sushi-m.net').split(',');
 
 const DB_PORT = parseInt(process.env.DB_PORT as string, undefined);

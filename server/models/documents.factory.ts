@@ -96,6 +96,7 @@ import { defaultTypeValue } from './Types/Types.factory';
 import { CatalogConfiguration } from './Catalogs/Catalog.Configuration';
 import { CatalogRetailNetwork } from './Catalogs/Catalog.RetailNetwork';
 import { CatalogBusinessCalendar } from './Catalogs/Catalog.BusinessCalendar';
+import { CatalogBusinessProcessRules } from './Catalogs/Catalog.BusinessProcessRules';
 import { IFlatDocument } from 'jetti-middle';
 import { CatalogMoneyDocument } from './Catalogs/Catalog.MoneyDocument';
 import { COMMON_COMPANY } from '../env/environment';
@@ -150,6 +151,7 @@ export const RegisteredDocumentStatic: RegisteredDocumentType[] = [
   { type: 'Catalog.Account', Class: CatalogAccount },
   { type: 'Catalog.Balance', Class: CatalogBalance },
   { type: 'Catalog.BusinessCalendar', Class: CatalogBusinessCalendar },
+  { type: 'Catalog.BusinessProcessRules', Class: CatalogBusinessProcessRules },
   { type: 'Catalog.Balance.Analytics', Class: CatalogBalanceAnalytics },
   { type: 'Catalog.BankAccount', Class: CatalogBankAccount },
   { type: 'Catalog.CashFlow', Class: CatalogCashFlow },

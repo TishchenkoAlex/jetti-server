@@ -6,15 +6,17 @@ import { BusinessProcessInstanceRepository } from '../repositories/bp-instance.r
 import { BusinessProcessTaskRepository } from '../repositories/bp-task.repository';
 import { BusinessProcessService } from '../services/business-process.service';
 import { BusinessProcessStartInput } from '../types/business-process.types';
+import { requireBusinessProcessUserId } from '../services/business-process-user-lookup';
 
 export const router = express.Router();
 
 router.post('/start', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const db = SDB(req);
+    const user = await requireBusinessProcessUserId(db.email, db);
     const input: BusinessProcessStartInput = {
       ...req.body,
-      user: req.body?.user || db.email || null,
+      user,
     };
     res.json(await new BusinessProcessService(db).start(input));
   } catch (err) { next(err); }

@@ -9,13 +9,14 @@ BEGIN
     status NVARCHAR(32) NOT NULL,
     objectTypes NVARCHAR(MAX) NOT NULL,
     startMode NVARCHAR(32) NOT NULL,
+    rules NVARCHAR(MAX) NOT NULL,
     startCondition NVARCHAR(MAX) NULL,
     steps NVARCHAR(MAX) NOT NULL,
     transitions NVARCHAR(MAX) NOT NULL,
     parameters NVARCHAR(MAX) NULL,
     bpmnXml NVARCHAR(MAX) NULL,
     visualMapping NVARCHAR(MAX) NULL,
-    createdBy NVARCHAR(256) NULL,
+    createdBy UNIQUEIDENTIFIER NULL,
     activatedAt DATETIME2(3) NULL,
     archivedAt DATETIME2(3) NULL,
     createdAt DATETIME2(3) NOT NULL CONSTRAINT DF_BusinessProcessTemplate_createdAt DEFAULT (SYSUTCDATETIME()),
@@ -23,12 +24,37 @@ BEGIN
     CONSTRAINT CK_BusinessProcessTemplate_Status CHECK (status IN (N'DRAFT', N'ACTIVE', N'ARCHIVED')),
     CONSTRAINT CK_BusinessProcessTemplate_StartMode CHECK (startMode IN (N'MANUAL', N'ON_SAVE', N'ON_POST', N'ON_STATUS_CHANGE')),
     CONSTRAINT CK_BusinessProcessTemplate_ObjectTypesJson CHECK (ISJSON(objectTypes) = 1),
+    CONSTRAINT CK_BusinessProcessTemplate_RulesJson CHECK (ISJSON(rules) = 1),
     CONSTRAINT CK_BusinessProcessTemplate_StepsJson CHECK (ISJSON(steps) = 1),
     CONSTRAINT CK_BusinessProcessTemplate_TransitionsJson CHECK (ISJSON(transitions) = 1),
     CONSTRAINT CK_BusinessProcessTemplate_StartConditionJson CHECK (startCondition IS NULL OR ISJSON(startCondition) = 1),
     CONSTRAINT CK_BusinessProcessTemplate_ParametersJson CHECK (parameters IS NULL OR ISJSON(parameters) = 1),
     CONSTRAINT CK_BusinessProcessTemplate_VisualMappingJson CHECK (visualMapping IS NULL OR ISJSON(visualMapping) = 1)
   );
+END;
+GO
+
+-- Bring an existing template table forward to the rule-based process model.
+IF OBJECT_ID(N'dbo.BusinessProcessTemplate', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.BusinessProcessTemplate', N'rules') IS NULL
+BEGIN
+  EXEC(N'ALTER TABLE dbo.BusinessProcessTemplate ADD rules NVARCHAR(MAX) NULL;');
+  EXEC(N'UPDATE dbo.BusinessProcessTemplate SET rules = N''[]'' WHERE rules IS NULL;');
+  EXEC(N'ALTER TABLE dbo.BusinessProcessTemplate ALTER COLUMN rules NVARCHAR(MAX) NOT NULL;');
+END;
+GO
+
+IF COL_LENGTH(N'dbo.BusinessProcessTemplate', N'rules') IS NOT NULL
+   AND NOT EXISTS (
+     SELECT 1
+     FROM sys.check_constraints
+     WHERE name = N'CK_BusinessProcessTemplate_RulesJson'
+       AND parent_object_id = OBJECT_ID(N'dbo.BusinessProcessTemplate')
+   )
+BEGIN
+  ALTER TABLE dbo.BusinessProcessTemplate
+    ADD CONSTRAINT CK_BusinessProcessTemplate_RulesJson
+    CHECK (ISJSON(rules) = 1);
 END;
 GO
 
@@ -46,7 +72,7 @@ BEGIN
     currentStepKey NVARCHAR(128) NULL,
     startedAt DATETIME2(3) NOT NULL CONSTRAINT DF_BusinessProcessInstance_startedAt DEFAULT (SYSUTCDATETIME()),
     completedAt DATETIME2(3) NULL,
-    author NVARCHAR(256) NULL,
+    authorUser UNIQUEIDENTIFIER NULL,
     company UNIQUEIDENTIFIER NULL,
     context NVARCHAR(MAX) NULL,
     idempotencyKey NVARCHAR(256) NULL,
@@ -70,24 +96,27 @@ BEGIN
     stepKey NVARCHAR(128) NOT NULL,
     title NVARCHAR(256) NOT NULL,
     status NVARCHAR(32) NOT NULL,
-    assigneeUser NVARCHAR(256) NULL,
-    assigneeRole NVARCHAR(128) NULL,
+    assigneeUser UNIQUEIDENTIFIER NOT NULL,
     activeFrom DATETIME2(3) NULL,
-    dueAt DATETIME2(3) NULL,
+    deadlineAt DATETIME2(3) NULL,
+    deadlineReachedAt DATETIME2(3) NULL,
     completedAt DATETIME2(3) NULL,
-    decisionUser NVARCHAR(256) NULL,
+    decisionKey NVARCHAR(128) NULL,
+    decisionUser UNIQUEIDENTIFIER NULL,
     decisionComment NVARCHAR(MAX) NULL,
-    delegatedFromUser NVARCHAR(256) NULL,
-    redirectedFromUser NVARCHAR(256) NULL,
-    penaltyRuleSnapshot NVARCHAR(MAX) NULL,
+    decisionSource NVARCHAR(16) NULL,
+    delegatedFromUser UNIQUEIDENTIFIER NULL,
+    redirectedFromUser UNIQUEIDENTIFIER NULL,
+    penaltyStartedAt DATETIME2(3) NULL,
     penaltyAmount DECIMAL(19, 4) NULL,
-    overdueAt DATETIME2(3) NULL,
-    penaltyAppliedAt DATETIME2(3) NULL,
+    penaltyLastCalculatedAt DATETIME2(3) NULL,
+    nextPenaltyCalculationAt DATETIME2(3) NULL,
     createdAt DATETIME2(3) NOT NULL CONSTRAINT DF_BusinessProcessTask_createdAt DEFAULT (SYSUTCDATETIME()),
     CONSTRAINT CK_BusinessProcessTask_Status CHECK (status IN (
       N'CREATED',
       N'WAITING',
       N'ACTIVE',
+      N'COMPLETED',
       N'APPROVED',
       N'REJECTED',
       N'REDIRECTED',
@@ -96,7 +125,7 @@ BEGIN
       N'OVERDUE',
       N'CANCELLED'
     )),
-    CONSTRAINT CK_BusinessProcessTask_PenaltyRuleSnapshotJson CHECK (penaltyRuleSnapshot IS NULL OR ISJSON(penaltyRuleSnapshot) = 1),
+    CONSTRAINT CK_BusinessProcessTask_DecisionSource CHECK (decisionSource IS NULL OR decisionSource IN (N'USER', N'SYSTEM')),
     CONSTRAINT FK_BusinessProcessTask_Instance FOREIGN KEY (instanceId)
       REFERENCES dbo.BusinessProcessInstance(id)
   );
@@ -110,7 +139,7 @@ BEGIN
     instanceId UNIQUEIDENTIFIER NOT NULL,
     taskId UNIQUEIDENTIFIER NULL,
     eventType NVARCHAR(64) NOT NULL,
-    eventUser NVARCHAR(256) NULL,
+    eventUser UNIQUEIDENTIFIER NULL,
     eventAt DATETIME2(3) NOT NULL CONSTRAINT DF_BusinessProcessEvent_eventAt DEFAULT (SYSUTCDATETIME()),
     payload NVARCHAR(MAX) NULL,
     eventKey NVARCHAR(256) NULL,
@@ -127,9 +156,8 @@ IF OBJECT_ID(N'dbo.BusinessProcessDelegation', N'U') IS NULL
 BEGIN
   CREATE TABLE dbo.BusinessProcessDelegation (
     id UNIQUEIDENTIFIER NOT NULL CONSTRAINT PK_BusinessProcessDelegation PRIMARY KEY,
-    userFrom NVARCHAR(256) NOT NULL,
-    userTo NVARCHAR(256) NOT NULL,
-    role NVARCHAR(128) NULL,
+    userFrom UNIQUEIDENTIFIER NOT NULL,
+    userTo UNIQUEIDENTIFIER NOT NULL,
     processTemplate NVARCHAR(128) NULL,
     company UNIQUEIDENTIFIER NULL,
     dateFrom DATETIME2(3) NOT NULL,

@@ -1,7 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import { MSSQL } from '../../mssql';
 import { BusinessProcessTask, BusinessProcessTaskStatus } from '../types/business-process.types';
-import { parseJsonObject, toJson } from './bp-json';
 
 type TaskRow = {
   id: string;
@@ -11,19 +10,21 @@ type TaskRow = {
   stepKey: string;
   title: string;
   status: BusinessProcessTaskStatus;
-  assigneeUser?: string | null;
-  assigneeRole?: string | null;
+  assigneeUser: string;
   activeFrom?: Date | null;
-  dueAt?: Date | null;
+  deadlineAt?: Date | null;
+  deadlineReachedAt?: Date | null;
   completedAt?: Date | null;
+  decisionKey?: string | null;
   decisionUser?: string | null;
   decisionComment?: string | null;
+  decisionSource?: 'USER' | 'SYSTEM' | null;
   delegatedFromUser?: string | null;
   redirectedFromUser?: string | null;
-  penaltyRuleSnapshot?: unknown;
+  penaltyStartedAt?: Date | null;
   penaltyAmount?: number | null;
-  overdueAt?: Date | null;
-  penaltyAppliedAt?: Date | null;
+  penaltyLastCalculatedAt?: Date | null;
+  nextPenaltyCalculationAt?: Date | null;
   createdAt?: Date;
 };
 
@@ -34,14 +35,10 @@ export type CreateBusinessProcessTaskInput = {
   stepKey: string;
   title: string;
   status: BusinessProcessTaskStatus;
-  assigneeUser?: string | null;
-  assigneeRole?: string | null;
-  activeFrom?: Date | null;
-  dueAt?: Date | null;
-  delegatedFromUser?: string | null;
-  redirectedFromUser?: string | null;
-  penaltyRuleSnapshot?: unknown;
-  penaltyAmount?: number | null;
+  assignee: BusinessProcessTask['assignee'];
+  activation?: BusinessProcessTask['activation'];
+  deadline?: BusinessProcessTask['deadline'];
+  penalty?: BusinessProcessTask['penalty'];
 };
 
 export class BusinessProcessTaskRepository {
@@ -89,13 +86,15 @@ export class BusinessProcessTaskRepository {
     await this.db.none(
       `INSERT INTO dbo.BusinessProcessTask (
         id, instanceId, objectType, objectId, stepKey, title, status,
-        assigneeUser, assigneeRole, activeFrom, dueAt, delegatedFromUser,
-        redirectedFromUser, penaltyRuleSnapshot, penaltyAmount
+        assigneeUser, activeFrom, deadlineAt, deadlineReachedAt, delegatedFromUser,
+        redirectedFromUser, penaltyStartedAt, penaltyAmount,
+        penaltyLastCalculatedAt, nextPenaltyCalculationAt
       )
       VALUES (
         @p1, @p2, @p3, @p4, @p5, @p6, @p7,
         @p8, @p9, @p10, @p11, @p12,
-        @p13, JSON_QUERY(@p14), @p15
+        @p13, @p14, @p15,
+        @p16, @p17
       )`,
       [
         id,
@@ -105,14 +104,16 @@ export class BusinessProcessTaskRepository {
         input.stepKey,
         input.title,
         input.status,
-        input.assigneeUser || null,
-        input.assigneeRole || null,
-        input.activeFrom || null,
-        input.dueAt || null,
-        input.delegatedFromUser || null,
-        input.redirectedFromUser || null,
-        toJson(input.penaltyRuleSnapshot),
-        input.penaltyAmount == null ? null : input.penaltyAmount,
+        input.assignee.user,
+        input.activation?.at || null,
+        input.deadline?.at || null,
+        input.deadline?.reachedAt || null,
+        input.assignee.delegatedFrom || null,
+        input.assignee.redirectedFrom || null,
+        input.penalty?.startedAt || null,
+        input.penalty?.amount == null ? null : input.penalty.amount,
+        input.penalty?.lastCalculatedAt || null,
+        input.penalty?.nextCalculationAt || null,
       ],
     );
 
@@ -129,9 +130,8 @@ export class BusinessProcessTaskRepository {
 
   async setDecision(args: {
     taskId: string;
-    status: 'APPROVED' | 'REJECTED' | 'REDIRECTED' | 'CANCELLED';
-    decisionUser?: string | null;
-    decisionComment?: string | null;
+    status: 'COMPLETED' | 'APPROVED' | 'REJECTED' | 'REDIRECTED' | 'AUTO_COMPLETED' | 'TIMEOUT' | 'CANCELLED';
+    decision?: BusinessProcessTask['decision'];
     redirectedFromUser?: string | null;
   }): Promise<BusinessProcessTask> {
     const task = await this.getById(args.taskId);
@@ -142,14 +142,18 @@ export class BusinessProcessTaskRepository {
        SET status = @p2,
            decisionUser = @p3,
            decisionComment = @p4,
-           redirectedFromUser = COALESCE(@p5, redirectedFromUser),
+           decisionKey = @p5,
+           decisionSource = @p6,
+           redirectedFromUser = COALESCE(@p7, redirectedFromUser),
            completedAt = SYSUTCDATETIME()
        WHERE id = @p1`,
       [
         args.taskId,
         args.status,
-        args.decisionUser || null,
-        args.decisionComment || null,
+        args.decision?.user || null,
+        args.decision?.comment || null,
+        args.decision?.key || null,
+        args.decision?.source || null,
         args.redirectedFromUser || null,
       ],
     );
@@ -162,9 +166,8 @@ export class BusinessProcessTaskRepository {
   async setDecisionIfStatusIn(args: {
     taskId: string;
     allowedStatuses: BusinessProcessTaskStatus[];
-    status: 'APPROVED' | 'REJECTED' | 'REDIRECTED' | 'CANCELLED';
-    decisionUser?: string | null;
-    decisionComment?: string | null;
+    status: 'COMPLETED' | 'APPROVED' | 'REJECTED' | 'REDIRECTED' | 'AUTO_COMPLETED' | 'TIMEOUT' | 'CANCELLED';
+    decision?: BusinessProcessTask['decision'];
     redirectedFromUser?: string | null;
   }): Promise<BusinessProcessTask | null> {
     if (!args.allowedStatuses.length) return null;
@@ -172,19 +175,23 @@ export class BusinessProcessTaskRepository {
     const params: unknown[] = [
       args.taskId,
       args.status,
-      args.decisionUser || null,
-      args.decisionComment || null,
+      args.decision?.user || null,
+      args.decision?.comment || null,
+      args.decision?.key || null,
+      args.decision?.source || null,
       args.redirectedFromUser || null,
       ...args.allowedStatuses,
     ];
-    const statusParams = args.allowedStatuses.map((status, index) => `@p${index + 6}`).join(', ');
+    const statusParams = args.allowedStatuses.map((status, index) => `@p${index + 8}`).join(', ');
 
     const row = await this.db.oneOrNone<TaskRow>(
       `UPDATE dbo.BusinessProcessTask
        SET status = @p2,
            decisionUser = @p3,
            decisionComment = @p4,
-           redirectedFromUser = COALESCE(@p5, redirectedFromUser),
+           decisionKey = @p5,
+           decisionSource = @p6,
+           redirectedFromUser = COALESCE(@p7, redirectedFromUser),
            completedAt = SYSUTCDATETIME()
        OUTPUT
            inserted.id,
@@ -195,18 +202,20 @@ export class BusinessProcessTaskRepository {
            inserted.title,
            inserted.status,
            inserted.assigneeUser,
-           inserted.assigneeRole,
            inserted.activeFrom,
-           inserted.dueAt,
+           inserted.deadlineAt,
+           inserted.deadlineReachedAt,
            inserted.completedAt,
+           inserted.decisionKey,
            inserted.decisionUser,
            inserted.decisionComment,
+           inserted.decisionSource,
            inserted.delegatedFromUser,
            inserted.redirectedFromUser,
-           inserted.penaltyRuleSnapshot,
+           inserted.penaltyStartedAt,
            inserted.penaltyAmount,
-           inserted.overdueAt,
-           inserted.penaltyAppliedAt,
+           inserted.penaltyLastCalculatedAt,
+           inserted.nextPenaltyCalculationAt,
            inserted.createdAt
        WHERE id = @p1
          AND status IN (${statusParams})`,
@@ -254,11 +263,11 @@ export class BusinessProcessTaskRepository {
          SELECT TOP (CAST(@p2 AS INT)) id
          FROM dbo.BusinessProcessTask
          WHERE status = N'ACTIVE'
-           AND dueAt IS NOT NULL
-           AND dueAt <= @p1
-         ORDER BY dueAt, createdAt, id
+           AND deadlineAt IS NOT NULL
+           AND deadlineAt <= @p1
+         ORDER BY deadlineAt, createdAt, id
        )
-       ORDER BY dueAt, createdAt, id`,
+       ORDER BY deadlineAt, createdAt, id`,
       [now, limit],
     );
     return rows.map(row => this.mapTask(row));
@@ -271,48 +280,56 @@ export class BusinessProcessTaskRepository {
     const row = await this.db.oneOrNone<TaskRow>(
       `UPDATE dbo.BusinessProcessTask
        SET status = N'OVERDUE',
-           overdueAt = @p2
+           deadlineReachedAt = @p2,
+           penaltyStartedAt = COALESCE(penaltyStartedAt, @p2)
        ${this.outputSql()}
        WHERE id = @p1
          AND status = N'ACTIVE'
-         AND dueAt IS NOT NULL
-         AND dueAt <= @p2`,
+         AND deadlineAt IS NOT NULL
+         AND deadlineAt <= @p2`,
       [args.taskId, args.now],
     );
     return row ? this.mapTask(row) : null;
   }
 
-  async applyPenaltyIfNeeded(args: {
+  async applyPenaltyCycle(args: {
     taskId: string;
     amount: number;
     now: Date;
+    nextCalculationAt?: Date | null;
   }): Promise<BusinessProcessTask | null> {
     const row = await this.db.oneOrNone<TaskRow>(
       `UPDATE dbo.BusinessProcessTask
        SET penaltyAmount = COALESCE(penaltyAmount, 0) + @p2,
-           penaltyAppliedAt = @p3
+           penaltyLastCalculatedAt = @p3,
+           nextPenaltyCalculationAt = @p4
        ${this.outputSql()}
        WHERE id = @p1
          AND status = N'OVERDUE'
-         AND penaltyAppliedAt IS NULL`,
-      [args.taskId, args.amount, args.now],
+         AND (
+           penaltyLastCalculatedAt IS NULL
+           OR (nextPenaltyCalculationAt IS NOT NULL AND nextPenaltyCalculationAt <= @p3)
+         )`,
+      [args.taskId, args.amount, args.now, args.nextCalculationAt || null],
     );
     return row ? this.mapTask(row) : null;
   }
 
-  async listOverdueWithoutPenalty(limit: number = 500): Promise<BusinessProcessTask[]> {
+  async listPenaltyDue(now: Date, limit: number = 500): Promise<BusinessProcessTask[]> {
     const rows = await this.db.manyOrNone<TaskRow>(
       `${this.selectSql()}
        WHERE id IN (
-         SELECT TOP (CAST(@p1 AS INT)) id
+         SELECT TOP (CAST(@p2 AS INT)) id
          FROM dbo.BusinessProcessTask
          WHERE status = N'OVERDUE'
-           AND penaltyAppliedAt IS NULL
-           AND penaltyRuleSnapshot IS NOT NULL
-         ORDER BY overdueAt, dueAt, createdAt, id
+           AND (
+             penaltyLastCalculatedAt IS NULL
+             OR (nextPenaltyCalculationAt IS NOT NULL AND nextPenaltyCalculationAt <= @p1)
+           )
+         ORDER BY COALESCE(nextPenaltyCalculationAt, deadlineReachedAt, deadlineAt), createdAt, id
        )
-       ORDER BY overdueAt, dueAt, createdAt, id`,
-      [limit],
+       ORDER BY COALESCE(nextPenaltyCalculationAt, deadlineReachedAt, deadlineAt), createdAt, id`,
+      [now, limit],
     );
     return rows.map(row => this.mapTask(row));
   }
@@ -336,8 +353,12 @@ export class BusinessProcessTaskRepository {
         taskId: sibling.id,
         allowedStatuses: ['ACTIVE', 'WAITING', 'OVERDUE'],
         status: 'CANCELLED',
-        decisionUser: args.decisionUser || null,
-        decisionComment: args.reason || null,
+        decision: {
+          key: 'CANCELLED',
+          user: args.decisionUser || null,
+          comment: args.reason || null,
+          source: args.decisionUser ? 'USER' : 'SYSTEM',
+        },
       });
       if (cancelledTask) cancelled.push(cancelledTask);
     }
@@ -347,22 +368,13 @@ export class BusinessProcessTaskRepository {
 
   async listActiveByAssignee(args: {
     userId: string;
-    roles?: string[];
   }): Promise<BusinessProcessTask[]> {
-    const params: unknown[] = [args.userId];
-    const roleWhere = args.roles && args.roles.length
-      ? ` OR assigneeRole IN (${args.roles.map(role => {
-        params.push(role);
-        return `@p${params.length}`;
-      }).join(', ')})`
-      : '';
-
     const rows = await this.db.manyOrNone<TaskRow>(
       `${this.selectSql()}
        WHERE status IN (N'ACTIVE', N'WAITING', N'OVERDUE')
-         AND (assigneeUser = @p1${roleWhere})
-       ORDER BY dueAt, activeFrom, createdAt`,
-      params,
+         AND assigneeUser = @p1
+       ORDER BY deadlineAt, activeFrom, createdAt`,
+      [args.userId],
     );
     return rows.map(row => this.mapTask(row));
   }
@@ -370,9 +382,11 @@ export class BusinessProcessTaskRepository {
   private selectSql(): string {
     return `SELECT
       id, instanceId, objectType, objectId, stepKey, title, status,
-      assigneeUser, assigneeRole, activeFrom, dueAt, completedAt,
-      decisionUser, decisionComment, delegatedFromUser, redirectedFromUser,
-      penaltyRuleSnapshot, penaltyAmount, overdueAt, penaltyAppliedAt, createdAt
+      assigneeUser, activeFrom, deadlineAt, deadlineReachedAt, completedAt,
+      decisionKey, decisionUser, decisionComment, decisionSource,
+      delegatedFromUser, redirectedFromUser, penaltyStartedAt,
+      penaltyAmount, penaltyLastCalculatedAt,
+      nextPenaltyCalculationAt, createdAt
     FROM dbo.BusinessProcessTask`;
   }
 
@@ -392,18 +406,20 @@ export class BusinessProcessTaskRepository {
            inserted.title,
            inserted.status,
            inserted.assigneeUser,
-           inserted.assigneeRole,
            inserted.activeFrom,
-           inserted.dueAt,
+           inserted.deadlineAt,
+           inserted.deadlineReachedAt,
            inserted.completedAt,
+           inserted.decisionKey,
            inserted.decisionUser,
            inserted.decisionComment,
+           inserted.decisionSource,
            inserted.delegatedFromUser,
            inserted.redirectedFromUser,
-           inserted.penaltyRuleSnapshot,
+           inserted.penaltyStartedAt,
            inserted.penaltyAmount,
-           inserted.overdueAt,
-           inserted.penaltyAppliedAt,
+           inserted.penaltyLastCalculatedAt,
+           inserted.nextPenaltyCalculationAt,
            inserted.createdAt`;
   }
 
@@ -416,19 +432,29 @@ export class BusinessProcessTaskRepository {
       stepKey: row.stepKey,
       title: row.title,
       status: row.status,
-      assigneeUser: row.assigneeUser || null,
-      assigneeRole: row.assigneeRole || null,
-      activeFrom: row.activeFrom || null,
-      dueAt: row.dueAt || null,
-      completedAt: row.completedAt || null,
-      decisionUser: row.decisionUser || null,
-      decisionComment: row.decisionComment || null,
-      delegatedFromUser: row.delegatedFromUser || null,
-      redirectedFromUser: row.redirectedFromUser || null,
-      penaltyRuleSnapshot: parseJsonObject<Record<string, unknown> | null>(row.penaltyRuleSnapshot, null),
-      penaltyAmount: row.penaltyAmount == null ? null : Number(row.penaltyAmount),
-      overdueAt: row.overdueAt || null,
-      penaltyAppliedAt: row.penaltyAppliedAt || null,
+      assignee: {
+        user: row.assigneeUser,
+        delegatedFrom: row.delegatedFromUser || null,
+        redirectedFrom: row.redirectedFromUser || null,
+      },
+      activation: { at: row.activeFrom || null },
+      deadline: {
+        at: row.deadlineAt || null,
+        reachedAt: row.deadlineReachedAt || null,
+      },
+      decision: {
+        key: row.decisionKey || null,
+        user: row.decisionUser || null,
+        comment: row.decisionComment || null,
+        source: row.decisionSource || null,
+        at: row.completedAt || null,
+      },
+      penalty: {
+        amount: row.penaltyAmount == null ? null : Number(row.penaltyAmount),
+        startedAt: row.penaltyStartedAt || null,
+        lastCalculatedAt: row.penaltyLastCalculatedAt || null,
+        nextCalculationAt: row.nextPenaltyCalculationAt || null,
+      },
       createdAt: row.createdAt,
     };
   }

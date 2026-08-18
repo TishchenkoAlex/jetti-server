@@ -1,3 +1,16 @@
+-- Existing installations may still use the former dueAt column.
+-- Normalize it before creating indexes that reference deadlineAt.
+IF OBJECT_ID(N'dbo.BusinessProcessTask', N'U') IS NOT NULL
+   AND COL_LENGTH('dbo.BusinessProcessTask', 'deadlineAt') IS NULL
+BEGIN
+  ALTER TABLE dbo.BusinessProcessTask
+    ADD deadlineAt DATETIME2(3) NULL;
+
+  IF COL_LENGTH('dbo.BusinessProcessTask', 'dueAt') IS NOT NULL
+    EXEC(N'UPDATE dbo.BusinessProcessTask SET deadlineAt = dueAt WHERE deadlineAt IS NULL;');
+END;
+GO
+
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_BusinessProcessTemplate_Code_Version' AND object_id = OBJECT_ID(N'dbo.BusinessProcessTemplate'))
   CREATE UNIQUE INDEX UX_BusinessProcessTemplate_Code_Version
     ON dbo.BusinessProcessTemplate (code, version);
@@ -36,19 +49,14 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_BusinessProcessTask_A
     ON dbo.BusinessProcessTask (assigneeUser, status);
 GO
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_BusinessProcessTask_AssigneeRole_Status' AND object_id = OBJECT_ID(N'dbo.BusinessProcessTask'))
-  CREATE INDEX IX_BusinessProcessTask_AssigneeRole_Status
-    ON dbo.BusinessProcessTask (assigneeRole, status);
-GO
-
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_BusinessProcessTask_Status_ActiveFrom' AND object_id = OBJECT_ID(N'dbo.BusinessProcessTask'))
   CREATE INDEX IX_BusinessProcessTask_Status_ActiveFrom
     ON dbo.BusinessProcessTask (status, activeFrom);
 GO
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_BusinessProcessTask_Status_DueAt' AND object_id = OBJECT_ID(N'dbo.BusinessProcessTask'))
-  CREATE INDEX IX_BusinessProcessTask_Status_DueAt
-    ON dbo.BusinessProcessTask (status, dueAt);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_BusinessProcessTask_Status_DeadlineAt' AND object_id = OBJECT_ID(N'dbo.BusinessProcessTask'))
+  CREATE INDEX IX_BusinessProcessTask_Status_DeadlineAt
+    ON dbo.BusinessProcessTask (status, deadlineAt);
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_BusinessProcessTask_Instance_Step_Status' AND object_id = OBJECT_ID(N'dbo.BusinessProcessTask'))

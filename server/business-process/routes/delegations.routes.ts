@@ -2,6 +2,7 @@ import * as express from 'express';
 import { NextFunction, Request, Response } from 'express';
 import { SDB } from '../../routes/middleware/db-sessions';
 import { BusinessProcessDelegationRepository } from '../repositories/bp-delegation.repository';
+import { requireBusinessProcessUserId } from '../services/business-process-user-lookup';
 
 export const router = express.Router();
 
@@ -9,16 +10,16 @@ router.get('/my', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const db = SDB(req);
     const repository = new BusinessProcessDelegationRepository(db);
-    res.json(await repository.listMine(db.email));
+    const user = await requireBusinessProcessUserId(db.email, db);
+    res.json(await repository.listMine(user));
   } catch (err) { next(err); }
 });
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const db = SDB(req);
-    const userFrom = db.email;
-    const userTo = req.body?.userTo;
-    if (typeof userTo !== 'string' || !userTo.trim()) throw new Error('Delegation userTo is required');
+    const userFrom = await requireBusinessProcessUserId(db.email, db);
+    const userTo = await requireBusinessProcessUserId(req.body?.userTo || '', db);
     if (userTo === userFrom) throw new Error('Delegation userTo must be different from userFrom');
 
     const dateFrom = new Date(req.body?.dateFrom);
@@ -32,7 +33,6 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     res.json(await repository.create({
       userFrom,
       userTo,
-      role: req.body?.role || null,
       processTemplate: req.body?.processTemplate || null,
       company: req.body?.company || null,
       dateFrom,
@@ -45,10 +45,11 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 router.post('/:id/cancel', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const db = SDB(req);
+    const user = await requireBusinessProcessUserId(db.email, db);
     const repository = new BusinessProcessDelegationRepository(db);
     const delegation = await repository.getById(req.params.id);
     if (!delegation) return res.status(404).json({ error: `Business process delegation ${req.params.id} not found` });
-    if (delegation.userFrom !== db.email) throw new Error(`User ${db.email} cannot cancel delegation ${req.params.id}`);
+    if (delegation.userFrom !== user) throw new Error(`User ${user} cannot cancel delegation ${req.params.id}`);
 
     await repository.cancel(req.params.id);
     res.json({});

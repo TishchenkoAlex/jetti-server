@@ -1,8 +1,9 @@
 import { MSSQL } from '../../mssql';
 import { SchedulerService } from '../../business-process/services/scheduler.service';
 import { JETTI_POOL } from '../../sql.pool.jetti';
+import * as Bull from 'bull';
 
-export default async function businessProcessSchedulerTick(job) {
+export default async function businessProcessSchedulerTick(job: Bull.Job) {
   const db = new MSSQL(JETTI_POOL, {
     email: 'business-process@scheduler',
     isAdmin: true,
@@ -15,7 +16,7 @@ export default async function businessProcessSchedulerTick(job) {
     limit: resolveLimit(job.data?.limit),
   });
 
-  job.progress(100);
+  await job.progress(100);
   return result;
 }
 

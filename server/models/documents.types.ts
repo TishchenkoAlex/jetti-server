@@ -9,6 +9,7 @@ export type CatalogTypes =
   'Catalog.Balance.Analytics' |
   'Catalog.BankAccount' |
   'Catalog.BusinessCalendar' |
+  'Catalog.BusinessProcessRules' |
   'Catalog.Brand' |
   'Catalog.CashFlow' |
   'Catalog.CashRegister' |
@@ -101,8 +102,12 @@ export type DocumentTypes =
   'Document.WorkFlow' |
   'Document.CashRequestRegistry';
 
-export type ProcessTypes =
-  'BusinessProcess.CashRequestApproving';
+export type BusinessProcessTypes =
+  'BusinessProcess.Instance' |
+  'BusinessProcess.Task' |
+  'BusinessProcess.Template';
+
+export type ProcessTypes = BusinessProcessTypes;
 
 export type DocTypes =
   CatalogTypes |
@@ -145,4 +150,5 @@ export type IncomeExpenseAnalyticTypes =
 export type AllTypes =
   PrimitiveTypes |
   ComplexTypes |
-  DocTypes;
+  DocTypes |
+  BusinessProcessTypes;

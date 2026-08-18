@@ -4,6 +4,7 @@ import { SDB } from '../../routes/middleware/db-sessions';
 import { BusinessProcessTemplateRepository } from '../repositories/bp-template.repository';
 import { BusinessProcessTemplateStatus } from '../types/business-process.types';
 import { TemplateService } from '../services/template.service';
+import { requireBusinessProcessUserId } from '../services/business-process-user-lookup';
 
 export const router = express.Router();
 
@@ -39,7 +40,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const db = SDB(req);
     const service = templateService(req);
-    const input = { ...req.body, createdBy: req.body?.createdBy || db.email || undefined };
+    const createdBy = await requireBusinessProcessUserId(db.email, db);
+    const input = { ...req.body, createdBy };
     res.json(await service.createDraft(input));
   } catch (err) { next(err); }
 });

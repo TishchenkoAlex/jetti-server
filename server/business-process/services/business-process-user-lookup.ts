@@ -1,4 +1,3 @@
-import { getUserRoles } from '../../fuctions/UsersPermissions';
 import { MSSQL } from '../../mssql';
 import { CatalogUser } from '../../models/Catalogs/Catalog.User';
 import { lib } from '../../std.lib';
@@ -12,9 +11,20 @@ export async function getBusinessProcessUserByEmail(email: string, db: MSSQL): P
   return user;
 }
 
-export async function getBusinessProcessUserRoles(email: string, db: MSSQL): Promise<string[]> {
-  const user = await getBusinessProcessUserByEmail(email, db);
-  if (!user) throw new Error(`Business process user ${email} not found`);
-  return getUserRoles(user);
+export async function getBusinessProcessUserByIdentity(identity: string, db: MSSQL): Promise<CatalogUser | null> {
+  if (!identity) return null;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(identity)) {
+    return getBusinessProcessUserByEmail(identity, db);
+  }
+
+  const user = await lib.doc.byIdT<CatalogUser>(identity, db);
+  if (!user || user.type !== 'Catalog.User' || user.isDisabled) return null;
+  return user;
+}
+
+export async function requireBusinessProcessUserId(identity: string, db: MSSQL): Promise<string> {
+  const user = await getBusinessProcessUserByIdentity(identity, db);
+  if (!user) throw new Error(`Business process user ${identity || '<empty>'} not found`);
+  return user.id;
 }
 

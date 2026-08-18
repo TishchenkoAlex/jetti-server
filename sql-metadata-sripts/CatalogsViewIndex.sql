@@ -363,6 +363,43 @@ RAISERROR('Catalog.BusinessDirection end', 0 ,1) WITH NOWAIT;
 ------------------------------ END Catalog.BusinessDirection ------------------------------
 
 
+------------------------------ BEGIN Catalog.BusinessProcessRules ------------------------------
+
+RAISERROR('Catalog.BusinessProcessRules start', 0 ,1) WITH NOWAIT;
+DROP TABLE IF EXISTS dbo.[Catalog.BusinessProcessRules.v]
+GO
+
+DROP TRIGGER IF EXISTS dbo.[Catalog.BusinessProcessRules.t]
+GO
+
+CREATE OR ALTER VIEW dbo.[Catalog.BusinessProcessRules.v] WITH SCHEMABINDING AS
+SELECT id, type, date, code, description, posted, deleted, isfolder, timestamp, parent, company, [user], [version]
+, TRY_CONVERT(UNIQUEIDENTIFIER, JSON_VALUE(doc, N'$."workflow"')) [workflow]
+, ISNULL(TRY_CONVERT(NVARCHAR(150), JSON_VALUE(doc,N'$."purpose"')), '') [purpose]
+, ISNULL(TRY_CONVERT(NVARCHAR(250), JSON_VALUE(doc,N'$."module"')), '') [module]
+FROM dbo.[Documents]
+WHERE [type] = N'Catalog.BusinessProcessRules';
+GO
+
+CREATE UNIQUE CLUSTERED INDEX [Catalog.BusinessProcessRules.v] ON [Catalog.BusinessProcessRules.v](id);
+CREATE NONCLUSTERED INDEX [Catalog.BusinessProcessRules.v.code.u] ON [Catalog.BusinessProcessRules.v]([code]) INCLUDE([company],[description],[id]);
+CREATE NONCLUSTERED INDEX [Catalog.BusinessProcessRules.v.code.c] ON [Catalog.BusinessProcessRules.v]([code]) INCLUDE([company]);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.BusinessProcessRules.v.deleted] ON [Catalog.BusinessProcessRules.v](deleted,description,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.BusinessProcessRules.v.code.f] ON [Catalog.BusinessProcessRules.v](parent,isfolder,code,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.BusinessProcessRules.v.description.f] ON [Catalog.BusinessProcessRules.v](parent,isfolder,description,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.BusinessProcessRules.v.description] ON [Catalog.BusinessProcessRules.v](description,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.BusinessProcessRules.v.code] ON [Catalog.BusinessProcessRules.v](code,id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.BusinessProcessRules.v.user] ON [Catalog.BusinessProcessRules.v]([user],id);
+CREATE UNIQUE NONCLUSTERED INDEX [Catalog.BusinessProcessRules.v.company] ON [Catalog.BusinessProcessRules.v](company,id);
+GO
+
+GRANT SELECT ON dbo.[Catalog.BusinessProcessRules.v] TO jetti;
+GRANT SELECT ON dbo.[Catalog.BusinessProcessRules.v] TO PUBLIC;
+RAISERROR('Catalog.BusinessProcessRules end', 0 ,1) WITH NOWAIT;
+
+------------------------------ END Catalog.BusinessProcessRules ------------------------------
+
+
 ------------------------------ BEGIN Catalog.CashFlow ------------------------------
 
 RAISERROR('Catalog.CashFlow start', 0 ,1) WITH NOWAIT;

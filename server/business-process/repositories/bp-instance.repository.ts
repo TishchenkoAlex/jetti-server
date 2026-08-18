@@ -20,7 +20,7 @@ type InstanceRow = {
   currentStepKey?: string | null;
   startedAt: Date;
   completedAt?: Date | null;
-  author?: string | null;
+  authorUser?: string | null;
   company?: string | null;
   context?: unknown;
   idempotencyKey?: string | null;
@@ -35,6 +35,7 @@ export function createBusinessProcessTemplateHash(template: BusinessProcessTempl
       version: template.version,
       objectTypes: template.objectTypes,
       startMode: template.startMode,
+      rules: template.rules,
       startCondition: template.startCondition,
       steps: template.steps,
       transitions: template.transitions,
@@ -48,6 +49,14 @@ export class BusinessProcessInstanceRepository {
 
   async getById(id: string): Promise<BusinessProcessInstance | null> {
     const row = await this.db.oneOrNone<InstanceRow>(`${this.selectSql()} WHERE id = @p1`, [id]);
+    return row ? this.mapInstance(row) : null;
+  }
+
+  async getByIdForUpdate(id: string): Promise<BusinessProcessInstance | null> {
+    const row = await this.db.oneOrNone<InstanceRow>(
+      `${this.selectSql('WITH (UPDLOCK, HOLDLOCK)')} WHERE id = @p1`,
+      [id],
+    );
     return row ? this.mapInstance(row) : null;
   }
 
@@ -82,21 +91,22 @@ export class BusinessProcessInstanceRepository {
   }
 
   async create(input: {
+    id?: string;
     template: BusinessProcessTemplate;
     templateHash: string;
     objectType: string;
     objectId: string;
     currentStepKey?: string | null;
-    author?: string | null;
+    authorUser?: string | null;
     company?: string | null;
     context?: Record<string, unknown> | null;
     idempotencyKey?: string | null;
   }): Promise<BusinessProcessInstance> {
-    const id = uuid();
+    const id = input.id || uuid();
     await this.db.none(
       `INSERT INTO dbo.BusinessProcessInstance (
         id, templateId, templateCode, templateVersion, templateHash, objectType,
-        objectId, status, currentStepKey, author, company, context, idempotencyKey
+        objectId, status, currentStepKey, authorUser, company, context, idempotencyKey
       )
       VALUES (
         @p1, @p2, @p3, @p4, @p5, @p6,
@@ -111,7 +121,7 @@ export class BusinessProcessInstanceRepository {
         input.objectType,
         input.objectId,
         input.currentStepKey || null,
-        input.author || null,
+        input.authorUser || null,
         input.company || null,
         toJson(input.context),
         input.idempotencyKey || null,
@@ -126,19 +136,35 @@ export class BusinessProcessInstanceRepository {
   async setCurrentStep(args: {
     instanceId: string;
     stepKey?: string | null;
+    context?: Record<string, unknown> | null;
   }): Promise<void> {
     await this.db.none(
       `UPDATE dbo.BusinessProcessInstance
        SET currentStepKey = @p2,
+           context = COALESCE(JSON_QUERY(@p3), context),
            updatedAt = SYSUTCDATETIME()
        WHERE id = @p1`,
-      [args.instanceId, args.stepKey || null],
+      [args.instanceId, args.stepKey || null, toJson(args.context)],
+    );
+  }
+
+  async setContext(args: {
+    instanceId: string;
+    context: Record<string, unknown>;
+  }): Promise<void> {
+    await this.db.none(
+      `UPDATE dbo.BusinessProcessInstance
+       SET context = JSON_QUERY(@p2),
+           updatedAt = SYSUTCDATETIME()
+       WHERE id = @p1`,
+      [args.instanceId, toJson(args.context)],
     );
   }
 
   async complete(args: {
     instanceId: string;
     status: 'COMPLETED' | 'REJECTED' | 'CANCELLED' | 'FAILED';
+    context?: Record<string, unknown> | null;
   }): Promise<void> {
     const instance = await this.getById(args.instanceId);
     if (!instance) throw new Error(`Business process instance ${args.instanceId} not found`);
@@ -149,10 +175,11 @@ export class BusinessProcessInstanceRepository {
     await this.db.none(
       `UPDATE dbo.BusinessProcessInstance
        SET status = @p2,
+           context = COALESCE(JSON_QUERY(@p3), context),
            completedAt = SYSUTCDATETIME(),
            updatedAt = SYSUTCDATETIME()
        WHERE id = @p1`,
-      [args.instanceId, args.status],
+      [args.instanceId, args.status, toJson(args.context)],
     );
   }
 
@@ -170,12 +197,12 @@ export class BusinessProcessInstanceRepository {
     };
   }
 
-  private selectSql(): string {
+  private selectSql(tableHint: string = ''): string {
     return `SELECT
       id, templateId, templateCode, templateVersion, templateHash, objectType,
-      objectId, status, currentStepKey, startedAt, completedAt, author, company,
+      objectId, status, currentStepKey, startedAt, completedAt, authorUser, company,
       context, idempotencyKey, createdAt, updatedAt
-    FROM dbo.BusinessProcessInstance`;
+    FROM dbo.BusinessProcessInstance ${tableHint}`;
   }
 
   private mapInstance(row: InstanceRow): BusinessProcessInstance {
@@ -191,7 +218,7 @@ export class BusinessProcessInstanceRepository {
       currentStepKey: row.currentStepKey || undefined,
       startedAt: row.startedAt,
       completedAt: row.completedAt || null,
-      author: row.author || null,
+      authorUser: row.authorUser || null,
       company: row.company || null,
       context: parseJsonObject<Record<string, unknown>>(row.context, {}),
       idempotencyKey: row.idempotencyKey || null,

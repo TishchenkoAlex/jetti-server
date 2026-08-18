@@ -1,3 +1,4 @@
+import { v4 as uuid } from 'uuid';
 import { MSSQL } from '../../mssql';
 import {
   BusinessProcessStartInput,
@@ -16,6 +17,7 @@ import { BusinessProcessTaskRepository } from '../repositories/bp-task.repositor
 import { BusinessProcessTemplateRepository } from '../repositories/bp-template.repository';
 import { RuleEngine } from './rule-engine';
 import { BusinessProcessTaskFactory } from './task-factory.service';
+import { BusinessProcessRuleLifecycle } from './rule-lifecycle.service';
 
 export type BusinessProcessStartEvent = 'MANUAL' | 'ON_SAVE' | 'ON_POST' | 'ON_STATUS_CHANGE';
 
@@ -40,6 +42,7 @@ export class BusinessProcessService {
     private readonly events = new BusinessProcessEventRepository(db),
     private readonly ruleEngine = new RuleEngine(),
     private readonly taskFactory = new BusinessProcessTaskFactory(),
+    private readonly ruleLifecycle = new BusinessProcessRuleLifecycle(),
   ) {}
 
   async start(input: BusinessProcessStartInput): Promise<BusinessProcessStartResult> {
@@ -129,7 +132,15 @@ export class BusinessProcessService {
       };
 
       if (!this.ruleEngine.evaluate(template.startCondition, this.ruleContext(input))) continue;
-      results.push(await this.startFromTemplate(db, template, input, args.event));
+      if (args.tx) {
+        results.push(await this.startFromTemplate(args.tx, template, input, args.event));
+      } else {
+        let started: BusinessProcessStartResult | null = null;
+        await this.db.tx(async tx => {
+          started = await this.startFromTemplate(tx, template, input, args.event);
+        });
+        results.push(started!);
+      }
     }
 
     return results;
@@ -184,29 +195,72 @@ export class BusinessProcessService {
     const objectStatusChanges: BusinessProcessObjectStatusChange[] = [];
     const step = this.resolveStartStep(template.steps, template.parameters);
     const templateHash = createBusinessProcessTemplateHash(template);
+    const instanceDraft = {
+      id: uuid(),
+      templateId: template.id,
+      templateCode: template.code,
+      templateVersion: template.version,
+      templateHash,
+      objectType: input.objectType,
+      objectId: input.objectId,
+      status: 'RUNNING' as const,
+      currentStepKey: step.key,
+      startedAt: new Date(),
+      completedAt: null,
+      authorUser: input.user || null,
+      company: input.company || null,
+      context: input.context || {},
+      idempotencyKey: input.idempotencyKey || null,
+    };
+    await this.ruleLifecycle.executeProcess({
+      db,
+      template,
+      instance: instanceDraft,
+      step,
+      purpose: 'PROCESS_BEFORE_SAVE',
+      user: input.user || null,
+      data: {
+        operation: 'CREATE',
+        startMode: expectedStartMode || template.startMode,
+      },
+    });
     const instance = await instances.create({
+      id: instanceDraft.id,
       template,
       templateHash,
       objectType: input.objectType,
       objectId: input.objectId,
-      currentStepKey: step.key,
-      author: input.user || null,
-      company: input.company || null,
-      context: input.context || {},
+      currentStepKey: instanceDraft.currentStepKey,
+      authorUser: instanceDraft.authorUser,
+      company: instanceDraft.company,
+      context: instanceDraft.context,
       idempotencyKey: input.idempotencyKey || null,
+    });
+
+    await this.ruleLifecycle.executeProcess({
+      db,
+      template,
+      instance,
+      step,
+      purpose: 'PROCESS_STARTED',
+      user: input.user || null,
+      data: {
+        startMode: expectedStartMode || template.startMode,
+        input: ruleContext,
+      },
     });
 
     const createdTasks = await this.taskFactory.createTasksForStep({
       db,
       step,
-      instanceId: instance.id,
-      objectType: input.objectType,
-      objectId: input.objectId,
+      instance,
+      template,
       user: input.user || null,
-      author: input.user || null,
-      templateCode: template.code,
-      company: input.company || null,
       context: ruleContext,
+    });
+    await instances.setContext({
+      instanceId: instance.id,
+      context: instance.context || {},
     });
 
     await events.appendOnce({
@@ -231,8 +285,7 @@ export class BusinessProcessService {
         payload: {
           stepKey: task.stepKey,
           title: task.title,
-          assigneeUser: task.assigneeUser || null,
-          assigneeRole: task.assigneeRole || null,
+          assigneeUser: task.assignee.user,
         },
         eventKey: `task-created:${task.id}`,
       });
@@ -251,7 +304,7 @@ export class BusinessProcessService {
         });
       }
 
-      if (task.delegatedFromUser) {
+      if (task.assignee.delegatedFrom) {
         await events.appendOnce({
           instanceId: instance.id,
           taskId: task.id,
@@ -259,8 +312,8 @@ export class BusinessProcessService {
           user: input.user || null,
           payload: {
             stepKey: task.stepKey,
-            delegatedFromUser: task.delegatedFromUser,
-            assigneeUser: task.assigneeUser || null,
+            delegatedFromUser: task.assignee.delegatedFrom,
+            assigneeUser: task.assignee.user,
           },
           eventKey: `task-delegated:${task.id}`,
         });

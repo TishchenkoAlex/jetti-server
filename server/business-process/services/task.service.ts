@@ -1,12 +1,14 @@
 import { MSSQL } from '../../mssql';
 import {
+  BusinessProcessDecision,
   BusinessProcessInstance,
-  BusinessProcessStep,
   BusinessProcessTask,
   BusinessProcessTaskActionInput,
   BusinessProcessTaskActionResult,
   BusinessProcessTaskDecision,
+  BusinessProcessTaskDecisionInput,
   BusinessProcessTaskRedirectInput,
+  BusinessProcessTemplate,
   BusinessProcessTransition,
 } from '../types/business-process.types';
 import { BusinessProcessEventRepository } from '../repositories/bp-event.repository';
@@ -19,6 +21,13 @@ import { BusinessProcessObjectStatusChange } from '../types/object-integration.t
 import { BusinessProcessTaskFactory } from './task-factory.service';
 import { TaskAccessResolver } from './task-access-resolver';
 import { TransitionResolver } from './transition-resolver';
+import { BusinessProcessRuleLifecycle } from './rule-lifecycle.service';
+import { BusinessProcessTaskDecisionResolver } from './task-decision-resolver';
+import { BusinessProcessTaskCompletionPolicyResolver } from './task-completion-policy-resolver';
+
+type BusinessProcessTaskDecisionExecutionInput = Omit<BusinessProcessTaskDecisionInput, 'user'> & {
+  user: string | null;
+};
 
 export class TaskService {
   constructor(
@@ -30,11 +39,13 @@ export class TaskService {
     private readonly transitionResolver = new TransitionResolver(),
     private readonly taskFactory = new BusinessProcessTaskFactory(),
     private readonly accessResolver = new TaskAccessResolver(db),
+    private readonly ruleLifecycle = new BusinessProcessRuleLifecycle(),
+    private readonly decisionResolver = new BusinessProcessTaskDecisionResolver(ruleLifecycle),
+    private readonly completionPolicyResolver = new BusinessProcessTaskCompletionPolicyResolver(),
   ) {}
 
   async getMyTasks(userId: string): Promise<BusinessProcessTask[]> {
-    const roles = await this.accessResolver.getEffectiveRoles(userId);
-    const tasks = await this.tasks.listActiveByAssignee({ userId, roles });
+    const tasks = await this.tasks.listActiveByAssignee({ userId });
     const delegations = await new BusinessProcessDelegationRepository(this.db).listActiveForUserTo({
       userTo: userId,
       date: new Date(),
@@ -43,31 +54,51 @@ export class TaskService {
     for (const delegation of delegations) {
       const candidates = await this.tasks.listActiveByAssignee({
         userId: delegation.userFrom,
-        roles: [],
       });
       tasks.push(...await this.filterAllowedDelegatedTasks(candidates, userId));
-
-      if (delegation.role) {
-        const userFromRoles = await this.accessResolver.getEffectiveRoles(delegation.userFrom);
-        if (userFromRoles.includes(delegation.role)) {
-          const roleCandidates = await this.tasks.listActiveByAssignee({
-            userId: '',
-            roles: [delegation.role],
-          });
-          tasks.push(...await this.filterAllowedDelegatedTasks(roleCandidates, userId));
-        }
-      }
     }
 
     return this.uniqueTasks(tasks);
   }
 
   async approve(taskId: string, input: BusinessProcessTaskActionInput): Promise<BusinessProcessTaskActionResult> {
-    return this.decide(taskId, 'APPROVE', input);
+    return this.decide(taskId, {
+      user: input.user,
+      decision: { key: 'APPROVE', comment: input.comment || null },
+    });
   }
 
   async reject(taskId: string, input: BusinessProcessTaskActionInput): Promise<BusinessProcessTaskActionResult> {
-    return this.decide(taskId, 'REJECT', input);
+    return this.decide(taskId, {
+      user: input.user,
+      decision: { key: 'REJECT', comment: input.comment || null },
+    });
+  }
+
+  async getAvailableDecisions(
+    taskId: string,
+    user: string,
+    existingTx?: MSSQL,
+  ): Promise<BusinessProcessDecision[]> {
+    let result: BusinessProcessDecision[] | null = null;
+    const execute = async (tx: MSSQL) => {
+      const tasks = new BusinessProcessTaskRepository(tx);
+      const instances = new BusinessProcessInstanceRepository(tx);
+      const templates = new BusinessProcessTemplateRepository(tx);
+      const task = await this.requireTask(tasks, taskId);
+      const instance = await this.requireRunningInstance(instances, task.instanceId);
+      await this.assertCanActOnTask({ task, user, instance, db: tx });
+      const template = await templates.getByCodeAndVersion(instance.templateCode, instance.templateVersion);
+      if (!template) {
+        throw new Error(`Business process template ${instance.templateCode} v${instance.templateVersion} not found`);
+      }
+      const step = template.steps.find(item => item.key === task.stepKey);
+      if (!step) throw new Error(`Business process step ${task.stepKey} not found`);
+      result = await this.decisionResolver.resolve({ db: tx, template, instance, step, task, user });
+    };
+    if (existingTx) await execute(existingTx);
+    else await this.db.tx(execute);
+    return result!;
   }
 
   async redirect(taskId: string, input: BusinessProcessTaskRedirectInput): Promise<BusinessProcessTaskActionResult> {
@@ -79,11 +110,7 @@ export class TaskService {
       const templates = new BusinessProcessTemplateRepository(tx);
 
       const task = await this.requireTask(tasks, taskId);
-      if (!input.targetUser && !input.targetRole) {
-        throw new Error('Redirect requires targetUser or targetRole');
-      }
-
-      const instance = await this.requireRunningInstance(instances, task.instanceId);
+      const instance = await this.requireRunningInstance(instances, task.instanceId, true);
       const access = await this.assertCanActOnTask({ task, user: input.user, instance, db: tx });
       const template = await templates.getByCodeAndVersion(instance.templateCode, instance.templateVersion);
       if (!template) {
@@ -93,14 +120,45 @@ export class TaskService {
       if (!step) throw new Error(`Business process step ${task.stepKey} not found`);
       if (step.allowRedirect !== true) throw new Error(`Redirect is not allowed for step ${task.stepKey}`);
 
+      const lifecycleData = {
+        action: 'REDIRECT',
+        targetUser: input.targetUser,
+        comment: input.comment || null,
+        delegatedFromUser: access.delegatedFromUser || null,
+      };
+      await this.ruleLifecycle.executeTask({
+        db: tx,
+        template,
+        instance,
+        step,
+        task,
+        purpose: 'TASK_BEFORE_EXECUTE',
+        user: input.user,
+        data: lifecycleData,
+      });
+
       const redirectedTask = await tasks.setDecisionIfStatusIn({
         taskId,
         allowedStatuses: ['ACTIVE', 'OVERDUE'],
         status: 'REDIRECTED',
-        decisionUser: input.user,
-        decisionComment: input.comment || null,
+        decision: {
+          key: 'REDIRECT',
+          user: input.user,
+          comment: input.comment || null,
+          source: 'USER',
+        },
       });
       if (!redirectedTask) throw new Error(`Task ${taskId} is not active or was already completed`);
+      await this.ruleLifecycle.executeTask({
+        db: tx,
+        template,
+        instance,
+        step,
+        task: redirectedTask,
+        purpose: 'TASK_AFTER_EXECUTE',
+        user: input.user,
+        data: lifecycleData,
+      });
       const createdTasks = await tasks.createMany([{
         instanceId: task.instanceId,
         objectType: task.objectType,
@@ -108,14 +166,33 @@ export class TaskService {
         stepKey: task.stepKey,
         title: task.title,
         status: 'ACTIVE',
-        assigneeUser: input.targetUser || null,
-        assigneeRole: input.targetRole || null,
-        activeFrom: new Date(),
-        dueAt: task.dueAt || null,
-        redirectedFromUser: input.user,
-        penaltyRuleSnapshot: task.penaltyRuleSnapshot,
-        penaltyAmount: task.penaltyAmount || null,
+        assignee: {
+          user: input.targetUser,
+          redirectedFrom: input.user,
+        },
+        activation: { at: new Date() },
+        deadline: { ...task.deadline },
+        penalty: { ...task.penalty },
       }]);
+      for (const createdTask of createdTasks) {
+        await this.ruleLifecycle.executeTask({
+          db: tx,
+          template,
+          instance,
+          step,
+          task: createdTask,
+          purpose: 'TASK_CREATED',
+          user: input.user,
+          data: {
+            source: 'REDIRECT',
+            redirectedTaskId: task.id,
+          },
+        });
+      }
+      await instances.setContext({
+        instanceId: instance.id,
+        context: instance.context || {},
+      });
 
       await events.appendOnce({
         instanceId: instance.id,
@@ -124,8 +201,7 @@ export class TaskService {
         user: input.user,
         payload: {
           stepKey: task.stepKey,
-          targetUser: input.targetUser || null,
-          targetRole: input.targetRole || null,
+          targetUser: input.targetUser,
           comment: input.comment || null,
           delegatedFromUser: access.delegatedFromUser || null,
         },
@@ -148,21 +224,43 @@ export class TaskService {
     throw new Error('TaskService.delegate is not implemented');
   }
 
-  private async decide(
+  async decide(
     taskId: string,
-    decision: BusinessProcessTaskDecision,
-    input: BusinessProcessTaskActionInput,
+    input: BusinessProcessTaskDecisionInput,
+    tx?: MSSQL,
   ): Promise<BusinessProcessTaskActionResult> {
+    return this.decideInternal(taskId, input, 'USER', tx);
+  }
+
+  async decideSystem(
+    taskId: string,
+    input: Omit<BusinessProcessTaskDecisionInput, 'user'>,
+    tx?: MSSQL,
+  ): Promise<BusinessProcessTaskActionResult> {
+    return this.decideInternal(taskId, { ...input, user: null }, 'SYSTEM', tx);
+  }
+
+  private async decideInternal(
+    taskId: string,
+    input: BusinessProcessTaskDecisionExecutionInput,
+    source: 'USER' | 'SYSTEM',
+    existingTx?: MSSQL,
+  ): Promise<BusinessProcessTaskActionResult> {
+    const decision = typeof input.decision?.key === 'string' ? input.decision.key.trim() : '';
+    const comment = input.decision?.comment || null;
+    if (!decision) throw new Error('Business process task decision must be a non-empty string');
     let result: BusinessProcessTaskActionResult | null = null;
-    await this.db.tx(async tx => {
+    const execute = async (tx: MSSQL) => {
       const tasks = new BusinessProcessTaskRepository(tx);
       const instances = new BusinessProcessInstanceRepository(tx);
       const templates = new BusinessProcessTemplateRepository(tx);
       const events = new BusinessProcessEventRepository(tx);
 
       const task = await this.requireTask(tasks, taskId);
-      const instance = await this.requireRunningInstance(instances, task.instanceId);
-      const access = await this.assertCanActOnTask({ task, user: input.user, instance, db: tx });
+      const instance = await this.requireRunningInstance(instances, task.instanceId, true);
+      const access = source === 'USER'
+        ? await this.assertCanActOnTask({ task, user: input.user!, instance, db: tx })
+        : { delegatedFromUser: null };
       const template = await templates.getByCodeAndVersion(instance.templateCode, instance.templateVersion);
       if (!template) {
         throw new Error(`Business process template ${instance.templateCode} v${instance.templateVersion} not found`);
@@ -171,50 +269,94 @@ export class TaskService {
       const step = template.steps.find(item => item.key === task.stepKey);
       if (!step) throw new Error(`Business process step ${task.stepKey} not found`);
 
-      const context = {
-        ...(instance.context || {}),
-        context: instance.context || {},
-        objectType: instance.objectType,
-        objectId: instance.objectId,
+      const availableDecisions = source === 'USER'
+        ? await this.decisionResolver.resolve({
+          db: tx,
+          template,
+          instance,
+          step,
+          task,
+          user: input.user!,
+        })
+        : step.decisions;
+      this.decisionResolver.requireAvailable({
+        decisions: availableDecisions,
+        key: decision,
+        comment,
         taskId: task.id,
-        user: input.user,
+        user: input.user || 'SYSTEM',
+      });
+
+      const lifecycleData = {
+        action: 'DECISION',
         decision,
+        comment,
+        source,
+        delegatedFromUser: access.delegatedFromUser || null,
       };
-      const transition = this.transitionResolver.resolve({
-        transitions: template.transitions,
-        fromStepKey: task.stepKey,
-        decision,
-        context,
+      await this.ruleLifecycle.executeTask({
+        db: tx,
+        template,
+        instance,
+        step,
+        task,
+        purpose: 'TASK_BEFORE_EXECUTE',
+        user: input.user,
+        data: lifecycleData,
       });
 
       const decidedTask = await tasks.setDecisionIfStatusIn({
         taskId,
         allowedStatuses: ['ACTIVE', 'OVERDUE'],
-        status: decision === 'APPROVE' ? 'APPROVED' : 'REJECTED',
-        decisionUser: input.user,
-        decisionComment: input.comment || null,
+        status: this.taskStatusForDecision(decision, source),
+        decision: {
+          key: decision,
+          user: input.user,
+          comment,
+          source,
+        },
       });
       if (!decidedTask) throw new Error(`Task ${taskId} is not active or was already completed`);
-      const cancelledTasks = await tasks.cancelSiblingTasks({
+      await this.ruleLifecycle.executeTask({
+        db: tx,
+        template,
+        instance,
+        step,
+        task: decidedTask,
+        purpose: 'TASK_AFTER_EXECUTE',
+        user: input.user,
+        data: lifecycleData,
+      });
+      const stepTasks = await tasks.listByInstanceStep({
         instanceId: task.instanceId,
         stepKey: task.stepKey,
-        exceptTaskId: task.id,
-        decisionUser: input.user,
-        reason: 'sibling-task-cancelled-after-decision',
       });
+      const completion = this.completionPolicyResolver.resolve({ step, tasks: stepTasks });
+      const cancelledTasks = completion.cancelSiblings
+        ? await tasks.cancelSiblingTasks({
+          instanceId: task.instanceId,
+          stepKey: task.stepKey,
+          exceptTaskId: task.id,
+          decisionUser: input.user,
+          reason: 'sibling-task-cancelled-after-decision',
+        })
+        : [];
 
+      const decisionEvent = this.taskEventForDecision(decision, source);
       await events.appendOnce({
         instanceId: instance.id,
         taskId: task.id,
-        eventType: decision === 'APPROVE' ? 'TASK_APPROVED' : 'TASK_REJECTED',
+        eventType: decisionEvent.eventType,
         user: input.user,
         payload: {
           stepKey: task.stepKey,
           decision,
-          comment: input.comment || null,
+          comment,
+          source,
+          completionPolicy: step.completionPolicy,
           delegatedFromUser: access.delegatedFromUser || null,
         },
-        eventKey: decision === 'APPROVE' ? `task-approved:${task.id}` : `task-rejected:${task.id}`,
+        eventKey: `${decisionEvent.eventKeyPrefix}:${task.id}`,
       });
       for (const cancelledTask of cancelledTasks) {
         await events.appendOnce({
@@ -231,6 +373,40 @@ export class TaskService {
         });
       }
 
+      if (!completion.shouldAdvance) {
+        await instances.setContext({
+          instanceId: instance.id,
+          context: instance.context || {},
+        });
+        result = {
+          task: decidedTask,
+          instance,
+          createdTasks: [],
+          completed: false,
+          objectStatusChanges: [],
+        };
+        return;
+      }
+
+      const context = {
+        ...(instance.context || {}),
+        context: instance.context || {},
+        objectType: instance.objectType,
+        objectId: instance.objectId,
+        taskId: task.id,
+        user: input.user,
+        decision,
+        decisionSource: source,
+        completionPolicy: step.completionPolicy,
+        taskDecisions: completion.taskDecisions,
+      };
+      const transition = this.transitionResolver.resolve({
+        transitions: template.transitions,
+        fromStepKey: task.stepKey,
+        decision,
+        context,
+      });
+
       result = await this.applyTransition({
         tx,
         instances,
@@ -240,9 +416,12 @@ export class TaskService {
         transition,
         user: input.user,
         context,
-        templateSteps: template.steps,
+        template,
       });
-    });
+    };
+
+    if (existingTx) await execute(existingTx);
+    else await this.db.tx(execute);
 
     return result!;
   }
@@ -254,11 +433,11 @@ export class TaskService {
     instance: BusinessProcessInstance;
     task: BusinessProcessTask;
     transition: BusinessProcessTransition;
-    user: string;
+    user: string | null;
     context: Record<string, unknown>;
-    templateSteps: BusinessProcessStep[];
+    template: BusinessProcessTemplate;
   }): Promise<BusinessProcessTaskActionResult> {
-    const currentStep = args.templateSteps.find(step => step.key === args.task.stepKey);
+    const currentStep = args.template.steps.find(step => step.key === args.task.stepKey);
     if (args.transition.to === 'END_APPROVED') {
       return this.completeInstance({
         ...args,
@@ -278,29 +457,44 @@ export class TaskService {
       }, 'CANCELLED', 'PROCESS_CANCELLED', 'CANCELLED');
     }
 
-    const nextStep = args.templateSteps.find(step => step.key === args.transition.to);
+    const nextStep = args.template.steps.find(step => step.key === args.transition.to);
     if (!nextStep) throw new Error(`Business process step ${args.transition.to} not found`);
 
-    const createdTasks = await this.taskFactory.createTasksForStep({
+    await this.ruleLifecycle.executeProcess({
       db: args.tx,
-      step: nextStep,
-      instanceId: args.instance.id,
-      objectType: args.instance.objectType,
-      objectId: args.instance.objectId,
+      template: args.template,
+      instance: args.instance,
+      step: currentStep || null,
+      task: args.task,
+      purpose: 'PROCESS_BEFORE_SAVE',
       user: args.user,
-      author: args.instance.author || null,
-      templateCode: args.instance.templateCode,
-      company: args.instance.company || null,
-      context: args.context,
+      data: {
+        operation: 'SET_CURRENT_STEP',
+        fromStepKey: args.task.stepKey,
+        toStepKey: nextStep.key,
+        decision: args.task.decision,
+      },
     });
     await args.instances.setCurrentStep({
       instanceId: args.instance.id,
       stepKey: nextStep.key,
+      context: args.instance.context || {},
     });
-    await this.writeTaskCreatedEvents(args.events, args.instance.id, createdTasks, args.user);
-
     const updatedInstance = await args.instances.getById(args.instance.id);
     if (!updatedInstance) throw new Error(`Business process instance ${args.instance.id} not found after transition`);
+    const createdTasks = await this.taskFactory.createTasksForStep({
+      db: args.tx,
+      step: nextStep,
+      instance: updatedInstance,
+      template: args.template,
+      user: args.user,
+      context: args.context,
+    });
+    await args.instances.setContext({
+      instanceId: updatedInstance.id,
+      context: updatedInstance.context || {},
+    });
+    await this.writeTaskCreatedEvents(args.events, args.instance.id, createdTasks, args.user);
 
     return {
       task: args.task,
@@ -318,20 +512,55 @@ export class TaskService {
       events: BusinessProcessEventRepository;
       instance: BusinessProcessInstance;
       task: BusinessProcessTask;
-      user: string;
+      template: BusinessProcessTemplate;
+      user: string | null;
       rejectPolicy?: string | null;
     },
     status: 'COMPLETED' | 'REJECTED' | 'CANCELLED',
     eventType: 'PROCESS_COMPLETED' | 'PROCESS_REJECTED' | 'PROCESS_CANCELLED',
     result: 'APPROVED' | 'REJECTED' | 'CANCELLED',
   ): Promise<BusinessProcessTaskActionResult> {
+    const step = args.template.steps.find(item => item.key === args.task.stepKey) || null;
+    await this.ruleLifecycle.executeProcess({
+      db: args.tx,
+      template: args.template,
+      instance: args.instance,
+      step,
+      task: args.task,
+      purpose: 'PROCESS_BEFORE_SAVE',
+      user: args.user,
+      data: {
+        operation: 'COMPLETE',
+        status,
+        result,
+      },
+    });
     await args.instances.complete({
       instanceId: args.instance.id,
       status,
+      context: args.instance.context || {},
     });
 
     const updatedInstance = await args.instances.getById(args.instance.id);
     if (!updatedInstance) throw new Error(`Business process instance ${args.instance.id} not found after completion`);
+
+    await this.ruleLifecycle.executeProcess({
+      db: args.tx,
+      template: args.template,
+      instance: updatedInstance,
+      step,
+      task: args.task,
+      purpose: 'PROCESS_COMPLETED',
+      user: args.user,
+      data: {
+        status,
+        result,
+      },
+    });
+    await args.instances.setContext({
+      instanceId: updatedInstance.id,
+      context: updatedInstance.context || {},
+    });
 
     const adapter = new BusinessProcessObjectAdapterRegistry().get(args.instance.objectType);
     let statusChange: BusinessProcessObjectStatusChange | null = null;
@@ -389,7 +618,7 @@ export class TaskService {
     events: BusinessProcessEventRepository,
     instanceId: string,
     tasks: BusinessProcessTask[],
-    user: string,
+    user: string | null,
   ): Promise<void> {
     for (const task of tasks) {
       await events.appendOnce({
@@ -400,8 +629,7 @@ export class TaskService {
         payload: {
           stepKey: task.stepKey,
           title: task.title,
-          assigneeUser: task.assigneeUser || null,
-          assigneeRole: task.assigneeRole || null,
+          assigneeUser: task.assignee.user,
         },
         eventKey: `task-created:${task.id}`,
       });
@@ -420,7 +648,7 @@ export class TaskService {
         });
       }
 
-      if (task.delegatedFromUser) {
+      if (task.assignee.delegatedFrom) {
         await events.appendOnce({
           instanceId,
           taskId: task.id,
@@ -428,8 +656,8 @@ export class TaskService {
           user,
           payload: {
             stepKey: task.stepKey,
-            delegatedFromUser: task.delegatedFromUser,
-            assigneeUser: task.assigneeUser || null,
+            delegatedFromUser: task.assignee.delegatedFrom,
+            assigneeUser: task.assignee.user,
           },
           eventKey: `task-delegated:${task.id}`,
         });
@@ -496,11 +724,37 @@ export class TaskService {
   private async requireRunningInstance(
     instances: BusinessProcessInstanceRepository,
     instanceId: string,
+    lockForUpdate: boolean = false,
   ): Promise<BusinessProcessInstance> {
-    const instance = await instances.getById(instanceId);
+    const instance = lockForUpdate
+      ? await instances.getByIdForUpdate(instanceId)
+      : await instances.getById(instanceId);
     if (!instance) throw new Error(`Business process instance ${instanceId} not found`);
     if (instance.status !== 'RUNNING') throw new Error(`Business process instance ${instanceId} is not running`);
     return instance;
+  }
+
+  private taskStatusForDecision(
+    decision: BusinessProcessTaskDecision,
+    source: 'USER' | 'SYSTEM',
+  ): 'COMPLETED' | 'APPROVED' | 'REJECTED' | 'AUTO_COMPLETED' | 'TIMEOUT' {
+    if (source === 'SYSTEM') return decision === 'TIMEOUT' ? 'TIMEOUT' : 'AUTO_COMPLETED';
+    if (decision === 'APPROVE') return 'APPROVED';
+    if (decision === 'REJECT') return 'REJECTED';
+    return 'COMPLETED';
+  }
+
+  private taskEventForDecision(decision: BusinessProcessTaskDecision, source: 'USER' | 'SYSTEM'): {
+    eventType: 'TASK_COMPLETED' | 'TASK_APPROVED' | 'TASK_REJECTED' | 'TASK_AUTO_COMPLETED' | 'TASK_TIMEOUT';
+    eventKeyPrefix: 'task-completed' | 'task-approved' | 'task-rejected' | 'task-auto-completed' | 'task-timeout';
+  } {
+    if (source === 'SYSTEM') {
+      if (decision === 'TIMEOUT') return { eventType: 'TASK_TIMEOUT', eventKeyPrefix: 'task-timeout' };
+      return { eventType: 'TASK_AUTO_COMPLETED', eventKeyPrefix: 'task-auto-completed' };
+    }
+    if (decision === 'APPROVE') return { eventType: 'TASK_APPROVED', eventKeyPrefix: 'task-approved' };
+    if (decision === 'REJECT') return { eventType: 'TASK_REJECTED', eventKeyPrefix: 'task-rejected' };
+    return { eventType: 'TASK_COMPLETED', eventKeyPrefix: 'task-completed' };
   }
 
   private uniqueTasks(tasks: BusinessProcessTask[]): BusinessProcessTask[] {

@@ -6,10 +6,18 @@ import {
   BusinessProcessTransition,
 } from '../types/business-process.types';
 import {
+  BUSINESS_PROCESS_PROCESS_RULE_PURPOSES,
+  BUSINESS_PROCESS_TASK_RULE_PURPOSES,
+  BusinessProcessRulePurpose,
+} from '../types/business-process-rule.types';
+import {
   BusinessProcessTemplateRepository,
   CreateBusinessProcessTemplateDraftInput,
 } from '../repositories/bp-template.repository';
 import { RuleEngine } from './rule-engine';
+import { BusinessProcessRuleExecutor } from './rule-executor';
+
+type TemplateValidationMode = 'DRAFT' | 'EXECUTABLE';
 
 export class TemplateService {
   constructor(
@@ -18,19 +26,17 @@ export class TemplateService {
   ) {}
 
   async validateTemplate(template: unknown): Promise<void> {
-    this.validateTemplateShape(this.normalizeTemplate(template));
+    this.prepareTemplate(template, 'EXECUTABLE');
   }
 
   async createDraft(input: unknown, tx?: unknown): Promise<BusinessProcessTemplate> {
-    const normalized = this.normalizeTemplate(input);
-    this.validateTemplateShape(normalized);
-    return this.repository(tx).createDraft(normalized as CreateBusinessProcessTemplateDraftInput);
+    const normalized = this.prepareTemplate(input, 'DRAFT');
+    return this.repository(tx).createDraft(normalized);
   }
 
   async updateDraft(id: string, input: unknown, tx?: unknown): Promise<BusinessProcessTemplate> {
-    const normalized = this.normalizeTemplate(input);
-    this.validateTemplateShape(normalized);
-    return this.repository(tx).updateDraft(id, normalized as CreateBusinessProcessTemplateDraftInput);
+    const normalized = this.prepareTemplate(input, 'DRAFT');
+    return this.repository(tx).updateDraft(id, normalized);
   }
 
   async activate(id: string, tx?: unknown): Promise<BusinessProcessTemplate> {
@@ -38,22 +44,82 @@ export class TemplateService {
     if (!template) throw new Error(`Business process template ${id} not found`);
 
     await this.validateTemplate(template);
-    return this.repository(tx).activate(id, this.userFromTx(tx));
+    await this.validateCatalogRules(template, this.database(tx));
+    return this.repository(tx).activate(id);
   }
 
   async archive(id: string, tx?: unknown): Promise<void> {
-    await this.repository(tx).archive(id, this.userFromTx(tx));
+    await this.repository(tx).archive(id);
   }
 
   private repository(tx?: unknown): BusinessProcessTemplateRepository {
     return tx instanceof MSSQL ? new BusinessProcessTemplateRepository(tx) : this.templates;
   }
 
-  private userFromTx(tx?: unknown): string | null {
-    return tx instanceof MSSQL ? tx.email || null : null;
+  private database(tx?: unknown): MSSQL {
+    return tx instanceof MSSQL ? tx : this.templates.database;
   }
 
-  private validateTemplateShape(template: unknown): asserts template is CreateBusinessProcessTemplateDraftInput {
+  private prepareTemplate(template: unknown, mode: TemplateValidationMode): CreateBusinessProcessTemplateDraftInput {
+    try {
+      const normalized = this.normalizeTemplate(template);
+      this.validateTemplateShape(normalized, mode);
+      return normalized;
+    } catch (error) {
+      if (error instanceof Error) (error as Error & { status?: number }).status = 400;
+      throw error;
+    }
+  }
+
+  private async validateCatalogRules(template: BusinessProcessTemplate, db: MSSQL): Promise<void> {
+    const executor = new BusinessProcessRuleExecutor();
+    await executor.validateBindings({
+      db,
+      bindings: template.rules,
+      allowedPurposes: BUSINESS_PROCESS_PROCESS_RULE_PURPOSES,
+      path: '$.rules',
+    });
+
+    for (const [index, step] of template.steps.entries()) {
+      const purposes = await executor.validateBindings({
+        db,
+        bindings: step.rules,
+        allowedPurposes: BUSINESS_PROCESS_TASK_RULE_PURPOSES,
+        path: `$.steps[${index}].rules`,
+      });
+      this.validateRequiredStepRulePurposes(step.type, purposes, `$.steps[${index}].rules`);
+    }
+  }
+
+  private validateRequiredStepRulePurposes(
+    stepType: BusinessProcessStepType,
+    purposes: BusinessProcessRulePurpose[],
+    path: string,
+  ): void {
+    if (stepType === 'USER_TASK' && !purposes.includes('TASK_ASSIGNMENT')) {
+      throw new Error(`Invalid template at ${path}: USER_TASK requires a TASK_ASSIGNMENT rule`);
+    }
+    if (stepType !== 'USER_TASK' && purposes.includes('TASK_ASSIGNMENT')) {
+      throw new Error(`Invalid template at ${path}: TASK_ASSIGNMENT is allowed only for USER_TASK`);
+    }
+    const hasPenalty = purposes.includes('TASK_DEADLINE_PENALTY');
+    const hasAutoExecute = purposes.includes('TASK_DEADLINE_AUTO_EXECUTE');
+    if ((hasPenalty || hasAutoExecute) && !purposes.includes('TASK_DEADLINE_DATE')) {
+      throw new Error(
+        `Invalid template at ${path}: deadline penalty or auto execution requires a TASK_DEADLINE_DATE rule`,
+      );
+    }
+    if (hasPenalty && hasAutoExecute) {
+      throw new Error(
+        `Invalid template at ${path}: TASK_DEADLINE_PENALTY and TASK_DEADLINE_AUTO_EXECUTE are mutually exclusive`,
+      );
+    }
+  }
+
+  private validateTemplateShape(
+    template: unknown,
+    mode: TemplateValidationMode,
+  ): asserts template is CreateBusinessProcessTemplateDraftInput {
     if (!template || typeof template !== 'object' || Array.isArray(template)) {
       throw new Error('Invalid template at $: template must be object');
     }
@@ -71,13 +137,17 @@ export class TemplateService {
       throw new Error('Invalid template at $.startMode: unsupported startMode');
     }
 
+    this.validateRuleBindings(value.rules, '$.rules');
+
     if (!Array.isArray(value.steps) || value.steps.length === 0) {
       throw new Error('Invalid template at $.steps: steps must be non-empty array');
     }
 
     const stepKeys = new Set<string>();
+    const stepDecisionKeys = new Map<string, Set<string>>();
     value.steps.forEach((step, index) => {
-      this.validateStep(step, `$.steps[${index}]`, stepKeys);
+      const decisionKeys = this.validateStep(step, `$.steps[${index}]`, stepKeys, mode);
+      stepDecisionKeys.set((step as Record<string, unknown>).key as string, decisionKeys);
     });
 
     if (!Array.isArray(value.transitions)) {
@@ -86,8 +156,16 @@ export class TemplateService {
 
     const transitionKeys = new Set<string>();
     value.transitions.forEach((transition, index) => {
-      this.validateTransition(transition, `$.transitions[${index}]`, stepKeys, transitionKeys);
+      this.validateTransition(
+        transition,
+        `$.transitions[${index}]`,
+        stepKeys,
+        stepDecisionKeys,
+        transitionKeys,
+        mode,
+      );
     });
+    if (mode === 'EXECUTABLE') this.validateDecisionTransitions(value.transitions, stepDecisionKeys);
 
     this.validateStartStepKey(value.parameters, stepKeys);
     this.ruleEngine.validate(value.startCondition);
@@ -134,7 +212,12 @@ export class TemplateService {
     }
   }
 
-  private validateStep(step: unknown, path: string, stepKeys: Set<string>): void {
+  private validateStep(
+    step: unknown,
+    path: string,
+    stepKeys: Set<string>,
+    mode: TemplateValidationMode,
+  ): Set<string> {
     if (!step || typeof step !== 'object' || Array.isArray(step)) {
       throw new Error(`Invalid template at ${path}: step must be object`);
     }
@@ -157,18 +240,53 @@ export class TemplateService {
       throw new Error(`Invalid template at ${path}.type: unsupported step type`);
     }
 
-    this.ruleEngine.validate(value.autoCompleteCondition);
-    this.validateDueRule(value.dueRule, `${path}.dueRule`);
-    this.validateWaitUntilRule(value.waitUntilRule, `${path}.waitUntilRule`);
-    this.validatePenaltyRule(value.penaltyRule, `${path}.penaltyRule`);
-    this.validateAssignmentRule(value.type, value.assignmentRule, `${path}.assignmentRule`);
+    this.validateRuleBindings(value.rules, `${path}.rules`);
+
+    if (!Array.isArray(value.decisions)) {
+      throw new Error(`Invalid template at ${path}.decisions: decisions must be array`);
+    }
+    if (mode === 'EXECUTABLE' && value.type === 'USER_TASK' && value.decisions.length === 0) {
+      throw new Error(
+        `Invalid template at ${path}.decisions: USER_TASK requires at least one declared decision; `
+        + 'TASK_AVAILABLE_DECISIONS rules can only filter declared decisions',
+      );
+    }
+
+    const decisionKeys = new Set<string>();
+    value.decisions.forEach((decision, index) => {
+      const decisionPath = `${path}.decisions[${index}]`;
+      if (!decision || typeof decision !== 'object' || Array.isArray(decision)) {
+        throw new Error(`Invalid template at ${decisionPath}: decision must be object`);
+      }
+      const item = decision as Record<string, unknown>;
+      if (typeof item.key !== 'string' || !item.key.trim()) {
+        throw new Error(`Invalid template at ${decisionPath}.key: key must be non-empty string`);
+      }
+      if (decisionKeys.has(item.key)) {
+        throw new Error(`Invalid template at ${decisionPath}.key: decision key must be unique within step`);
+      }
+      if (typeof item.title !== 'string' || !item.title.trim()) {
+        throw new Error(`Invalid template at ${decisionPath}.title: title must be non-empty string`);
+      }
+      if (item.commentRequired != null && typeof item.commentRequired !== 'boolean') {
+        throw new Error(`Invalid template at ${decisionPath}.commentRequired: value must be boolean`);
+      }
+      decisionKeys.add(item.key);
+    });
+
+    if (!['ANY', 'ALL'].includes(value.completionPolicy as string)) {
+      throw new Error(`Invalid template at ${path}.completionPolicy: value must be ANY or ALL`);
+    }
+    return decisionKeys;
   }
 
   private validateTransition(
     transition: unknown,
     path: string,
     stepKeys: Set<string>,
+    stepDecisionKeys: Map<string, Set<string>>,
     transitionKeys: Set<string>,
+    mode: TemplateValidationMode,
   ): void {
     if (!transition || typeof transition !== 'object' || Array.isArray(transition)) {
       throw new Error(`Invalid template at ${path}: transition must be object`);
@@ -187,8 +305,13 @@ export class TemplateService {
       throw new Error(`Invalid template at ${path}.from: from must reference existing step`);
     }
 
-    if (!['APPROVE', 'REJECT', 'TIMEOUT', 'AUTO'].includes(value.on)) {
-      throw new Error(`Invalid template at ${path}.on: unsupported transition event`);
+    const systemEvents = ['TIMEOUT', 'AUTO'];
+    const decisionKeys = stepDecisionKeys.get(value.from) || new Set<string>();
+    if (typeof value.on !== 'string' || !value.on.trim()) {
+      throw new Error(`Invalid template at ${path}.on: event must be non-empty string`);
+    }
+    if (mode === 'EXECUTABLE' && !systemEvents.includes(value.on) && !decisionKeys.has(value.on)) {
+      throw new Error(`Invalid template at ${path}.on: event must reference a decision of step ${value.from} or a system event`);
     }
 
     const endStates = ['END_APPROVED', 'END_REJECTED', 'END_CANCELLED'];
@@ -199,11 +322,60 @@ export class TemplateService {
     this.ruleEngine.validate(value.condition);
   }
 
+  private validateDecisionTransitions(
+    transitions: unknown[],
+    stepDecisionKeys: Map<string, Set<string>>,
+  ): void {
+    stepDecisionKeys.forEach((decisionKeys, stepKey) => {
+      decisionKeys.forEach(decisionKey => {
+        const hasTransition = transitions.some(transition => {
+          if (!transition || typeof transition !== 'object' || Array.isArray(transition)) return false;
+          const value = transition as Record<string, unknown>;
+          return value.from === stepKey && value.on === decisionKey;
+        });
+        if (!hasTransition) {
+          throw new Error(
+            `Invalid template at $.steps: decision ${decisionKey} of step ${stepKey} has no transition`,
+          );
+        }
+      });
+    });
+  }
+
   private normalizeTemplate(template: unknown): unknown {
     if (!template || typeof template !== 'object' || Array.isArray(template)) return template;
 
     const value = template as Record<string, unknown>;
-    if (!Array.isArray(value.transitions)) return template;
+    const objectTypes = this.normalizeObjectTypes(value.objectTypes);
+    const rules = this.normalizeRuleBindings(value.rules, '$.rules');
+    const formStepRules = Array.isArray(value.stepRules)
+      ? this.normalizeStepRuleBindings(value.stepRules)
+      : null;
+    const formStepDecisions = Array.isArray(value.stepDecisions)
+      ? this.normalizeStepDecisions(value.stepDecisions)
+      : null;
+    this.validateFormStepReferences(value.steps, formStepRules, '$.stepRules');
+    this.validateFormStepReferences(value.steps, formStepDecisions, '$.stepDecisions');
+    const steps = Array.isArray(value.steps)
+      ? value.steps.map((step, index) => this.normalizeStep(
+        step,
+        formStepRules,
+        formStepDecisions,
+        `$.steps[${index}]`,
+      ))
+      : value.steps;
+    const normalized: Record<string, unknown> = {
+      ...value,
+      objectTypes,
+      rules,
+      steps,
+      startCondition: this.normalizeJsonEditorValue(value.startCondition, '$.startCondition'),
+      parameters: this.normalizeJsonEditorValue(value.parameters, '$.parameters'),
+      visualMapping: this.normalizeJsonEditorValue(value.visualMapping, '$.visualMapping'),
+    };
+    delete normalized.stepRules;
+    delete normalized.stepDecisions;
+    if (!Array.isArray(value.transitions)) return normalized;
 
     const usedKeys = new Set<string>();
     value.transitions.forEach(transition => {
@@ -213,19 +385,158 @@ export class TemplateService {
     });
 
     let sequence = 1;
-    const transitions = value.transitions.map(transition => {
+    const transitions = value.transitions.map((transition, index) => {
       if (!transition || typeof transition !== 'object' || Array.isArray(transition)) return transition;
 
       const item = transition as Record<string, unknown>;
-      if (typeof item.key === 'string' && item.key.trim()) return { ...item, key: item.key.trim() };
+      const condition = this.normalizeJsonEditorValue(item.condition, `$.transitions[${index}].condition`);
+      if (typeof item.key === 'string' && item.key.trim()) {
+        return { ...item, key: item.key.trim(), condition };
+      }
 
       let key = `Transition_${sequence++}`;
       while (usedKeys.has(key)) key = `Transition_${sequence++}`;
       usedKeys.add(key);
-      return { ...item, key };
+      return {
+        ...item,
+        key,
+        condition,
+      };
     });
 
-    return { ...value, transitions };
+    return { ...normalized, transitions };
+  }
+
+  private normalizeStep(
+    value: unknown,
+    formRules: Array<Record<string, unknown>> | null,
+    formDecisions: Array<Record<string, unknown>> | null,
+    path: string,
+  ): unknown {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+    const step = value as Record<string, unknown>;
+    const stepKey = typeof step.key === 'string' ? step.key.trim() : step.key;
+    const sourceDecisions = formDecisions == null
+      ? step.decisions
+      : formDecisions.filter(item => item.stepKey === stepKey);
+    const decisions = Array.isArray(sourceDecisions)
+      ? sourceDecisions.map(decision => {
+        if (!decision || typeof decision !== 'object' || Array.isArray(decision)) return decision;
+        const item = decision as Record<string, unknown>;
+        const { stepKey: ignoredStepKey, ...decisionValue } = item;
+        return {
+          ...decisionValue,
+          key: typeof item.key === 'string' ? item.key.trim() : item.key,
+          title: typeof item.title === 'string' ? item.title.trim() : item.title,
+          commentRequired: item.commentRequired === true,
+        };
+      })
+      : [];
+    const sourceRules = formRules == null
+      ? step.rules
+      : formRules.filter(item => item.stepKey === stepKey);
+    return {
+      ...step,
+      key: stepKey,
+      rules: this.normalizeRuleBindings(sourceRules, `${path}.rules`).map(binding => {
+        if (!binding || typeof binding !== 'object' || Array.isArray(binding)) return binding;
+        const { stepKey: ignoredStepKey, ...ruleBinding } = binding as Record<string, unknown>;
+        return ruleBinding;
+      }),
+      decisions,
+      completionPolicy: step.completionPolicy || 'ANY',
+    };
+  }
+
+  private normalizeStepRuleBindings(value: unknown[]): Array<Record<string, unknown>> {
+    return this.normalizeRuleBindings(value, '$.stepRules').map(binding => {
+      if (!binding || typeof binding !== 'object' || Array.isArray(binding)) return { invalid: binding };
+      const item = binding as Record<string, unknown>;
+      return {
+        ...item,
+        stepKey: typeof item.stepKey === 'string' ? item.stepKey.trim() : item.stepKey,
+      };
+    });
+  }
+
+  private normalizeStepDecisions(value: unknown[]): Array<Record<string, unknown>> {
+    return value.map(decision => {
+      if (!decision || typeof decision !== 'object' || Array.isArray(decision)) return { invalid: decision };
+      const item = decision as Record<string, unknown>;
+      return {
+        ...item,
+        stepKey: typeof item.stepKey === 'string' ? item.stepKey.trim() : item.stepKey,
+      };
+    });
+  }
+
+  private validateFormStepReferences(
+    steps: unknown,
+    rows: Array<Record<string, unknown>> | null,
+    path: string,
+  ): void {
+    if (rows == null) return;
+    const stepKeys = new Set(Array.isArray(steps)
+      ? steps.map(step => step && typeof step === 'object' && !Array.isArray(step)
+        ? (typeof (step as Record<string, unknown>).key === 'string'
+          ? ((step as Record<string, unknown>).key as string).trim()
+          : null)
+        : null).filter(key => typeof key === 'string') as string[]
+      : []);
+    rows.forEach((row, index) => {
+      if (typeof row.stepKey !== 'string' || !row.stepKey || !stepKeys.has(row.stepKey)) {
+        throw new Error(`Invalid template at ${path}[${index}].stepKey: stepKey must reference existing step`);
+      }
+    });
+  }
+
+  private normalizeRuleBindings(value: unknown, path: string): unknown[] {
+    if (!Array.isArray(value)) return [];
+    return value.map((binding, index) => {
+      if (!binding || typeof binding !== 'object' || Array.isArray(binding)) return binding;
+      const item = binding as Record<string, unknown>;
+      return {
+        ...item,
+        rule: this.normalizeRef(item.rule),
+        order: item.order == null ? index : item.order,
+        settings: this.normalizeJsonEditorValue(item.settings, `${path}[${index}].settings`),
+      };
+    });
+  }
+
+  private normalizeJsonEditorValue(value: unknown, path: string): unknown {
+    if (typeof value !== 'string') return value;
+    if (!value.trim()) return null;
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      throw new Error(`Invalid template at ${path}: value must be valid JSON`);
+    }
+  }
+
+  private normalizeRef(value: unknown): unknown {
+    if (typeof value === 'string') return value.trim();
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+    const id = (value as Record<string, unknown>).id;
+    return typeof id === 'string' ? id.trim() : value;
+  }
+
+  private normalizeObjectTypes(value: unknown): unknown {
+    if (!Array.isArray(value)) return value;
+
+    return value.map(item => {
+      if (typeof item === 'string') return item.trim();
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return item;
+
+      const objectType = (item as Record<string, unknown>).objectType;
+      if (typeof objectType === 'string') return objectType.trim();
+      if (objectType && typeof objectType === 'object' && !Array.isArray(objectType)) {
+        const id = (objectType as Record<string, unknown>).id;
+        if (typeof id === 'string') return id.trim();
+      }
+
+      return item;
+    });
   }
 
   private isStartMode(value: unknown): value is BusinessProcessStartMode {
@@ -246,117 +557,33 @@ export class TemplateService {
     }
   }
 
-  private validateAssignmentRule(stepType: unknown, assignmentRule: unknown, path: string): void {
-    if (stepType !== 'USER_TASK') return;
-    if (!assignmentRule || typeof assignmentRule !== 'object' || Array.isArray(assignmentRule)) {
-      throw new Error(`Invalid template at ${path}: USER_TASK step requires assignmentRule`);
+  private validateRuleBindings(value: unknown, path: string): void {
+    if (!Array.isArray(value)) {
+      throw new Error(`Invalid template at ${path}: rules must be array`);
     }
 
-    const rule = assignmentRule as Record<string, unknown>;
-    if (typeof rule.type !== 'string' || !rule.type.trim()) {
-      throw new Error(`Invalid template at ${path}.type: assignmentRule.type is required`);
-    }
-
-    switch (rule.type) {
-      case 'ROLE':
-        if (typeof rule.role !== 'string' || !rule.role.trim()) {
-          throw new Error(`Invalid template at ${path}.role: role is required for ROLE assignment`);
-        }
-        return;
-      case 'FIXED_USER':
-        if (typeof rule.userId !== 'string' || !rule.userId.trim()) {
-          throw new Error(`Invalid template at ${path}.userId: userId is required for FIXED_USER assignment`);
-        }
-        return;
-      case 'DOCUMENT_FIELD':
-        if (typeof rule.field !== 'string' || !rule.field.trim()) {
-          throw new Error(`Invalid template at ${path}.field: field is required for DOCUMENT_FIELD assignment`);
-        }
-        return;
-      case 'AUTHOR':
-      case 'RESPONSIBLE_PERSON':
-      case 'MANAGER_OF_AUTHOR':
-        return;
-      default:
-        throw new Error(`Invalid template at ${path}.type: unsupported assignmentRule.type`);
-    }
-  }
-
-  private validateDueRule(rule: unknown, path: string): void {
-    if (rule == null) return;
-    if (!rule || typeof rule !== 'object' || Array.isArray(rule)) {
-      throw new Error(`Invalid template at ${path}: dueRule must be object`);
-    }
-
-    const value = rule as Record<string, unknown>;
-    const keys = ['hours', 'days', 'field'].filter(key => value[key] != null);
-    if (keys.length !== 1) throw new Error(`Invalid template at ${path}: dueRule must contain exactly one of hours, days or field`);
-
-    if (value.hours != null && (typeof value.hours !== 'number' || value.hours <= 0)) {
-      throw new Error(`Invalid template at ${path}.hours: hours must be positive number`);
-    }
-    if (value.days != null && (typeof value.days !== 'number' || value.days <= 0)) {
-      throw new Error(`Invalid template at ${path}.days: days must be positive number`);
-    }
-    if (value.field != null && (typeof value.field !== 'string' || !value.field.trim())) {
-      throw new Error(`Invalid template at ${path}.field: field must be non-empty string`);
-    }
-  }
-
-  private validateWaitUntilRule(rule: unknown, path: string): void {
-    if (rule == null) return;
-    if (!rule || typeof rule !== 'object' || Array.isArray(rule)) {
-      throw new Error(`Invalid template at ${path}: waitUntilRule must be object`);
-    }
-
-    const value = rule as Record<string, unknown>;
-    const keys = ['date', 'field'].filter(key => value[key] != null);
-    if (keys.length !== 1) throw new Error(`Invalid template at ${path}: waitUntilRule must contain exactly one of date or field`);
-
-    if (value.date != null) {
-      if (typeof value.date !== 'string' || Number.isNaN(new Date(value.date).getTime())) {
-        throw new Error(`Invalid template at ${path}.date: date must be valid date string`);
+    const ruleIds = new Set<string>();
+    value.forEach((binding, index) => {
+      const bindingPath = `${path}[${index}]`;
+      if (!binding || typeof binding !== 'object' || Array.isArray(binding)) {
+        throw new Error(`Invalid template at ${bindingPath}: rule binding must be object`);
       }
-    }
-    if (value.field != null && (typeof value.field !== 'string' || !value.field.trim())) {
-      throw new Error(`Invalid template at ${path}.field: field must be non-empty string`);
-    }
-  }
 
-  private validatePenaltyRule(rule: unknown, path: string): void {
-    if (rule == null) return;
-    if (!rule || typeof rule !== 'object' || Array.isArray(rule)) {
-      throw new Error(`Invalid template at ${path}: penaltyRule must be object`);
-    }
+      const item = binding as Record<string, unknown>;
+      if (typeof item.rule !== 'string' || !item.rule.trim()) {
+        throw new Error(`Invalid template at ${bindingPath}.rule: Catalog.BusinessProcessRules reference is required`);
+      }
+      if (ruleIds.has(item.rule)) {
+        throw new Error(`Invalid template at ${bindingPath}.rule: rule must be unique within scope`);
+      }
+      ruleIds.add(item.rule);
 
-    const value = rule as Record<string, unknown>;
-    if (value.amount != null) {
-      if (typeof value.amount !== 'number' || value.amount <= 0) {
-        throw new Error(`Invalid template at ${path}.amount: amount must be positive number`);
+      if (item.order != null && (typeof item.order !== 'number' || !Number.isFinite(item.order))) {
+        throw new Error(`Invalid template at ${bindingPath}.order: order must be a finite number`);
       }
-      if (value.percent != null || value.field != null) {
-        throw new Error(`Invalid template at ${path}: amount penalty cannot be combined with percent or field`);
+      if (item.settings != null && (typeof item.settings !== 'object' || Array.isArray(item.settings))) {
+        throw new Error(`Invalid template at ${bindingPath}.settings: settings must be an object`);
       }
-      return;
-    }
-
-    if (value.percent != null) {
-      if (typeof value.percent !== 'number' || value.percent <= 0) {
-        throw new Error(`Invalid template at ${path}.percent: percent must be positive number`);
-      }
-      if (typeof value.field !== 'string' || !value.field.trim()) {
-        throw new Error(`Invalid template at ${path}.field: field is required for percent penalty`);
-      }
-      return;
-    }
-
-    if (value.field != null) {
-      if (typeof value.field !== 'string' || !value.field.trim()) {
-        throw new Error(`Invalid template at ${path}.field: field must be non-empty string`);
-      }
-      return;
-    }
-
-    throw new Error(`Invalid template at ${path}: penaltyRule must contain amount, field or percent with field`);
+    });
   }
 }

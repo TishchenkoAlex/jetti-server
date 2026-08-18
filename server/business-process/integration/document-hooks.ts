@@ -3,6 +3,7 @@ import { DocumentBaseServer } from '../../models/documents.factory.server';
 import { lib } from '../../std.lib';
 import { BusinessProcessService, BusinessProcessStartEvent } from '../services/business-process.service';
 import { BusinessProcessStartResult } from '../types/business-process.types';
+import { requireBusinessProcessUserId } from '../services/business-process-user-lookup';
 
 export async function tryStartBusinessProcessForDocument(args: {
   doc: DocumentBaseServer;
@@ -15,11 +16,12 @@ export async function tryStartBusinessProcessForDocument(args: {
   if (args.doc.deleted === true) return [];
   if (typeof args.tx.isMirrorContourOperation === 'function' && args.tx.isMirrorContourOperation()) return [];
 
+  const user = await requireBusinessProcessUserId(args.user || args.tx.email || '', args.tx);
   return new BusinessProcessService(args.tx).tryStartForObjectMany({
     objectType: args.doc.type,
     objectId: args.doc.id,
     event: args.event,
-    user: args.user || args.tx.email || null,
+    user,
   });
 }
 

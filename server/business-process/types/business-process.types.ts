@@ -17,6 +17,7 @@ export type BusinessProcessTaskStatus =
   | 'CREATED'
   | 'WAITING'
   | 'ACTIVE'
+  | 'COMPLETED'
   | 'APPROVED'
   | 'REJECTED'
   | 'REDIRECTED'
@@ -39,6 +40,7 @@ export type BusinessProcessEventType =
   | 'PROCESS_FAILED'
   | 'TASK_CREATED'
   | 'TASK_ACTIVATED'
+  | 'TASK_COMPLETED'
   | 'TASK_APPROVED'
   | 'TASK_REJECTED'
   | 'TASK_REDIRECTED'
@@ -50,9 +52,39 @@ export type BusinessProcessEventType =
   | 'PENALTY_APPLIED'
   | 'OBJECT_STATUS_CHANGED';
 
-export type BusinessProcessTaskDecision =
-  | 'APPROVE'
-  | 'REJECT';
+export type BusinessProcessTaskDecision = string;
+
+export type CatalogUserId = string;
+
+export interface BusinessProcessTaskAssignee {
+  user: CatalogUserId;
+  delegatedFrom?: CatalogUserId | null;
+  redirectedFrom?: CatalogUserId | null;
+}
+
+export interface BusinessProcessTaskActivation {
+  at?: Date | null;
+}
+
+export interface BusinessProcessTaskDeadline {
+  at?: Date | null;
+  reachedAt?: Date | null;
+}
+
+export interface BusinessProcessTaskDecisionInfo {
+  key?: string | null;
+  user?: CatalogUserId | null;
+  comment?: string | null;
+  source?: 'USER' | 'SYSTEM' | null;
+  at?: Date | null;
+}
+
+export interface BusinessProcessTaskPenalty {
+  amount?: number | null;
+  startedAt?: Date | null;
+  lastCalculatedAt?: Date | null;
+  nextCalculationAt?: Date | null;
+}
 
 export interface BusinessProcessTemplate {
   id: string;
@@ -63,6 +95,7 @@ export interface BusinessProcessTemplate {
   status: BusinessProcessTemplateStatus;
   objectTypes: string[];
   startMode: BusinessProcessStartMode;
+  rules: import('./business-process-rule.types').BusinessProcessRuleBinding[];
   startCondition?: unknown;
   steps: BusinessProcessStep[];
   transitions: BusinessProcessTransition[];
@@ -73,7 +106,7 @@ export interface BusinessProcessTemplate {
   visualMapping?: BusinessProcessVisualMapping;
   createdAt?: Date;
   updatedAt?: Date;
-  createdBy?: string | null;
+  createdBy?: CatalogUserId | null;
   activatedAt?: Date | null;
   archivedAt?: Date | null;
 }
@@ -92,11 +125,9 @@ export interface BusinessProcessStep {
   key: string;
   title: string;
   type: BusinessProcessStepType;
-  assignmentRule?: unknown;
-  dueRule?: unknown;
-  penaltyRule?: unknown;
-  waitUntilRule?: unknown;
-  autoCompleteCondition?: unknown;
+  rules: import('./business-process-rule.types').BusinessProcessRuleBinding[];
+  decisions: BusinessProcessDecision[];
+  completionPolicy: 'ANY' | 'ALL';
   allowRedirect?: boolean;
   allowDelegate?: boolean;
   rejectPolicy?: string;
@@ -122,7 +153,7 @@ export interface BusinessProcessInstance {
   currentStepKey?: string;
   startedAt: Date;
   completedAt?: Date | null;
-  author?: string | null;
+  authorUser?: CatalogUserId | null;
   company?: string | null;
   context?: Record<string, unknown>;
   idempotencyKey?: string | null;
@@ -138,19 +169,11 @@ export interface BusinessProcessTask {
   stepKey: string;
   title: string;
   status: BusinessProcessTaskStatus;
-  assigneeUser?: string | null;
-  assigneeRole?: string | null;
-  activeFrom?: Date | null;
-  dueAt?: Date | null;
-  completedAt?: Date | null;
-  decisionUser?: string | null;
-  decisionComment?: string | null;
-  delegatedFromUser?: string | null;
-  redirectedFromUser?: string | null;
-  penaltyRuleSnapshot?: unknown;
-  penaltyAmount?: number | null;
-  overdueAt?: Date | null;
-  penaltyAppliedAt?: Date | null;
+  assignee: BusinessProcessTaskAssignee;
+  activation: BusinessProcessTaskActivation;
+  deadline: BusinessProcessTaskDeadline;
+  decision: BusinessProcessTaskDecisionInfo;
+  penalty: BusinessProcessTaskPenalty;
   createdAt?: Date;
 }
 
@@ -159,7 +182,7 @@ export interface BusinessProcessEvent {
   instanceId: string;
   taskId?: string | null;
   eventType: BusinessProcessEventType;
-  user?: string | null;
+  user?: CatalogUserId | null;
   date: Date;
   payload?: Record<string, unknown> | null;
   eventKey?: string | null;
@@ -167,9 +190,8 @@ export interface BusinessProcessEvent {
 
 export interface BusinessProcessDelegation {
   id: string;
-  userFrom: string;
-  userTo: string;
-  role?: string | null;
+  userFrom: CatalogUserId;
+  userTo: CatalogUserId;
   processTemplate?: string | null;
   company?: string | null;
   dateFrom: Date;
@@ -181,7 +203,7 @@ export interface BusinessProcessStartInput {
   templateCode: string;
   objectType: string;
   objectId: string;
-  user?: string | null;
+  user?: CatalogUserId | null;
   company?: string | null;
   context?: Record<string, unknown>;
   idempotencyKey?: string | null;
@@ -200,21 +222,33 @@ export interface BusinessProcessStartResult {
 }
 
 export interface ResolvedAssignee {
-  userId?: string | null;
-  role?: string | null;
-  delegatedFromUser?: string | null;
+  userId: CatalogUserId;
+  delegatedFromUser?: CatalogUserId | null;
 }
 
 export interface BusinessProcessTaskActionInput {
-  user: string;
+  user: CatalogUserId;
   comment?: string | null;
 }
 
+export interface BusinessProcessTaskDecisionInput {
+  user: CatalogUserId;
+  decision: {
+    key: BusinessProcessTaskDecision;
+    comment?: string | null;
+  };
+}
+
 export interface BusinessProcessTaskRedirectInput {
-  user: string;
-  targetUser?: string | null;
-  targetRole?: string | null;
+  user: CatalogUserId;
+  targetUser: CatalogUserId;
   comment?: string | null;
+}
+
+export interface BusinessProcessDecision {
+  key: string;
+  title: string;
+  commentRequired?: boolean;
 }
 
 export interface BusinessProcessTaskActionResult {
@@ -231,8 +265,15 @@ export interface BusinessProcessTaskActionResult {
 }
 
 export interface BusinessProcessSchedulerTickResult {
+  run: {
+    id: string;
+    status: 'COMPLETED' | 'COMPLETED_WITH_ERRORS' | 'SKIPPED_LOCKED';
+    startedAt: Date;
+    completedAt: Date;
+  };
   activatedTasks: number;
   overdueTasks: number;
+  autoCompletedTasks: number;
   penaltyCandidates: number;
   penaltiesApplied: number;
   skipped: number;
@@ -240,4 +281,12 @@ export interface BusinessProcessSchedulerTickResult {
     taskId?: string;
     message: string;
   }>;
+}
+
+export interface BusinessProcessSchedulerStatus {
+  lock: {
+    resource: string;
+    available: boolean;
+  };
+  databaseTime: Date;
 }

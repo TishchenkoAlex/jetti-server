@@ -4,6 +4,11 @@
   "version": "0.0.2",
   "license": "MIT",
   "scripts": {
+    "test:business-process-seed": "ts-node server/business-process/tests/cash-request-seed.test.ts",
+    "test:business-process-template": "ts-node server/business-process/tests/template-draft-validation.test.ts",
+    "test:business-process-scheduler": "ts-node server/business-process/tests/scheduler-runtime.test.ts",
+    "test:business-process-integration:preflight": "ts-node server/business-process/tests/integration-smoke.ts",
+    "test:business-process-integration": "ts-node server/business-process/tests/integration-smoke.ts --run",
     "start3001": "tsc && node dist/server/index.js port=3001 DISABLED_LIST_LOG=true",
     "start": "tsc && node dist/server/index.js DISABLED_LIST_LOG=true",
     "start_nodemon": "tsc && npx nodemon server/index.ts DISABLED_LIST_LOG=true",

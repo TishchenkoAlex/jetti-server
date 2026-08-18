@@ -6,7 +6,6 @@ type DelegationRow = {
   id: string;
   userFrom: string;
   userTo: string;
-  role?: string | null;
   processTemplate?: string | null;
   company?: string | null;
   dateFrom: Date;
@@ -20,7 +19,6 @@ export class BusinessProcessDelegationRepository {
   async create(input: {
     userFrom: string;
     userTo: string;
-    role?: string | null;
     processTemplate?: string | null;
     company?: string | null;
     dateFrom: Date;
@@ -30,16 +28,15 @@ export class BusinessProcessDelegationRepository {
     const id = uuid();
     await this.db.none(
       `INSERT INTO dbo.BusinessProcessDelegation (
-        id, userFrom, userTo, role, processTemplate, company, dateFrom, dateTo, active, comment
+        id, userFrom, userTo, processTemplate, company, dateFrom, dateTo, active, comment
       )
       VALUES (
-        @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, 1, @p9
+        @p1, @p2, @p3, @p4, @p5, @p6, @p7, 1, @p8
       )`,
       [
         id,
         input.userFrom,
         input.userTo,
-        input.role || null,
         input.processTemplate || null,
         input.company || null,
         input.dateFrom,
@@ -122,7 +119,7 @@ export class BusinessProcessDelegationRepository {
 
   private selectSql(): string {
     return `SELECT
-      id, userFrom, userTo, role, processTemplate, company, dateFrom, dateTo, active
+      id, userFrom, userTo, processTemplate, company, dateFrom, dateTo, active
     FROM dbo.BusinessProcessDelegation`;
   }
 
@@ -131,7 +128,6 @@ export class BusinessProcessDelegationRepository {
       id: row.id,
       userFrom: row.userFrom,
       userTo: row.userTo,
-      role: row.role || null,
       processTemplate: row.processTemplate || null,
       company: row.company || null,
       dateFrom: row.dateFrom,

@@ -20,6 +20,29 @@ router.post('/suggest/:type', async (req: Request, res: Response, next: NextFunc
     const filter = req.body.filters as FormListFilter[];
     const isDoc = Type.isDocument(type);
 
+    if (type === 'BusinessProcess.Template') {
+      const data = await sdb.manyOrNone<ISuggest>(
+        `SELECT TOP 10
+          id,
+          COALESCE(NULLIF(description, N''), code) value,
+          code,
+          COALESCE(NULLIF(description, N''), code) + N' (' + code + N', v.' + CAST(version AS nvarchar(20)) + N')' description,
+          N'BusinessProcess.Template' type,
+          CAST(0 AS bit) isfolder,
+          CAST(0 AS bit) deleted,
+          CAST(0 AS bit) archived
+        FROM dbo.BusinessProcessTemplate
+        WHERE active = 1
+          AND status = N'ACTIVE'
+          AND startMode = N'MANUAL'
+          AND (description LIKE @p1 OR code LIKE @p1)
+        ORDER BY code, version DESC`,
+        [`%${filterLike}%`],
+      );
+      res.json(data);
+      return;
+    }
+
     const filterQuery = await filterBuilder(filter, sdb, type);
     let query = '';
 

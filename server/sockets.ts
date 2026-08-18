@@ -1,9 +1,16 @@
 import { IJWTPayload } from 'jetti-middle';
-import { IO } from './index';
+import { Server as SocketIO } from 'socket.io';
+
+let socketServer: SocketIO | null = null;
+
+export function registerSocketServer(server: SocketIO): void {
+  socketServer = server;
+}
 
 export function userSocketsEmit(user: IJWTPayload | null, event: string, payload: any) {
   try {
-    IO.emit(event, payload);
+    if (!socketServer) return;
+    socketServer.emit(event, payload);
     /*     if (!(user && user.email)) {
           // IO.emit(event, payload);
         } else {
