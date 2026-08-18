@@ -27,7 +27,7 @@ export const SERVICE_ACCOUNTS = (process.env.SERVICE_ACCOUNTS || 'exchange@sushi
 const DB_PORT = parseInt(process.env.DB_PORT as string, undefined);
 
 export let LINK = process.env.LINK || "https://x100-jetti.web.app";
-export let REDIS_DB_HOST = process.env.REDIS_DB_HOST!;
+export let REDIS_DB_HOST = 'disabled';
 export let REDIS_DB_AUTH = process.env.REDIS_DB_AUTH;
 export let REDIS_DB_PORT = parseInt(process.env.REDIS_DB_PORT as string, undefined) || 6379;
 export let DB_HOST_MIRROR_CONTOUR = process.env.DB_HOST_MIRROR_CONTOUR || 'sql-jetti-db.sushi-m.net';
