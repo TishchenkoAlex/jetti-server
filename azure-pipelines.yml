@@ -7,8 +7,6 @@ pool:
 variables:
   tag: '$(Build.BuildId)'
   nexusRegistry: 'nexus.x100group.com'
-  nexusHostedRepo: 'docker-hosted'
-  nexusGroupRepo: 'docker-group'
   imagePath: 'finance/x100group.jetti-server'
 
 stages:
@@ -23,16 +21,7 @@ stages:
 
     steps:
 
-    # ========================================================
-    # Checkout
-    # ========================================================
-
     - checkout: self
-
-
-    # ========================================================
-    # Login to Nexus Docker Registry
-    # ========================================================
 
     - script: |
         set -euo pipefail
@@ -49,16 +38,12 @@ stages:
       displayName: 'Docker login to Nexus'
 
 
-    # ========================================================
-    # Build
-    # ========================================================
-
     - script: |
         set -euo pipefail
 
-        IMAGE="$(nexusRegistry)/$(nexusHostedRepo)/$(imagePath):$(tag)"
+        IMAGE="$(nexusRegistry)/$(imagePath):$(tag)"
 
-        echo "Building image:"
+        echo "Building:"
         echo "$IMAGE"
 
         docker build \
@@ -67,24 +52,15 @@ stages:
           -t "$IMAGE" \
           .
 
-        echo
-        echo "Image built:"
-        docker image inspect "$IMAGE" \
-          --format '{{.RepoTags}} {{.Id}}'
-
       displayName: 'Docker build'
 
-
-    # ========================================================
-    # Push to docker-hosted
-    # ========================================================
 
     - script: |
         set -euo pipefail
 
-        IMAGE="$(nexusRegistry)/$(nexusHostedRepo)/$(imagePath):$(tag)"
+        IMAGE="$(nexusRegistry)/$(imagePath):$(tag)"
 
-        echo "Publishing image:"
+        echo "Publishing:"
         echo "$IMAGE"
 
         docker push "$IMAGE"
@@ -94,33 +70,6 @@ stages:
 
       displayName: 'Docker push to Nexus'
 
-
-    # ========================================================
-    # Verify through docker-group
-    #
-    # Проверяем именно тот endpoint, которым потом должны
-    # пользоваться deployment/server.
-    # ========================================================
-
-    - script: |
-        set -euo pipefail
-
-        GROUP_IMAGE="$(nexusRegistry)/$(nexusGroupRepo)/$(imagePath):$(tag)"
-
-        echo "Verifying image through docker-group:"
-        echo "$GROUP_IMAGE"
-
-        docker pull "$GROUP_IMAGE"
-
-        echo
-        echo "Image successfully available through docker-group"
-
-      displayName: 'Verify image through Nexus group'
-
-
-    # ========================================================
-    # Logout
-    # ========================================================
 
     - script: |
         docker logout "$(nexusRegistry)" || true
