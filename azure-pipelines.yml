@@ -1,42 +1,129 @@
-# Docker
-# Build a Docker image
-# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
-
 trigger:
 - main
 
-resources:
-- repo: self
+pool:
+  vmImage: ubuntu-22.04
 
 variables:
   tag: '$(Build.BuildId)'
+  nexusRegistry: 'nexus.x100group.com'
+  nexusHostedRepo: 'docker-hosted'
+  nexusGroupRepo: 'docker-group'
+  imagePath: 'finance/x100group.jetti-server'
 
 stages:
+
 - stage: Build
-  displayName: Build image
+  displayName: 'Build and publish image'
+
   jobs:
+
   - job: Build
-    displayName: Build
-    pool:
-      vmImage: ubuntu-22.04
+    displayName: 'Build'
+
     steps:
 
+    # ========================================================
+    # Checkout
+    # ========================================================
+
+    - checkout: self
+
+
+    # ========================================================
+    # Login to Nexus Docker Registry
+    # ========================================================
+
     - script: |
-        docker build -t repository.jfd-prod.x100platforma.com/docker-local/finance/x100group.jetti-server:$(tag) .
+        set -euo pipefail
+
+        echo "$NEXUS_PASSWORD" \
+          | docker login "$(nexusRegistry)" \
+              --username "$NEXUS_USER" \
+              --password-stdin
+
+      env:
+        NEXUS_USER: $(NEXUS_USER)
+        NEXUS_PASSWORD: $(NEXUS_PASSWORD)
+
+      displayName: 'Docker login to Nexus'
+
+
+    # ========================================================
+    # Build
+    # ========================================================
+
+    - script: |
+        set -euo pipefail
+
+        IMAGE="$(nexusRegistry)/$(nexusHostedRepo)/$(imagePath):$(tag)"
+
+        echo "Building image:"
+        echo "$IMAGE"
+
+        docker build \
+          --label "org.opencontainers.image.revision=$(Build.SourceVersion)" \
+          --label "org.opencontainers.image.version=$(tag)" \
+          -t "$IMAGE" \
+          .
+
+        echo
+        echo "Image built:"
+        docker image inspect "$IMAGE" \
+          --format '{{.RepoTags}} {{.Id}}'
+
       displayName: 'Docker build'
 
-    - task: ArtifactoryDocker@1
-      inputs:
-        command: 'push'
-        artifactoryService: 'artifactory-x100'
-        targetRepo: 'docker-local'
-        imageName: 'repository.jfd-prod.x100platforma.com/docker-local/finance/x100group.jetti-server:$(tag)'
-        collectBuildInfo: true
-        buildName: '$(Build.DefinitionName)'
-        buildNumber: '$(Build.BuildNumber)'
 
-    - task: ArtifactoryPublishBuildInfo@1
-      inputs:
-        artifactoryService: 'artifactory-x100'
-        buildName: '$(Build.DefinitionName)'
-        buildNumber: '$(Build.BuildNumber)'
+    # ========================================================
+    # Push to docker-hosted
+    # ========================================================
+
+    - script: |
+        set -euo pipefail
+
+        IMAGE="$(nexusRegistry)/$(nexusHostedRepo)/$(imagePath):$(tag)"
+
+        echo "Publishing image:"
+        echo "$IMAGE"
+
+        docker push "$IMAGE"
+
+        echo
+        echo "Published successfully"
+
+      displayName: 'Docker push to Nexus'
+
+
+    # ========================================================
+    # Verify through docker-group
+    #
+    # Проверяем именно тот endpoint, которым потом должны
+    # пользоваться deployment/server.
+    # ========================================================
+
+    - script: |
+        set -euo pipefail
+
+        GROUP_IMAGE="$(nexusRegistry)/$(nexusGroupRepo)/$(imagePath):$(tag)"
+
+        echo "Verifying image through docker-group:"
+        echo "$GROUP_IMAGE"
+
+        docker pull "$GROUP_IMAGE"
+
+        echo
+        echo "Image successfully available through docker-group"
+
+      displayName: 'Verify image through Nexus group'
+
+
+    # ========================================================
+    # Logout
+    # ========================================================
+
+    - script: |
+        docker logout "$(nexusRegistry)" || true
+
+      displayName: 'Docker logout'
+      condition: always()
