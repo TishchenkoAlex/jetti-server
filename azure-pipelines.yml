@@ -55,19 +55,32 @@ stages:
       displayName: 'Docker build'
 
 
+    # - script: |
+    #     set -euo pipefail
+
+    #     IMAGE="$(nexusRegistry)/$(imagePath):$(tag)"
+
+    #     echo "Publishing:"
+    #     echo "$IMAGE"
+
+    #     docker push "$IMAGE"
+
+    #     echo
+    #     echo "Published successfully"
+
+    #   displayName: 'Docker push to Nexus'
+
     - script: |
         set -euo pipefail
-
+        # 1. Авторизация на едином эндпоинте
+        docker login $(nexusRegistry) -u $(NEXUS_USER) -p $(NEXUS_PASSWORD)
+        # 2. Сборка и тегирование (каталог finance создастся в Nexus автоматически)
         IMAGE="$(nexusRegistry)/$(imagePath):$(tag)"
-
-        echo "Publishing:"
-        echo "$IMAGE"
-
+        docker build -t "$IMAGE" .
+        # 3. Публикация образа
+        echo "Publishing image: $IMAGE"
         docker push "$IMAGE"
-
-        echo
         echo "Published successfully"
-
       displayName: 'Docker push to Nexus'
 
 
