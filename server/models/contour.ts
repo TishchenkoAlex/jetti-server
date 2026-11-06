@@ -1,4 +1,4 @@
-import { COMPANY_BY_CONTOUR_CACHE_TTL_SECONDS, CONTOUR, SERVICE_ACCOUNTS } from "../env/environment";
+import { COMPANY_BY_CONTOUR_CACHE_TTL_SECONDS, CONTOUR, CONTOUR_EDIT_ALLOWED_EMAILS, SERVICE_ACCOUNTS } from "../env/environment";
 import { MSSQL } from "../mssql";
 import { lib } from "../std.lib";
 
@@ -117,6 +117,7 @@ export class Contour {
 
     static async isReadOnlyContourCompany(company: string | undefined | null, tx?: MSSQL): Promise<boolean> {
         if (!company || tx?.isMirrorContourOperation()) return false;
+        if (CONTOUR_EDIT_ALLOWED_EMAILS.includes((tx?.email || '').trim().toLowerCase())) return false;
 
         const contour = await this.contourByCompany(company, tx);
         const isOwnContour = this.contour === contour;

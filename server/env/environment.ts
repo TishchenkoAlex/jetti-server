@@ -4,7 +4,7 @@ import { ConnectionConfig } from 'tedious';
 dotenv();
 export type ConnectionConfigAndPool = ConnectionConfig & { pool: { min: number, max: number, idleTimeoutMillis: number } };
 
-export const APP_VERSION = process.env.APP_VERSION || '1.0.11';
+export const APP_VERSION = process.env.APP_VERSION || '1.0.12';
 export const CONTOUR = parseInt(process.env.CONTOUR || "1");
 export const DB_NAME = process.env.DB_NAME!;
 export const JETTI_IS_HOST = process.env.JETTI_IS_HOST || 'http://localhost:3500';
@@ -23,6 +23,8 @@ export const DEBUG_EXCLUDE_ALL_ROLES = process.env.DEBUG_EXCLUDE_ALL_ROLES === '
 export const COMPANY_BY_CONTOUR_CACHE_TTL_SECONDS = parseInt(process.env.COMPANY_BY_CONTOUR_CACHE_TTL_SECONDS || '3600', undefined);
 export const DEFAULT_POST_QUEUE_FLOW = parseInt(process.env.DEFAULT_POST_QUEUE_FLOW as string) || 25;
 export const SERVICE_ACCOUNTS = (process.env.SERVICE_ACCOUNTS || 'exchange@sushi-master.net,kolpakov.d@sushi-master.net,setka.service.account@sushi-master.net,exchange@sushi-m.net').split(',');
+export const CONTOUR_EDIT_ALLOWED_EMAILS = (process.env.CONTOUR_EDIT_ALLOWED_EMAILS ?? 'exchange@sushi-master.net')
+  .split(',').map(email => email.trim().toLowerCase()).filter(Boolean);
 
 const DB_PORT = parseInt(process.env.DB_PORT as string, undefined);
 

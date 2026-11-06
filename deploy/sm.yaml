@@ -76,6 +76,8 @@ spec:
           value: "https://x100-jetti.web.app"          
         - name: SERVICE_ACCOUNTS
           value: "exchange@sushi-master.net,kolpakov.d@sushi-master.net,setka.service.account@sushi-master.net,exchange@sushi-m.net"
+        - name: CONTOUR_EDIT_ALLOWED_EMAILS
+          value: "exchange@sushi-master.net"
         image: eu.gcr.io/jetti-x100/jetti-api:latest
         imagePullPolicy: Always
         name: jetti

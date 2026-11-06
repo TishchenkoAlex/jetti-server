@@ -135,6 +135,11 @@
         "slotSetting": false
     },
     {
+        "name": "CONTOUR_EDIT_ALLOWED_EMAILS",
+        "value": "exchange@sushi-master.net",
+        "slotSetting": false
+    },
+    {
         "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
         "value": "false",
         "slotSetting": false
